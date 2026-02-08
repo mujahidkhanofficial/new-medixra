@@ -1,13 +1,37 @@
 'use client'
 
-import { useState } from 'react'
-import { Menu, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Menu, X, User, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 export default function Navigation() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [user, setUser] = useState<any>(null)
+    const router = useRouter()
+    const supabase = createClient()
+
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            setUser(user)
+        }
+        getUser()
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null)
+        })
+
+        return () => subscription.unsubscribe()
+    }, [supabase.auth])
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut()
+        router.refresh()
+    }
 
     return (
         <nav className="sticky top-0 z-50 border-b border-border bg-card">
@@ -47,12 +71,29 @@ export default function Navigation() {
                     </div>
 
                     <div className="hidden items-center gap-3 md:flex">
-                        <Button variant="outline" asChild>
-                            <Link href="/login">Sign In</Link>
-                        </Button>
-                        <Button asChild>
-                            <Link href="/signup">Sign Up</Link>
-                        </Button>
+                        {user ? (
+                            <div className="flex items-center gap-4">
+                                <Link href="/dashboard" className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
+                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <User className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <span>Dashboard</span>
+                                </Link>
+                                <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground">
+                                    <LogOut className="h-4 w-4 mr-2" />
+                                    Logout
+                                </Button>
+                            </div>
+                        ) : (
+                            <>
+                                <Button variant="outline" asChild>
+                                    <Link href="/login">Sign In</Link>
+                                </Button>
+                                <Button asChild>
+                                    <Link href="/signup">Sign Up</Link>
+                                </Button>
+                            </>
+                        )}
                     </div>
 
                     <button
@@ -85,12 +126,30 @@ export default function Navigation() {
                                 For Vendors
                             </Link>
                             <div className="border-t border-border pt-3 flex flex-col gap-2">
-                                <Button variant="outline" className="w-full" asChild>
-                                    <Link href="/login">Sign In</Link>
-                                </Button>
-                                <Button className="w-full" asChild>
-                                    <Link href="/signup">Sign Up</Link>
-                                </Button>
+                                {user ? (
+                                    <>
+                                        <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
+                                            <User className="h-4 w-4" />
+                                            Dashboard
+                                        </Link>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 rounded w-full text-left"
+                                        >
+                                            <LogOut className="h-4 w-4" />
+                                            Logout
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Button variant="outline" className="w-full" asChild>
+                                            <Link href="/login">Sign In</Link>
+                                        </Button>
+                                        <Button className="w-full" asChild>
+                                            <Link href="/signup">Sign Up</Link>
+                                        </Button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
