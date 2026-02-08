@@ -27,30 +27,30 @@ export default function Footer() {
                     <div>
                         <h4 className="font-semibold text-foreground mb-4">Platform</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><Link href="/product" className="text-muted-foreground hover:text-primary transition-colors">Browse Equipment</Link></li>
+                            <li><Link href="/products" className="text-muted-foreground hover:text-primary transition-colors">Browse Equipment</Link></li>
                             <li><Link href="/technicians" className="text-muted-foreground hover:text-primary transition-colors">Find Technicians</Link></li>
-                            <li><Link href="/become-vendor" className="text-muted-foreground hover:text-primary transition-colors">Search Vendors</Link></li>
-                            <li><Link href="/product" className="text-muted-foreground hover:text-primary transition-colors">Category Guide</Link></li>
+                            <li><Link href="/how-it-works" className="text-muted-foreground hover:text-primary transition-colors">How it Works</Link></li>
+                            <li><Link href="/become-vendor" className="text-muted-foreground hover:text-primary transition-colors">Become a Vendor</Link></li>
                         </ul>
                     </div>
 
                     <div>
                         <h4 className="font-semibold text-foreground mb-4">For Vendors</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><Link href="/become-vendor" className="text-muted-foreground hover:text-primary transition-colors">Become a Vendor</Link></li>
-                            <li><Link href="/dashboard/vendor" className="text-muted-foreground hover:text-primary transition-colors">List Equipment</Link></li>
+                            <li><Link href="/become-vendor" className="text-muted-foreground hover:text-primary transition-colors">Vendor Registration</Link></li>
+                            <li><Link href="/login" className="text-muted-foreground hover:text-primary transition-colors">Member Login</Link></li>
                             <li><Link href="/become-vendor" className="text-muted-foreground hover:text-primary transition-colors">Vendor Guide</Link></li>
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Pricing</Link></li>
+                            <li><Link href="/safety-compliance" className="text-muted-foreground hover:text-primary transition-colors">Safety & Standards</Link></li>
                         </ul>
                     </div>
 
                     <div>
                         <h4 className="font-semibold text-foreground mb-4">Company</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">About Us</Link></li>
+                            <li><Link href="/about-us" className="text-muted-foreground hover:text-primary transition-colors">About Us</Link></li>
                             <li><Link href="/safety-compliance" className="text-muted-foreground hover:text-primary transition-colors">Safety & Compliance</Link></li>
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link></li>
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link></li>
+                            <li><Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link></li>
+                            <li><Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link></li>
                         </ul>
                     </div>
                 </div>

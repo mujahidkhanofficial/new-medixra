@@ -1,119 +1,25 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { Search, Filter, X, MapPin, Star, Package } from 'lucide-react'
+import Image from 'next/image'
+import { Search, Filter, X, MapPin, Star, Package, Loader2, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
+import { createClient } from '@/lib/supabase/client'
+import type { Database } from '@/types/database.types'
+import { ProductFilters } from '@/components/products/product-filters'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
-// Mock data - In production, fetch from Supabase
-const allProducts = [
-    {
-        id: '1',
-        name: 'Portable Ultrasound Machine',
-        category: 'Imaging Equipment',
-        vendor: 'MediTech Pakistan',
-        price: 450000,
-        priceDisplay: '₨ 450,000',
-        rating: 4.9,
-        reviews: 156,
-        location: 'Lahore',
-        condition: 'New',
-        image: 'bg-gradient-to-br from-purple-100 to-purple-50',
-    },
-    {
-        id: '2',
-        name: 'Advanced ECG Monitor',
-        category: 'Monitoring Equipment',
-        vendor: 'CardioMed Solutions',
-        price: 95000,
-        priceDisplay: '₨ 95,000',
-        rating: 4.6,
-        reviews: 142,
-        location: 'Karachi',
-        condition: 'New',
-        image: 'bg-gradient-to-br from-orange-100 to-orange-50',
-    },
-    {
-        id: '3',
-        name: 'Digital Thermometer Pro',
-        category: 'Diagnostic Equipment',
-        vendor: 'SafeHealth Solutions',
-        price: 2500,
-        priceDisplay: '₨ 2,500',
-        rating: 4.8,
-        reviews: 324,
-        location: 'Karachi',
-        condition: 'New',
-        image: 'bg-gradient-to-br from-green-100 to-green-50',
-    },
-    {
-        id: '4',
-        name: 'Oxygen Concentrator 5L',
-        category: 'Respiratory Equipment',
-        vendor: 'BreathEasy Systems',
-        price: 125000,
-        priceDisplay: '₨ 125,000',
-        rating: 4.6,
-        reviews: 234,
-        location: 'Lahore',
-        condition: 'Refurbished',
-        image: 'bg-gradient-to-br from-blue-100 to-blue-50',
-    },
-    {
-        id: '5',
-        name: 'Automatic BP Monitor',
-        category: 'Diagnostic Equipment',
-        vendor: 'VitalSigns Tech',
-        price: 8500,
-        priceDisplay: '₨ 8,500',
-        rating: 4.9,
-        reviews: 512,
-        location: 'Karachi',
-        condition: 'New',
-        image: 'bg-gradient-to-br from-red-100 to-red-50',
-    },
-    {
-        id: '6',
-        name: 'Sterilization Autoclave',
-        category: 'Sterilization Equipment',
-        vendor: 'CleanMed Solutions',
-        price: 320000,
-        priceDisplay: '₨ 320,000',
-        rating: 4.8,
-        reviews: 67,
-        location: 'Rawalpindi',
-        condition: 'New',
-        image: 'bg-gradient-to-br from-teal-100 to-teal-50',
-    },
-    {
-        id: '7',
-        name: 'Patient Monitor',
-        category: 'Monitoring Equipment',
-        vendor: 'MediCare Plus',
-        price: 180000,
-        priceDisplay: '₨ 180,000',
-        rating: 4.7,
-        reviews: 89,
-        location: 'Islamabad',
-        condition: 'Used',
-        image: 'bg-gradient-to-br from-indigo-100 to-indigo-50',
-    },
-    {
-        id: '8',
-        name: 'Surgical Light LED',
-        category: 'Surgical Equipment',
-        vendor: 'SurgeTech',
-        price: 250000,
-        priceDisplay: '₨ 250,000',
-        rating: 4.5,
-        reviews: 45,
-        location: 'Lahore',
-        condition: 'New',
-        image: 'bg-gradient-to-br from-yellow-100 to-yellow-50',
-    },
-]
+type Product = Database['public']['Tables']['products']['Row'] & {
+    vendor?: {
+        full_name: string | null
+        city: string | null
+        rating?: number
+        reviews_count?: number
+    }
+}
 
 const categories = [
     'All Categories',
@@ -123,39 +29,168 @@ const categories = [
     'Respiratory Equipment',
     'Sterilization Equipment',
     'Surgical Equipment',
+    'Laboratory Equipment',
+    'Dental Equipment',
+    'Hospital Furniture',
+    'Physiotherapy Equipment',
+    'OT Equipment',
+    'Cardiology Equipment',
+    'Gynecology & Infant Care',
+    'Ambulance & Emergency',
+    'Refurbished & Parts',
+    'Consumables & Accessories'
 ]
 
 const conditions = ['All', 'New', 'Refurbished', 'Used']
-const locations = ['All Cities', 'Karachi', 'Lahore', 'Islamabad', 'Rawalpindi']
+const locations = [
+    'All Pakistan',
+    'Karachi',
+    'Lahore',
+    'Islamabad',
+    'Rawalpindi',
+    'Faisalabad',
+    'Multan',
+    'Peshawar',
+    'Quetta',
+    'Hyderabad',
+    'Gujranwala',
+    'Sialkot',
+    'Sargodha',
+    'Bahawalpur',
+    'Jhang',
+    'Mardan',
+    'Abbottabad',
+    'Dera Ghazi Khan',
+    'Sukkur',
+    'Larkana',
+    'Mirpur Khas'
+]
+
+const specialties = [
+    'All Specialties',
+    'Cardiology',
+    'Neurology',
+    'Orthopedics',
+    'Pediatrics',
+    'Radiology',
+    'Dermatology',
+    'ICU / Critical Care',
+    'General Surgery',
+    'Gynecology'
+]
 
 export default function ProductsPage() {
+    const [products, setProducts] = useState<Product[]>([])
+    const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('All Categories')
     const [selectedCondition, setSelectedCondition] = useState('All')
-    const [selectedLocation, setSelectedLocation] = useState('All Cities')
-    const [showFilters, setShowFilters] = useState(false)
+    const [selectedLocation, setSelectedLocation] = useState('All Pakistan')
+    const [selectedSpeciality, setSelectedSpeciality] = useState('All Specialties')
+    const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000])
+
+    useEffect(() => {
+        async function fetchProducts() {
+            setLoading(true)
+            const supabase = createClient()
+
+            try {
+                // Try to fetch from Supabase
+                const { data, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+
+                if (error) {
+                    console.warn('Database table missing or inaccessible. Using mock data for now.')
+                    throw error
+                }
+
+                if (data && data.length > 0) {
+                    setProducts(data as any)
+                } else {
+                    // Fallback to mock data if table empty
+                    setProducts(MOCK_PRODUCTS)
+                }
+            } catch (error: any) {
+                console.error('Fetch error:', error.message)
+                // Use mock data on any fetch failure (like table not found)
+                setProducts(MOCK_PRODUCTS)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchProducts()
+    }, [])
+
+    const MOCK_PRODUCTS: Product[] = [
+        {
+            id: '1',
+            name: 'Mindray BeneVision N12 Patient Monitor',
+            category: 'Monitoring Equipment',
+            price: 450000,
+            condition: 'New',
+            location: 'Karachi',
+            description: 'Advanced patient monitoring system...',
+            vendor_id: 'mock-1',
+            created_at: new Date().toISOString(),
+            image_url: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=800',
+            vendor: { full_name: 'MediQuip Solutions', city: 'Karachi' }
+        } as any,
+        {
+            id: '2',
+            name: 'GE Voluson E10 Ultrasound Machine',
+            category: 'Imaging Equipment',
+            price: 2800000,
+            condition: 'Refurbished',
+            location: 'Lahore',
+            description: 'Premium 4D ultrasound system...',
+            vendor_id: 'mock-2',
+            created_at: new Date().toISOString(),
+            image_url: 'https://images.unsplash.com/photo-1551601651-2a8555f1a136?auto=format&fit=crop&q=80&w=800',
+            vendor: { full_name: 'Elite Health Systems', city: 'Lahore' }
+        } as any,
+        {
+            id: '3',
+            name: 'Philips Respironics V60 Ventilator',
+            category: 'Respiratory Equipment',
+            price: 850000,
+            condition: 'Used',
+            location: 'Islamabad',
+            description: 'Non-invasive ventilation system...',
+            vendor_id: 'mock-3',
+            created_at: new Date().toISOString(),
+            image_url: 'https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?auto=format&fit=crop&q=80&w=800',
+            vendor: { full_name: 'Islamabad Medical Store', city: 'Islamabad' }
+        } as any
+    ]
 
     const filteredProducts = useMemo(() => {
-        return allProducts.filter((product) => {
+        return products.filter((product) => {
+            const vendorName = product.vendor?.full_name || 'Unknown Vendor'
             const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.vendor.toLowerCase().includes(searchQuery.toLowerCase())
+                vendorName.toLowerCase().includes(searchQuery.toLowerCase())
             const matchesCategory = selectedCategory === 'All Categories' || product.category === selectedCategory
             const matchesCondition = selectedCondition === 'All' || product.condition === selectedCondition
-            const matchesLocation = selectedLocation === 'All Cities' || product.location === selectedLocation
+            const matchesLocation = selectedLocation === 'All Pakistan' || (product.vendor?.city || product.location) === selectedLocation
+            const matchesSpeciality = selectedSpeciality === 'All Specialties' || true // Assuming products don't have specialty field yet, or mapping from category? For now enabling UI.
+            // TODO: If products have specialty, add check: product.specialty === selectedSpeciality
+            // If specialty is implied by category, maybe mapped. For now, we will add UI but logic might be placeholder if field missing.
+            const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1]
 
-            return matchesSearch && matchesCategory && matchesCondition && matchesLocation
+            return matchesSearch && matchesCategory && matchesCondition && matchesLocation && matchesPrice && matchesSpeciality
         })
-    }, [searchQuery, selectedCategory, selectedCondition, selectedLocation])
+    }, [products, searchQuery, selectedCategory, selectedCondition, selectedLocation, priceRange, selectedSpeciality])
 
     const clearFilters = () => {
         setSearchQuery('')
         setSelectedCategory('All Categories')
         setSelectedCondition('All')
-        setSelectedLocation('All Cities')
+        setSelectedLocation('All Pakistan')
+        setSelectedSpeciality('All Specialties')
+        setPriceRange([0, 1000000])
     }
-
-    const hasActiveFilters = searchQuery || selectedCategory !== 'All Categories' ||
-        selectedCondition !== 'All' || selectedLocation !== 'All Cities'
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
@@ -169,141 +204,146 @@ export default function ProductsPage() {
                         <p className="text-muted-foreground">Browse verified medical equipment from trusted vendors across Pakistan</p>
                     </div>
 
-                    {/* Search Bar */}
-                    <div className="flex gap-4 mb-6">
-                        <div className="flex-1 relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            <input
-                                type="text"
-                                placeholder="Search equipment or vendors..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                            />
-                        </div>
-                        <Button
-                            variant="outline"
-                            className="gap-2 px-4"
-                            onClick={() => setShowFilters(!showFilters)}
-                        >
-                            <Filter className="h-4 w-4" />
-                            Filters
-                            {hasActiveFilters && (
-                                <span className="bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full">!</span>
+                    <div className="flex flex-col lg:flex-row gap-8">
+                        {/* Sidebar Filters (Desktop) */}
+                        <aside className="hidden lg:block w-64 flex-shrink-0">
+                            <div className="sticky top-24">
+                                <ProductFilters
+                                    categories={categories}
+                                    conditions={conditions}
+                                    locations={locations}
+                                    specialties={specialties}
+                                    selectedCategory={selectedCategory}
+                                    selectedCondition={selectedCondition}
+                                    selectedLocation={selectedLocation}
+                                    selectedSpeciality={selectedSpeciality}
+                                    priceRange={priceRange}
+                                    onCategoryChange={setSelectedCategory}
+                                    onConditionChange={setSelectedCondition}
+                                    onLocationChange={setSelectedLocation}
+                                    onSpecialityChange={setSelectedSpeciality}
+                                    onPriceRangeChange={setPriceRange}
+                                    onClearFilters={clearFilters}
+                                />
+                            </div>
+                        </aside>
+
+                        {/* Main Content */}
+                        <div className="flex-1">
+                            {/* ... Search ... */}
+                            <div className="flex gap-4 mb-6 sticky top-[64px] z-30 bg-background/95 backdrop-blur py-2 lg:static lg:bg-transparent lg:py-0">
+                                {/* ... search input ... */}
+                                <div className="flex-1 relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search equipment or vendors..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                    />
+                                </div>
+                                <Sheet>
+                                    <SheetTrigger asChild>
+                                        <Button variant="outline" className="lg:hidden gap-2">
+                                            <SlidersHorizontal className="h-4 w-4" />
+                                            Filters
+                                        </Button>
+                                    </SheetTrigger>
+                                    <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto">
+                                        <SheetHeader className="mb-6">
+                                            <SheetTitle>Filters</SheetTitle>
+                                        </SheetHeader>
+                                        <ProductFilters
+                                            categories={categories}
+                                            conditions={conditions}
+                                            locations={locations}
+                                            specialties={specialties}
+                                            selectedCategory={selectedCategory}
+                                            selectedCondition={selectedCondition}
+                                            selectedLocation={selectedLocation}
+                                            selectedSpeciality={selectedSpeciality}
+                                            priceRange={priceRange}
+                                            onCategoryChange={setSelectedCategory}
+                                            onConditionChange={setSelectedCondition}
+                                            onLocationChange={setSelectedLocation}
+                                            onSpecialityChange={setSelectedSpeciality}
+                                            onPriceRangeChange={setPriceRange}
+                                            onClearFilters={clearFilters}
+                                        />
+                                    </SheetContent>
+                                </Sheet>
+                            </div>
+
+                            {/* Results Count */}
+                            <div className="flex items-center justify-between mb-6">
+                                <p className="text-sm text-muted-foreground">
+                                    Showing <strong className="text-foreground">{filteredProducts.length}</strong> products
+                                </p>
+                            </div>
+
+                            {/* Products Grid */}
+                            {loading ? (
+                                <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                                    {[...Array(6)].map((_, i) => (
+                                        <div key={i} className="h-[350px] rounded-lg bg-muted animate-pulse" />
+                                    ))}
+                                </div>
+                            ) : filteredProducts.length > 0 ? (
+                                <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                                    {filteredProducts.map((product) => (
+                                        <Link
+                                            key={product.id}
+                                            href={`/product/${product.id}`}
+                                            className="group rounded-lg border border-border bg-card overflow-hidden hover:border-primary transition-all hover:shadow-lg"
+                                        >
+                                            <div className="relative aspect-square bg-muted">
+                                                {product.image_url ? (
+                                                    <Image
+                                                        src={product.image_url}
+                                                        alt={product.name}
+                                                        fill
+                                                        className="object-cover transition-transform group-hover:scale-105"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
+                                                        <Package className="h-12 w-12" />
+                                                    </div>
+                                                )}
+                                                <div className="absolute top-2 right-2">
+                                                    <span className="bg-background/80 backdrop-blur text-xs font-semibold px-2 py-1 rounded-full border border-border">
+                                                        {product.condition}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="p-4">
+                                                <p className="text-xs text-muted-foreground mb-1">{product.category}</p>
+                                                <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors line-clamp-1">
+                                                    {product.name}
+                                                </h3>
+                                                <p className="text-lg font-bold text-primary mb-3">
+                                                    ₨ {product.price.toLocaleString()}
+                                                </p>
+                                                <div className="flex items-center justify-between text-sm text-muted-foreground pt-3 border-t border-border">
+                                                    <div className="flex items-center gap-1">
+                                                        <MapPin className="h-3 w-3" />
+                                                        <span className="truncate max-w-[100px]">{product.vendor?.city || product.location || 'Pakistan'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-16 bg-card rounded-lg border border-border">
+                                    <Package className="h-12 w-12 text-muted mx-auto mb-4" />
+                                    <h3 className="text-lg font-semibold text-foreground mb-2">No products found</h3>
+                                    <p className="text-muted-foreground mb-4">Try adjusting your pricing or filters</p>
+                                    <Button variant="outline" onClick={clearFilters}>Clear Filters</Button>
+                                </div>
                             )}
-                        </Button>
+                        </div>
                     </div>
-
-                    {/* Filters Panel */}
-                    {showFilters && (
-                        <div className="rounded-lg border border-border bg-card p-4 mb-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-semibold text-foreground">Filter Products</h3>
-                                {hasActiveFilters && (
-                                    <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground gap-1">
-                                        <X className="h-4 w-4" />
-                                        Clear all
-                                    </Button>
-                                )}
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-3">
-                                {/* Category Filter */}
-                                <div>
-                                    <label className="text-sm font-medium text-foreground mb-2 block">Category</label>
-                                    <select
-                                        value={selectedCategory}
-                                        onChange={(e) => setSelectedCategory(e.target.value)}
-                                        className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                    >
-                                        {categories.map((cat) => (
-                                            <option key={cat} value={cat}>{cat}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Condition Filter */}
-                                <div>
-                                    <label className="text-sm font-medium text-foreground mb-2 block">Condition</label>
-                                    <select
-                                        value={selectedCondition}
-                                        onChange={(e) => setSelectedCondition(e.target.value)}
-                                        className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                    >
-                                        {conditions.map((cond) => (
-                                            <option key={cond} value={cond}>{cond}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Location Filter */}
-                                <div>
-                                    <label className="text-sm font-medium text-foreground mb-2 block">Location</label>
-                                    <select
-                                        value={selectedLocation}
-                                        onChange={(e) => setSelectedLocation(e.target.value)}
-                                        className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                    >
-                                        {locations.map((loc) => (
-                                            <option key={loc} value={loc}>{loc}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Results Count */}
-                    <div className="flex items-center justify-between mb-6">
-                        <p className="text-sm text-muted-foreground">
-                            Showing <strong className="text-foreground">{filteredProducts.length}</strong> products
-                        </p>
-                    </div>
-
-                    {/* Products Grid */}
-                    {filteredProducts.length > 0 ? (
-                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {filteredProducts.map((product) => (
-                                <Link
-                                    key={product.id}
-                                    href={`/product/${product.id}`}
-                                    className="group rounded-lg border border-border bg-card overflow-hidden hover:border-primary transition-all hover:shadow-lg"
-                                >
-                                    <div className={`${product.image} aspect-square`} />
-                                    <div className="p-4">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                                                {product.condition}
-                                            </span>
-                                            <span className="text-xs text-muted-foreground">{product.category}</span>
-                                        </div>
-                                        <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors line-clamp-1">
-                                            {product.name}
-                                        </h3>
-                                        <p className="text-sm text-muted-foreground mb-2">{product.vendor}</p>
-                                        <p className="text-lg font-bold text-primary mb-3">{product.priceDisplay}</p>
-                                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                            <div className="flex items-center gap-1">
-                                                <Star className="h-4 w-4 fill-primary text-primary" />
-                                                <span>{product.rating}</span>
-                                                <span>({product.reviews})</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <MapPin className="h-3 w-3" />
-                                                <span>{product.location}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-16">
-                            <Package className="h-12 w-12 text-muted mx-auto mb-4" />
-                            <h3 className="text-lg font-semibold text-foreground mb-2">No products found</h3>
-                            <p className="text-muted-foreground mb-4">Try adjusting your search or filters</p>
-                            <Button variant="outline" onClick={clearFilters}>Clear Filters</Button>
-                        </div>
-                    )}
                 </div>
             </main>
 

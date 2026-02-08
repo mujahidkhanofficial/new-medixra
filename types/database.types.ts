@@ -67,6 +67,44 @@ export interface Database {
                     created_at?: string
                 }
             }
+            products: {
+                Row: {
+                    id: string
+                    name: string
+                    category: string
+                    vendor_id: string
+                    price: number
+                    description: string
+                    condition: 'New' | 'Used' | 'Refurbished'
+                    location: string | null
+                    image_url: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    name: string
+                    category: string
+                    vendor_id: string
+                    price: number
+                    description: string
+                    condition: 'New' | 'Used' | 'Refurbished'
+                    location?: string | null
+                    image_url?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    name?: string
+                    category?: string
+                    vendor_id?: string
+                    price?: number
+                    description?: string
+                    condition?: 'New' | 'Used' | 'Refurbished'
+                    location?: string | null
+                    image_url?: string | null
+                    created_at?: string
+                }
+            }
         }
     }
 }

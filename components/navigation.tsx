@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
 import Link from 'next/link'
@@ -24,17 +26,23 @@ export default function Navigation() {
                     </div>
 
                     <div className="hidden items-center gap-8 md:flex">
-                        <Link href="/product" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                        <Link href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                            Home
+                        </Link>
+                        <Link href="/products" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                             Equipment
                         </Link>
                         <Link href="/technicians" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                             Technicians
                         </Link>
+                        <Link href="/how-it-works" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                            How it Works
+                        </Link>
+                        <Link href="/about-us" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                            About Us
+                        </Link>
                         <Link href="/become-vendor" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                             For Vendors
-                        </Link>
-                        <Link href="/safety-compliance" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                            Safety & Compliance
                         </Link>
                     </div>
 
@@ -58,17 +66,23 @@ export default function Navigation() {
                 {mobileMenuOpen && (
                     <div className="border-t border-border bg-background py-4 md:hidden">
                         <div className="flex flex-col gap-3">
-                            <Link href="/product" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
+                            <Link href="/" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
+                                Home
+                            </Link>
+                            <Link href="/products" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
                                 Equipment
                             </Link>
                             <Link href="/technicians" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
                                 Technicians
                             </Link>
+                            <Link href="/how-it-works" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
+                                How it Works
+                            </Link>
+                            <Link href="/about-us" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
+                                About Us
+                            </Link>
                             <Link href="/become-vendor" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
                                 For Vendors
-                            </Link>
-                            <Link href="/safety-compliance" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
-                                Safety & Compliance
                             </Link>
                             <div className="border-t border-border pt-3 flex flex-col gap-2">
                                 <Button variant="outline" className="w-full" asChild>
