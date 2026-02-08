@@ -1,13 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { BarChart3, Users, Package, AlertCircle, Eye, MessageSquare, TrendingUp, Settings, Trash2, CheckCircle, XCircle } from 'lucide-react'
+import { BarChart3, Users, Package, AlertCircle, Eye, MessageSquare, Settings, Trash2, CheckCircle, XCircle, Shield, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
+import { useAuth } from '@/components/providers/auth-provider'
 
 export default function AdminDashboard() {
+  const { user, loading } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
+  const [userSearch, setUserSearch] = useState('')
 
   const stats = [
     { label: 'Total Users', value: 2847, change: '+12%', icon: Users },
@@ -62,12 +65,35 @@ export default function AdminDashboard() {
     },
   ]
 
+  const allUsers = [
+    { id: 1, name: 'Ahmed Khan', email: 'ahmed@example.com', role: 'buyer', status: 'active', joined: '2024-01-15' },
+    { id: 2, name: 'Sara Ali', email: 'sara@meditech.pk', role: 'vendor', status: 'active', joined: '2024-02-20' },
+    { id: 3, name: 'MediTech Pakistan', email: 'info@meditech.pk', role: 'vendor', status: 'active', joined: '2023-03-10' },
+    { id: 4, name: 'Dr. Fatima', email: 'fatima@hospital.pk', role: 'buyer', status: 'active', joined: '2024-03-05' },
+    { id: 5, name: 'CardioMed Solutions', email: 'admin@cardiomed.pk', role: 'vendor', status: 'suspended', joined: '2023-12-01' },
+    { id: 6, name: 'Hassan Raza', email: 'hassan@gmail.com', role: 'buyer', status: 'active', joined: '2024-04-12' },
+  ]
+
+  const filteredUsers = allUsers.filter(u =>
+    u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+    u.email.toLowerCase().includes(userSearch.toLowerCase())
+  )
+
   const systemStats = [
     { label: 'Platform Uptime', value: '99.9%', status: 'good' },
     { label: 'Avg Response Time', value: '245ms', status: 'good' },
     { label: 'Active API Calls', value: '1,204/min', status: 'good' },
     { label: 'Database Health', value: 'Optimal', status: 'good' },
   ]
+
+  // Admin check - in production, verify against Supabase user role
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,44 +110,50 @@ export default function AdminDashboard() {
           <div className="flex gap-8 overflow-x-auto">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`pb-4 font-semibold transition-colors whitespace-nowrap ${
-                activeTab === 'overview'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`pb-4 font-semibold transition-colors whitespace-nowrap ${activeTab === 'overview'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-muted-foreground hover:text-foreground'
+                }`}
             >
               <BarChart3 className="h-4 w-4 inline mr-2" />
               Overview
             </button>
             <button
               onClick={() => setActiveTab('vendors')}
-              className={`pb-4 font-semibold transition-colors whitespace-nowrap ${
-                activeTab === 'vendors'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`pb-4 font-semibold transition-colors whitespace-nowrap ${activeTab === 'vendors'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-muted-foreground hover:text-foreground'
+                }`}
             >
-              <Users className="h-4 w-4 inline mr-2" />
+              <Package className="h-4 w-4 inline mr-2" />
               Pending Vendors ({pendingVendors.length})
             </button>
             <button
+              onClick={() => setActiveTab('users')}
+              className={`pb-4 font-semibold transition-colors whitespace-nowrap ${activeTab === 'users'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-muted-foreground hover:text-foreground'
+                }`}
+            >
+              <Users className="h-4 w-4 inline mr-2" />
+              All Users
+            </button>
+            <button
               onClick={() => setActiveTab('reports')}
-              className={`pb-4 font-semibold transition-colors whitespace-nowrap ${
-                activeTab === 'reports'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`pb-4 font-semibold transition-colors whitespace-nowrap ${activeTab === 'reports'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-muted-foreground hover:text-foreground'
+                }`}
             >
               <AlertCircle className="h-4 w-4 inline mr-2" />
               Reported Listings ({reportedListings.length})
             </button>
             <button
               onClick={() => setActiveTab('settings')}
-              className={`pb-4 font-semibold transition-colors whitespace-nowrap ${
-                activeTab === 'settings'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`pb-4 font-semibold transition-colors whitespace-nowrap ${activeTab === 'settings'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-muted-foreground hover:text-foreground'
+                }`}
             >
               <Settings className="h-4 w-4 inline mr-2" />
               Settings
@@ -186,6 +218,72 @@ export default function AdminDashboard() {
                   <span className="text-foreground">312 user registrations completed</span>
                   <span className="text-muted-foreground">1 day ago</span>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <p className="text-sm text-muted-foreground">Manage all registered users and vendors</p>
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/50 border-b border-border">
+                    <tr>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-foreground">Name</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-foreground">Email</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-foreground">Role</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-foreground">Status</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-foreground">Joined</th>
+                      <th className="text-right py-3 px-4 text-sm font-semibold text-foreground">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map((u) => (
+                      <tr key={u.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                        <td className="py-3 px-4 text-sm text-foreground font-medium">{u.name}</td>
+                        <td className="py-3 px-4 text-sm text-muted-foreground">{u.email}</td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${u.role === 'vendor' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                            }`}>
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-flex items-center gap-1 text-xs font-medium ${u.status === 'active' ? 'text-emerald-600' : 'text-red-500'
+                            }`}>
+                            {u.status === 'active' ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                            {u.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-muted-foreground">{u.joined}</td>
+                        <td className="py-3 px-4 text-right">
+                          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                            View
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-red-500">
+                            {u.status === 'active' ? 'Suspend' : 'Activate'}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -265,7 +363,7 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             <div className="rounded-lg border border-border bg-card p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">Platform Settings</h3>
-              
+
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
@@ -320,7 +418,7 @@ export default function AdminDashboard() {
 
             <div className="rounded-lg border border-border bg-card p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">Content Management</h3>
-              
+
               <div className="space-y-4">
                 <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground justify-start">
                   Manage Safety & Compliance Guidelines
