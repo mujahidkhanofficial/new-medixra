@@ -20,7 +20,7 @@ export default function BuyerDashboard() {
   }, [user])
 
   const quickActions = [
-    { label: 'Browse Equipment', href: '/product', icon: Package },
+    { label: 'Browse Equipment', href: '/products', icon: Package },
     { label: 'Find Technicians', href: '/technicians', icon: Search },
     { label: 'Saved Items', href: '#', icon: Heart },
     { label: 'My Messages', href: '#', icon: MessageSquare },
