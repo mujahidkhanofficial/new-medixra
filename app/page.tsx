@@ -1,74 +1,21 @@
-'use client'
-
-import { Search, Heart, MessageCircle, Wrench, Building2, Star, MapPin, Filter } from 'lucide-react'
+import Link from 'next/link'
+import Image from 'next/image'
+import {
+  MessageCircle, Wrench, Building2, Star, MapPin, Filter, Heart, Package,
+  Scan, Activity, Scissors, FlaskConical, Stethoscope, Bed, HeartPulse, Syringe
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
+import { getProducts } from '@/lib/actions/products'
+import { HomeSearchBar } from '@/components/home/search-bar'
 
-export default function Home() {
 
 
-  const products = [
-    {
-      id: 1,
-      name: 'Digital Thermometer',
-      category: 'Diagnostic Equipment',
-      vendor: 'SafeHealth Solutions',
-      price: '₨ 2,500',
-      rating: 4.8,
-      reviews: 324,
-      location: 'Karachi',
-    },
-    {
-      id: 2,
-      name: 'Portable Ultrasound Machine',
-      category: 'Imaging Equipment',
-      vendor: 'MediTech Pakistan',
-      price: '₨ 450,000',
-      rating: 4.9,
-      reviews: 156,
-      location: 'Lahore',
-    },
-    {
-      id: 3,
-      name: 'ECG Monitor',
-      category: 'Monitoring Equipment',
-      vendor: 'HeartCare Devices',
-      price: '₨ 85,000',
-      rating: 4.7,
-      reviews: 89,
-      location: 'Islamabad',
-    },
-    {
-      id: 4,
-      name: 'Oxygen Concentrator',
-      category: 'Respiratory Equipment',
-      vendor: 'BreathEasy Systems',
-      price: '₨ 125,000',
-      rating: 4.6,
-      reviews: 234,
-      location: 'Lahore',
-    },
-    {
-      id: 5,
-      name: 'Automatic BP Monitor',
-      category: 'Diagnostic Equipment',
-      vendor: 'VitalSigns Tech',
-      price: '₨ 8,500',
-      rating: 4.9,
-      reviews: 512,
-      location: 'Karachi',
-    },
-    {
-      id: 6,
-      name: 'Sterilization Autoclave',
-      category: 'Sterilization Equipment',
-      vendor: 'CleanMed Solutions',
-      price: '₨ 320,000',
-      rating: 4.8,
-      reviews: 67,
-      location: 'Rawalpindi',
-    },
-  ]
+export const dynamic = 'force-dynamic'
+
+export default async function Home() {
+  const products = await getProducts({ limit: 6 })
 
   const technicians = [
     {
@@ -135,19 +82,7 @@ export default function Home() {
               Connect with verified medical equipment vendors and technician services across Pakistan. No middlemen, no commissions. Direct communication via WhatsApp.
             </p>
 
-            <div className="mx-auto max-w-2xl">
-              <div className="flex gap-2 rounded-lg border border-border bg-card p-2 shadow-lg">
-                <Search className="ml-3 h-5 w-5 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search equipment, vendors, or services..."
-                  className="flex-1 bg-transparent outline-none text-foreground placeholder-muted-foreground"
-                />
-                <button className="px-4 py-2 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground transition-colors font-medium">
-                  Search
-                </button>
-              </div>
-            </div>
+            <HomeSearchBar />
           </div>
 
           {/* Feature Cards */}
@@ -167,61 +102,114 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Categories Section */}
+      <section className="py-12 bg-muted/30">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-bold text-foreground">Browse by Category</h2>
+            <p className="text-muted-foreground mt-2">Find the right equipment for your medical facility</p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { name: 'Imaging Equipment', icon: Scan },
+              { name: 'Monitoring Equipment', icon: Activity },
+              { name: 'Surgical Equipment', icon: Scissors },
+              { name: 'Laboratory Equipment', icon: FlaskConical },
+              { name: 'Dental Equipment', icon: Stethoscope },
+              { name: 'Hospital Furniture', icon: Bed },
+              { name: 'Cardiology Equipment', icon: HeartPulse },
+              { name: 'Consumables', icon: Syringe }
+            ].map((cat) => (
+              <Link
+                key={cat.name}
+                href={`/products?category=${encodeURIComponent(cat.name === 'Consumables' ? 'Consumables & Accessories' : cat.name)}`}
+                className="flex flex-col items-center p-6 bg-card border border-border rounded-xl hover:border-primary hover:shadow-md transition-all group"
+              >
+                <div className="h-12 w-12 rounded-full bg-primary/5 flex items-center justify-center mb-3 group-hover:bg-primary/10 transition-colors">
+                  <cat.icon className="h-6 w-6 text-primary" />
+                </div>
+                <span className="font-semibold text-foreground text-center">{cat.name}</span>
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <Button variant="outline" asChild>
+              <Link href="/products">View All Categories</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Products Grid */}
       <section className="py-12 md:py-20">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-8 flex items-center justify-between">
             <h2 className="text-2xl font-bold text-foreground">Featured Equipment</h2>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-foreground hover:bg-muted transition-colors">
+            <Link href="/products" className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-foreground hover:bg-muted transition-colors">
               <Filter className="h-4 w-4" />
-              More Filters
-            </button>
+              View All Assets
+            </Link>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="group overflow-hidden rounded-lg border border-border bg-card transition-all hover:shadow-lg hover:border-primary"
-              >
-                <div className="aspect-square bg-gradient-to-br from-blue-100 to-blue-50" />
-                <div className="p-4">
-                  <p className="text-sm text-primary font-semibold">{product.category}</p>
-                  <h3 className="mb-1 font-semibold text-foreground text-lg">{product.name}</h3>
-                  <p className="mb-3 text-sm text-muted-foreground flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {product.location}
-                  </p>
-
-                  <div className="mb-3 flex items-center gap-1">
-                    <div className="flex gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-3.5 w-3.5 ${i < Math.floor(product.rating) ? 'fill-accent text-accent' : 'text-muted'
-                            }`}
-                        />
-                      ))}
+          {products.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {products.map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/product/${product.id}`}
+                  className="group overflow-hidden rounded-lg border border-border bg-card transition-all hover:shadow-lg hover:border-primary block"
+                >
+                  <div className="aspect-square bg-muted relative">
+                    {product.image_url ? (
+                      <Image
+                        src={product.image_url}
+                        alt={product.name}
+                        fill
+                        className="object-cover transition-transform group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <Package className="h-12 w-12" />
+                      </div>
+                    )}
+                    <div className="absolute top-2 right-2">
+                      <span className="bg-background/80 backdrop-blur text-xs font-semibold px-2 py-1 rounded-full border border-border">
+                        {product.condition}
+                      </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">({product.reviews})</span>
                   </div>
+                  <div className="p-4">
+                    <p className="text-sm text-primary font-semibold">{product.category}</p>
+                    <h3 className="mb-1 font-semibold text-foreground text-lg line-clamp-1">{product.name}</h3>
+                    <p className="mb-3 text-sm text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {product.location}
+                    </p>
 
-                  <p className="mb-3 text-sm text-muted-foreground">Vendor: {product.vendor}</p>
-                  <p className="mb-4 text-2xl font-bold text-primary">{product.price}</p>
+                    <p className="mb-3 text-sm text-muted-foreground">Vendor: {product.vendor_name}</p>
+                    <p className="mb-4 text-2xl font-bold text-primary">₨ {product.price.toLocaleString()}</p>
 
-                  <div className="flex gap-2">
-                    <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground transition-colors font-medium">
-                      <MessageCircle className="h-4 w-4" />
-                      Message
-                    </button>
-                    <button className="flex items-center justify-center p-2 rounded-lg border border-border text-foreground hover:bg-muted transition-colors">
-                      <Heart className="h-4 w-4" />
-                    </button>
+                    <div className="flex gap-2">
+                      <Button className="w-full">
+                        View Details
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-muted/20 rounded-xl border border-dashed border-border">
+              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-foreground">No featured equipment yet</h3>
+              <p className="text-muted-foreground mb-4">Be the first to post an ad!</p>
+              <Button asChild>
+                <Link href="/post-ad">Post Ad</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 

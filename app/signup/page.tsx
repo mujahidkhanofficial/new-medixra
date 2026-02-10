@@ -1,46 +1,85 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { FormField } from '@/components/ui/form-field'
+import { FormError } from '@/components/ui/form-error'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
+import { useAuth } from '@/components/providers/auth-provider'
+import { signupSchema } from '@/lib/validation'
+import { getErrorMessage } from '@/lib/error-handler'
 
 export default function SignupPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [fullName, setFullName] = useState('')
     const [role, setRole] = useState<'buyer' | 'vendor'>('buyer')
+    const [errors, setErrors] = useState<Record<string, string>>({})
     const [error, setError] = useState<string | null>(null)
-    const [loading, setLoading] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
     const [success, setSuccess] = useState(false)
     const router = useRouter()
     const supabase = createClient()
+    const { user, loading } = useAuth()
+
+    useEffect(() => {
+        if (!loading && user) {
+            router.replace('/dashboard')
+        }
+    }, [user, loading, router])
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        )
+    }
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
+        setIsLoading(true)
         setError(null)
+        setErrors({})
 
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    full_name: fullName,
-                    role: role,
+        try {
+            // Validate inputs
+            const result = await signupSchema.parseAsync({
+                email,
+                password,
+                fullName,
+                role,
+            })
+
+            // Create account
+            const { data, error: authError } = await supabase.auth.signUp({
+                email: result.email,
+                password: result.password,
+                options: {
+                    data: {
+                        full_name: result.fullName,
+                        role: result.role,
+                    },
                 },
-            },
-        })
+            })
 
-        if (error) {
-            setError(error.message)
-            setLoading(false)
-        } else if (data.user) {
-            setSuccess(true)
-            setLoading(false)
+            if (authError) {
+                setError(getErrorMessage(authError))
+                return
+            }
+
+            if (data.user) {
+                setSuccess(true)
+            }
+        } catch (err) {
+            setError(getErrorMessage(err))
+        } finally {
+            setIsLoading(false)
         }
     }
 
@@ -79,94 +118,78 @@ export default function SignupPage() {
                         <p className="mt-2 text-muted-foreground">Join Medixra as a buyer or vendor</p>
                     </div>
 
-                    <form onSubmit={handleSignup} className="mt-8 space-y-6 bg-card p-8 rounded-xl border border-border shadow-sm">
-                        {error && (
-                            <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
-                                {error}
-                            </div>
-                        )}
+                    <form onSubmit={handleSignup} className="space-y-6 bg-card p-8 rounded-xl border border-border shadow-sm">
+                        {error && <FormError message={error} />}
 
-                        <div className="space-y-4">
-                            <div>
-                                <label htmlFor="fullName" className="block text-sm font-medium text-foreground mb-1">
-                                    Full Name
-                                </label>
-                                <input
-                                    id="fullName"
-                                    type="text"
-                                    required
-                                    value={fullName}
-                                    onChange={(e) => setFullName(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                    placeholder="John Doe"
-                                />
-                            </div>
+                        <FormField label="Full Name" required error={errors.fullName}>
+                            <Input
+                                type="text"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                                placeholder="John Doe"
+                                disabled={isLoading}
+                            />
+                        </FormField>
 
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
-                                    Email Address
-                                </label>
-                                <input
-                                    id="email"
-                                    type="email"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                    placeholder="you@example.com"
-                                />
-                            </div>
+                        <FormField label="Email Address" required error={errors.email}>
+                            <Input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="you@example.com"
+                                disabled={isLoading}
+                            />
+                        </FormField>
 
-                            <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
-                                    Password
-                                </label>
-                                <input
-                                    id="password"
-                                    type="password"
-                                    required
-                                    minLength={6}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                    placeholder="••••••••"
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">Minimum 6 characters</p>
-                            </div>
+                        <FormField
+                            label="Password"
+                            required
+                            error={errors.password}
+                            helpText="Minimum 8 characters with uppercase, lowercase, and number"
+                        >
+                            <Input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="••••••••"
+                                disabled={isLoading}
+                            />
+                        </FormField>
 
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-2">
-                                    I want to
-                                </label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setRole('buyer')}
-                                        className={`p-4 rounded-lg border text-center transition-all ${role === 'buyer'
-                                                ? 'border-primary bg-primary/10 text-primary'
-                                                : 'border-border hover:border-primary/50'
-                                            }`}
-                                    >
-                                        <span className="font-medium block">Buy Equipment</span>
-                                        <span className="text-xs text-muted-foreground">Browse & purchase</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setRole('vendor')}
-                                        className={`p-4 rounded-lg border text-center transition-all ${role === 'vendor'
-                                                ? 'border-primary bg-primary/10 text-primary'
-                                                : 'border-border hover:border-primary/50'
-                                            }`}
-                                    >
-                                        <span className="font-medium block">Sell Equipment</span>
-                                        <span className="text-xs text-muted-foreground">List your inventory</span>
-                                    </button>
-                                </div>
+                        <div>
+                            <p className="text-sm font-medium text-foreground mb-2">What would you like to do?</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setRole('buyer')}
+                                    className={`p-4 rounded-lg border text-center transition-all ${
+                                        role === 'buyer'
+                                            ? 'border-primary bg-primary/10 text-primary'
+                                            : 'border-border hover:border-primary/50'
+                                    }`}
+                                    disabled={isLoading}
+                                >
+                                    <span className="font-medium block">Buy Equipment</span>
+                                    <span className="text-xs text-muted-foreground">Browse & purchase</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setRole('vendor')}
+                                    className={`p-4 rounded-lg border text-center transition-all ${
+                                        role === 'vendor'
+                                            ? 'border-primary bg-primary/10 text-primary'
+                                            : 'border-border hover:border-primary/50'
+                                    }`}
+                                    disabled={isLoading}
+                                >
+                                    <span className="font-medium block">Sell Equipment</span>
+                                    <span className="text-xs text-muted-foreground">List your inventory</span>
+                                </button>
                             </div>
                         </div>
 
-                        <Button type="submit" className="w-full" disabled={loading}>
-                            {loading ? 'Creating account...' : 'Create Account'}
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading ? 'Creating account...' : 'Create Account'}
                         </Button>
 
                         <p className="text-center text-sm text-muted-foreground">

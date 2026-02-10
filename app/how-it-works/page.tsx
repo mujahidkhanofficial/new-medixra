@@ -14,19 +14,19 @@ export default function HowItWorksPage() {
             title: 'Contact Vendor',
             description: 'Use the WhatsApp or Call buttons to connect directly with the equipment seller.',
             icon: MessageSquare,
-            color: 'text-green-600'
+            color: 'text-primary'
         },
         {
             title: 'Discuss Terms',
             description: 'Negotiate pricing, delivery, and payment terms directly with the vendor.',
             icon: Handshake,
-            color: 'text-blue-500'
+            color: 'text-primary'
         },
         {
             title: 'Close the Deal',
             description: 'Finalize your agreement privately. Medixra helps you find the right partner.',
             icon: CheckCircle2,
-            color: 'text-teal-500'
+            color: 'text-primary'
         }
     ]
 

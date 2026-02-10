@@ -1,45 +1,80 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { FormField } from '@/components/ui/form-field'
+import { FormError } from '@/components/ui/form-error'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
+import { useAuth } from '@/components/providers/auth-provider'
+import { loginSchema } from '@/lib/validation'
+import { getErrorMessage } from '@/lib/error-handler'
 
 export default function LoginPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [errors, setErrors] = useState<Record<string, string>>({})
     const [error, setError] = useState<string | null>(null)
-    const [loading, setLoading] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
     const router = useRouter()
     const supabase = createClient()
+    const { user, loading } = useAuth()
+
+    useEffect(() => {
+        if (!loading && user) {
+            router.replace('/dashboard')
+        }
+    }, [user, loading, router])
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        )
+    }
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
+        setIsLoading(true)
         setError(null)
+        setErrors({})
 
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        })
+        try {
+            // Validate inputs
+            const result = await loginSchema.parseAsync({ email, password })
 
-        if (error) {
-            setError(error.message)
-            setLoading(false)
-        } else {
+            // Authenticate
+            const { error: authError } = await supabase.auth.signInWithPassword({
+                email: result.email,
+                password: result.password,
+            })
+
+            if (authError) {
+                setError(getErrorMessage(authError))
+                return
+            }
+
             // Check user role and redirect accordingly
-            const { data: { user } } = await supabase.auth.getUser()
-            const role = user?.user_metadata?.role || 'buyer'
+            const { data: { user: authUser } } = await supabase.auth.getUser()
+            const role = authUser?.user_metadata?.role || 'buyer'
 
             if (role === 'vendor') {
                 router.push('/dashboard/vendor')
+            } else if (role === 'admin') {
+                router.push('/admin')
             } else {
                 router.push('/dashboard/buyer')
             }
             router.refresh()
+        } catch (err) {
+            setError(getErrorMessage(err))
+        } finally {
+            setIsLoading(false)
         }
     }
 
@@ -53,47 +88,31 @@ export default function LoginPage() {
                         <p className="mt-2 text-muted-foreground">Sign in to your Medixra account</p>
                     </div>
 
-                    <form onSubmit={handleLogin} className="mt-8 space-y-6 bg-card p-8 rounded-xl border border-border shadow-sm">
-                        {error && (
-                            <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
-                                {error}
-                            </div>
-                        )}
+                    <form onSubmit={handleLogin} className="space-y-6 bg-card p-8 rounded-xl border border-border shadow-sm">
+                        {error && <FormError message={error} />}
 
-                        <div className="space-y-4">
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
-                                    Email Address
-                                </label>
-                                <input
-                                    id="email"
-                                    type="email"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                    placeholder="you@example.com"
-                                />
-                            </div>
+                        <FormField label="Email Address" required error={errors.email}>
+                            <Input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="you@example.com"
+                                disabled={isLoading}
+                            />
+                        </FormField>
 
-                            <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
-                                    Password
-                                </label>
-                                <input
-                                    id="password"
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                    placeholder="••••••••"
-                                />
-                            </div>
-                        </div>
+                        <FormField label="Password" required error={errors.password}>
+                            <Input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="••••••••"
+                                disabled={isLoading}
+                            />
+                        </FormField>
 
-                        <Button type="submit" className="w-full" disabled={loading}>
-                            {loading ? 'Signing in...' : 'Sign In'}
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading ? 'Signing in...' : 'Sign In'}
                         </Button>
 
                         <p className="text-center text-sm text-muted-foreground">

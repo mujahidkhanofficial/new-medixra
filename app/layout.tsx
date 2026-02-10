@@ -5,6 +5,8 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
+import { Toaster } from 'sonner'
+
 const _geist = Geist({ subsets: ["latin"], variable: '--font-geist-sans' });
 const _geistMono = Geist_Mono({ subsets: ["latin"], variable: '--font-geist-mono' });
 
@@ -38,12 +40,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   icons: {
-    icon: [
-      { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
-      { url: '/icon-dark-32x32.png', media: '(prefers-color-scheme: dark)' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/favicon.ico',
   },
 }
 
@@ -58,6 +55,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Analytics />
+          <Toaster position="top-center" richColors />
         </AuthProvider>
       </body>
     </html>

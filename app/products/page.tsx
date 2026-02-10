@@ -1,196 +1,40 @@
-'use client'
-
-import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Search, Filter, X, MapPin, Star, Package, Loader2, SlidersHorizontal } from 'lucide-react'
+import { Search, MapPin, Package, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
-import { createClient } from '@/lib/supabase/client'
-import type { Database } from '@/types/database.types'
-import { ProductFilters } from '@/components/products/product-filters'
+import { getProducts } from '@/lib/actions/products'
+import { ProductFiltersClient } from '@/components/products/product-filters-client'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
-type Product = Database['public']['Tables']['products']['Row'] & {
-    vendor?: {
-        full_name: string | null
-        city: string | null
-        rating?: number
-        reviews_count?: number
-    }
+// Force dynamic rendering since we depend on searchParams
+export const dynamic = 'force-dynamic'
+
+type Props = {
+    searchParams: { [key: string]: string | string[] | undefined }
 }
 
-const categories = [
-    'All Categories',
-    'Imaging Equipment',
-    'Monitoring Equipment',
-    'Diagnostic Equipment',
-    'Respiratory Equipment',
-    'Sterilization Equipment',
-    'Surgical Equipment',
-    'Laboratory Equipment',
-    'Dental Equipment',
-    'Hospital Furniture',
-    'Physiotherapy Equipment',
-    'OT Equipment',
-    'Cardiology Equipment',
-    'Gynecology & Infant Care',
-    'Ambulance & Emergency',
-    'Refurbished & Parts',
-    'Consumables & Accessories'
-]
+export default async function ProductsPage({ searchParams }: Props) {
+    const params = await searchParams; // searchParams is a promise in recent Next.js versions, but safe to await even if not
 
-const conditions = ['All', 'New', 'Refurbished', 'Used']
-const locations = [
-    'All Pakistan',
-    'Karachi',
-    'Lahore',
-    'Islamabad',
-    'Rawalpindi',
-    'Faisalabad',
-    'Multan',
-    'Peshawar',
-    'Quetta',
-    'Hyderabad',
-    'Gujranwala',
-    'Sialkot',
-    'Sargodha',
-    'Bahawalpur',
-    'Jhang',
-    'Mardan',
-    'Abbottabad',
-    'Dera Ghazi Khan',
-    'Sukkur',
-    'Larkana',
-    'Mirpur Khas'
-]
+    // Parse search params
+    const query = typeof params.q === 'string' ? params.q : undefined
+    const category = typeof params.category === 'string' ? params.category : undefined
+    const city = typeof params.city === 'string' ? params.city : undefined
+    const minPrice = typeof params.minPrice === 'string' ? Number(params.minPrice) : undefined
+    const maxPrice = typeof params.maxPrice === 'string' ? Number(params.maxPrice) : undefined
+    const condition = typeof params.condition === 'string' ? params.condition : undefined
+    const specialty = typeof params.speciality === 'string' ? params.speciality : undefined
 
-const specialties = [
-    'All Specialties',
-    'Cardiology',
-    'Neurology',
-    'Orthopedics',
-    'Pediatrics',
-    'Radiology',
-    'Dermatology',
-    'ICU / Critical Care',
-    'General Surgery',
-    'Gynecology'
-]
-
-export default function ProductsPage() {
-    const [products, setProducts] = useState<Product[]>([])
-    const [loading, setLoading] = useState(true)
-    const [searchQuery, setSearchQuery] = useState('')
-    const [selectedCategory, setSelectedCategory] = useState('All Categories')
-    const [selectedCondition, setSelectedCondition] = useState('All')
-    const [selectedLocation, setSelectedLocation] = useState('All Pakistan')
-    const [selectedSpeciality, setSelectedSpeciality] = useState('All Specialties')
-    const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000])
-
-    useEffect(() => {
-        async function fetchProducts() {
-            setLoading(true)
-            const supabase = createClient()
-
-            try {
-                // Try to fetch from Supabase
-                const { data, error } = await supabase
-                    .from('products')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-
-                if (error) {
-                    console.warn('Database table missing or inaccessible. Using mock data for now.')
-                    throw error
-                }
-
-                if (data && data.length > 0) {
-                    setProducts(data as any)
-                } else {
-                    // Fallback to mock data if table empty
-                    setProducts(MOCK_PRODUCTS)
-                }
-            } catch (error: any) {
-                console.error('Fetch error:', error.message)
-                // Use mock data on any fetch failure (like table not found)
-                setProducts(MOCK_PRODUCTS)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchProducts()
-    }, [])
-
-    const MOCK_PRODUCTS: Product[] = [
-        {
-            id: '1',
-            name: 'Mindray BeneVision N12 Patient Monitor',
-            category: 'Monitoring Equipment',
-            price: 450000,
-            condition: 'New',
-            location: 'Karachi',
-            description: 'Advanced patient monitoring system...',
-            vendor_id: 'mock-1',
-            created_at: new Date().toISOString(),
-            image_url: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=800',
-            vendor: { full_name: 'MediQuip Solutions', city: 'Karachi' }
-        } as any,
-        {
-            id: '2',
-            name: 'GE Voluson E10 Ultrasound Machine',
-            category: 'Imaging Equipment',
-            price: 2800000,
-            condition: 'Refurbished',
-            location: 'Lahore',
-            description: 'Premium 4D ultrasound system...',
-            vendor_id: 'mock-2',
-            created_at: new Date().toISOString(),
-            image_url: 'https://images.unsplash.com/photo-1551601651-2a8555f1a136?auto=format&fit=crop&q=80&w=800',
-            vendor: { full_name: 'Elite Health Systems', city: 'Lahore' }
-        } as any,
-        {
-            id: '3',
-            name: 'Philips Respironics V60 Ventilator',
-            category: 'Respiratory Equipment',
-            price: 850000,
-            condition: 'Used',
-            location: 'Islamabad',
-            description: 'Non-invasive ventilation system...',
-            vendor_id: 'mock-3',
-            created_at: new Date().toISOString(),
-            image_url: 'https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?auto=format&fit=crop&q=80&w=800',
-            vendor: { full_name: 'Islamabad Medical Store', city: 'Islamabad' }
-        } as any
-    ]
-
-    const filteredProducts = useMemo(() => {
-        return products.filter((product) => {
-            const vendorName = product.vendor?.full_name || 'Unknown Vendor'
-            const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                vendorName.toLowerCase().includes(searchQuery.toLowerCase())
-            const matchesCategory = selectedCategory === 'All Categories' || product.category === selectedCategory
-            const matchesCondition = selectedCondition === 'All' || product.condition === selectedCondition
-            const matchesLocation = selectedLocation === 'All Pakistan' || (product.vendor?.city || product.location) === selectedLocation
-            const matchesSpeciality = selectedSpeciality === 'All Specialties' || true // Assuming products don't have specialty field yet, or mapping from category? For now enabling UI.
-            // TODO: If products have specialty, add check: product.specialty === selectedSpeciality
-            // If specialty is implied by category, maybe mapped. For now, we will add UI but logic might be placeholder if field missing.
-            const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1]
-
-            return matchesSearch && matchesCategory && matchesCondition && matchesLocation && matchesPrice && matchesSpeciality
-        })
-    }, [products, searchQuery, selectedCategory, selectedCondition, selectedLocation, priceRange, selectedSpeciality])
-
-    const clearFilters = () => {
-        setSearchQuery('')
-        setSelectedCategory('All Categories')
-        setSelectedCondition('All')
-        setSelectedLocation('All Pakistan')
-        setSelectedSpeciality('All Specialties')
-        setPriceRange([0, 1000000])
-    }
+    const products = await getProducts({
+        query,
+        category,
+        city, // mapping 'city' param to location/city filter
+        minPrice,
+        maxPrice,
+        condition
+    })
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
@@ -208,90 +52,48 @@ export default function ProductsPage() {
                         {/* Sidebar Filters (Desktop) */}
                         <aside className="hidden lg:block w-64 flex-shrink-0">
                             <div className="sticky top-24">
-                                <ProductFilters
-                                    categories={categories}
-                                    conditions={conditions}
-                                    locations={locations}
-                                    specialties={specialties}
-                                    selectedCategory={selectedCategory}
-                                    selectedCondition={selectedCondition}
-                                    selectedLocation={selectedLocation}
-                                    selectedSpeciality={selectedSpeciality}
-                                    priceRange={priceRange}
-                                    onCategoryChange={setSelectedCategory}
-                                    onConditionChange={setSelectedCondition}
-                                    onLocationChange={setSelectedLocation}
-                                    onSpecialityChange={setSelectedSpeciality}
-                                    onPriceRangeChange={setPriceRange}
-                                    onClearFilters={clearFilters}
-                                />
+                                <ProductFiltersClient />
                             </div>
                         </aside>
 
                         {/* Main Content */}
                         <div className="flex-1">
-                            {/* ... Search ... */}
-                            <div className="flex gap-4 mb-6 sticky top-[64px] z-30 bg-background/95 backdrop-blur py-2 lg:static lg:bg-transparent lg:py-0">
-                                {/* ... search input ... */}
-                                <div className="flex-1 relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search equipment or vendors..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                    />
-                                </div>
+                            {/* Mobile Filters Trigger */}
+                            <div className="lg:hidden mb-6 sticky top-[64px] z-30 bg-background/95 backdrop-blur py-2">
                                 <Sheet>
                                     <SheetTrigger asChild>
-                                        <Button variant="outline" className="lg:hidden gap-2">
+                                        <Button variant="outline" className="w-full gap-2">
                                             <SlidersHorizontal className="h-4 w-4" />
-                                            Filters
+                                            Filters & Search
                                         </Button>
                                     </SheetTrigger>
                                     <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto">
                                         <SheetHeader className="mb-6">
                                             <SheetTitle>Filters</SheetTitle>
                                         </SheetHeader>
-                                        <ProductFilters
-                                            categories={categories}
-                                            conditions={conditions}
-                                            locations={locations}
-                                            specialties={specialties}
-                                            selectedCategory={selectedCategory}
-                                            selectedCondition={selectedCondition}
-                                            selectedLocation={selectedLocation}
-                                            selectedSpeciality={selectedSpeciality}
-                                            priceRange={priceRange}
-                                            onCategoryChange={setSelectedCategory}
-                                            onConditionChange={setSelectedCondition}
-                                            onLocationChange={setSelectedLocation}
-                                            onSpecialityChange={setSelectedSpeciality}
-                                            onPriceRangeChange={setPriceRange}
-                                            onClearFilters={clearFilters}
-                                        />
+                                        <ProductFiltersClient />
                                     </SheetContent>
                                 </Sheet>
                             </div>
 
+                            {/* Search Query Display */}
+                            {query && (
+                                <div className="mb-4">
+                                    <p className="text-muted-foreground">Search results for "<span className="font-semibold text-foreground">{query}</span>"</p>
+                                </div>
+                            )}
+
                             {/* Results Count */}
                             <div className="flex items-center justify-between mb-6">
                                 <p className="text-sm text-muted-foreground">
-                                    Showing <strong className="text-foreground">{filteredProducts.length}</strong> products
+                                    Showing <strong className="text-foreground">{products.length}</strong> products
                                 </p>
                             </div>
 
                             {/* Products Grid */}
-                            {loading ? (
+                            {products.length > 0 ? (
                                 <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                                    {[...Array(6)].map((_, i) => (
-                                        <div key={i} className="h-[350px] rounded-lg bg-muted animate-pulse" />
-                                    ))}
-                                </div>
-                            ) : filteredProducts.length > 0 ? (
-                                <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                                    {filteredProducts.map((product) => (
+                                    {products.map((product) => (
                                         <Link
                                             key={product.id}
                                             href={`/product/${product.id}`}
@@ -327,7 +129,7 @@ export default function ProductsPage() {
                                                 <div className="flex items-center justify-between text-sm text-muted-foreground pt-3 border-t border-border">
                                                     <div className="flex items-center gap-1">
                                                         <MapPin className="h-3 w-3" />
-                                                        <span className="truncate max-w-[100px]">{product.vendor?.city || product.location || 'Pakistan'}</span>
+                                                        <span className="truncate max-w-[100px]">{product.location || 'Pakistan'}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -338,15 +140,14 @@ export default function ProductsPage() {
                                 <div className="text-center py-16 bg-card rounded-lg border border-border">
                                     <Package className="h-12 w-12 text-muted mx-auto mb-4" />
                                     <h3 className="text-lg font-semibold text-foreground mb-2">No products found</h3>
-                                    <p className="text-muted-foreground mb-4">Try adjusting your pricing or filters</p>
-                                    <Button variant="outline" onClick={clearFilters}>Clear Filters</Button>
+                                    <p className="text-muted-foreground mb-4">Try adjusting your filters or search query</p>
+                                    <Button variant="outline" asChild><Link href="/products">Clear Filters</Link></Button>
                                 </div>
                             )}
                         </div>
                     </div>
                 </div>
             </main>
-
             <Footer />
         </div>
     )

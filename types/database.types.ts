@@ -16,7 +16,10 @@ export interface Database {
                     full_name: string | null
                     role: 'buyer' | 'vendor' | 'admin'
                     avatar_url: string | null
+                    phone: string | null
+                    city: string | null
                     created_at: string
+                    updated_at: string
                 }
                 Insert: {
                     id: string
@@ -24,7 +27,10 @@ export interface Database {
                     full_name?: string | null
                     role?: 'buyer' | 'vendor' | 'admin'
                     avatar_url?: string | null
+                    phone?: string | null
+                    city?: string | null
                     created_at?: string
+                    updated_at?: string
                 }
                 Update: {
                     id?: string
@@ -32,8 +38,12 @@ export interface Database {
                     full_name?: string | null
                     role?: 'buyer' | 'vendor' | 'admin'
                     avatar_url?: string | null
+                    phone?: string | null
+                    city?: string | null
                     created_at?: string
+                    updated_at?: string
                 }
+                Relationships: []
             }
             vendors: {
                 Row: {
@@ -44,6 +54,9 @@ export interface Database {
                     contact_phone: string | null
                     whatsapp_number: string | null
                     city: string | null
+                    showroom_slug: string | null
+                    banner_url: string | null
+                    is_featured: boolean
                     created_at: string
                 }
                 Insert: {
@@ -54,6 +67,9 @@ export interface Database {
                     contact_phone?: string | null
                     whatsapp_number?: string | null
                     city?: string | null
+                    showroom_slug?: string | null
+                    banner_url?: string | null
+                    is_featured?: boolean
                     created_at?: string
                 }
                 Update: {
@@ -64,8 +80,20 @@ export interface Database {
                     contact_phone?: string | null
                     whatsapp_number?: string | null
                     city?: string | null
+                    showroom_slug?: string | null
+                    banner_url?: string | null
+                    is_featured?: boolean
                     created_at?: string
                 }
+                Relationships: [
+                    {
+                        foreignKeyName: "vendors_id_fkey"
+                        columns: ["id"]
+                        isOneToOne: true
+                        referencedRelation: "profiles"
+                        referencedColumns: ["id"]
+                    }
+                ]
             }
             products: {
                 Row: {
@@ -76,9 +104,18 @@ export interface Database {
                     price: number
                     description: string
                     condition: 'New' | 'Used' | 'Refurbished'
+                    speciality: string | null
+                    brand: string | null
+                    warranty: string | null
                     location: string | null
+                    city: string | null
+                    area: string | null
                     image_url: string | null
+                    views: number
+                    whatsapp_clicks: number
+                    status: 'active' | 'pending' | 'sold' | 'expired' | 'archived'
                     created_at: string
+                    updated_at: string
                 }
                 Insert: {
                     id?: string
@@ -88,9 +125,18 @@ export interface Database {
                     price: number
                     description: string
                     condition: 'New' | 'Used' | 'Refurbished'
+                    speciality?: string | null
+                    brand?: string | null
+                    warranty?: string | null
                     location?: string | null
+                    city?: string | null
+                    area?: string | null
                     image_url?: string | null
+                    views?: number
+                    whatsapp_clicks?: number
+                    status?: 'active' | 'pending' | 'sold' | 'expired' | 'archived'
                     created_at?: string
+                    updated_at?: string
                 }
                 Update: {
                     id?: string
@@ -100,11 +146,164 @@ export interface Database {
                     price?: number
                     description?: string
                     condition?: 'New' | 'Used' | 'Refurbished'
+                    speciality?: string | null
+                    brand?: string | null
+                    warranty?: string | null
                     location?: string | null
+                    city?: string | null
+                    area?: string | null
                     image_url?: string | null
+                    views?: number
+                    whatsapp_clicks?: number
+                    status?: 'active' | 'pending' | 'sold' | 'expired' | 'archived'
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "products_vendor_id_fkey"
+                        columns: ["vendor_id"]
+                        isOneToOne: false
+                        referencedRelation: "profiles"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            product_images: {
+                Row: {
+                    id: string
+                    product_id: string
+                    url: string
+                    display_order: number
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    product_id: string
+                    url: string
+                    display_order?: number
                     created_at?: string
                 }
+                Update: {
+                    id?: string
+                    product_id?: string
+                    url?: string
+                    display_order?: number
+                    created_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "product_images_product_id_fkey"
+                        columns: ["product_id"]
+                        isOneToOne: false
+                        referencedRelation: "products"
+                        referencedColumns: ["id"]
+                    }
+                ]
             }
+            saved_items: {
+                Row: {
+                    id: string
+                    user_id: string
+                    product_id: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    product_id: string
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    product_id?: string
+                    created_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "saved_items_product_id_fkey"
+                        columns: ["product_id"]
+                        isOneToOne: false
+                        referencedRelation: "products"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "saved_items_user_id_fkey"
+                        columns: ["user_id"]
+                        isOneToOne: false
+                        referencedRelation: "profiles"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            inquiries: {
+                Row: {
+                    id: string
+                    buyer_id: string
+                    product_id: string
+                    vendor_id: string
+                    message: string
+                    status: 'pending' | 'responded' | 'closed'
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    buyer_id: string
+                    product_id: string
+                    vendor_id: string
+                    message: string
+                    status?: 'pending' | 'responded' | 'closed'
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    buyer_id?: string
+                    product_id?: string
+                    vendor_id?: string
+                    message?: string
+                    status?: 'pending' | 'responded' | 'closed'
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "inquiries_buyer_id_fkey"
+                        columns: ["buyer_id"]
+                        isOneToOne: false
+                        referencedRelation: "profiles"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "inquiries_product_id_fkey"
+                        columns: ["product_id"]
+                        isOneToOne: false
+                        referencedRelation: "products"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "inquiries_vendor_id_fkey"
+                        columns: ["vendor_id"]
+                        isOneToOne: false
+                        referencedRelation: "profiles"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+        }
+        Views: {
+            [_ in never]: never
+        }
+        Functions: {
+            [_ in never]: never
+        }
+        Enums: {
+            [_ in never]: never
+        }
+        CompositeTypes: {
+            [_ in never]: never
         }
     }
 }

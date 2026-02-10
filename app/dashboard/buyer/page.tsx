@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Search, Heart, MessageSquare, Clock, Package } from 'lucide-react'
+import { Search, Heart, Clock, Package, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
-import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/auth-provider'
+import { DashboardSkeleton } from '@/components/skeletons'
 
 export default function BuyerDashboard() {
   const { user, loading } = useAuth()
@@ -22,22 +22,14 @@ export default function BuyerDashboard() {
   const quickActions = [
     { label: 'Browse Equipment', href: '/products', icon: Package },
     { label: 'Find Technicians', href: '/technicians', icon: Search },
-    { label: 'Saved Items', href: '#', icon: Heart },
-    { label: 'My Messages', href: '#', icon: MessageSquare },
+    { label: 'Saved Items', href: '/dashboard/saved-items', icon: Heart },
+    { label: 'Profile Settings', href: '/dashboard/settings', icon: User },
   ]
 
-  const recentActivity = [
-    { type: 'view', text: 'Viewed Portable Ultrasound Machine', time: '2 hours ago' },
-    { type: 'inquiry', text: 'Sent inquiry to MediTech Pakistan', time: '1 day ago' },
-    { type: 'save', text: 'Saved Advanced ECG Monitor', time: '2 days ago' },
-  ]
+  const recentActivity: any[] = []
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   return (
@@ -56,19 +48,30 @@ export default function BuyerDashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-            {quickActions.map((action) => {
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+            {quickActions.map((action: any) => {
               const Icon = action.icon
+              const isDisabled = action.disabled || false
               return (
                 <Link
                   key={action.label}
-                  href={action.href}
-                  className="group rounded-lg border border-border bg-card p-6 hover:border-primary transition-colors"
+                  href={isDisabled ? '#' : action.href}
+                  onClick={(e) => isDisabled && e.preventDefault()}
+                  className={`group rounded-lg border border-border bg-card p-6 transition-colors ${isDisabled
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:border-primary'
+                    }`}
                 >
                   <Icon className="h-8 w-8 text-primary mb-3" />
-                  <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                  <p className={`font-semibold transition-colors ${isDisabled
+                    ? 'text-muted-foreground'
+                    : 'text-foreground group-hover:text-primary'
+                    }`}>
                     {action.label}
                   </p>
+                  {isDisabled && (
+                    <p className="text-xs text-muted-foreground mt-1">Coming soon</p>
+                  )}
                 </Link>
               )
             })}
@@ -82,17 +85,30 @@ export default function BuyerDashboard() {
                 <Clock className="h-5 w-5 text-primary" />
                 Recent Activity
               </h2>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3 pb-3 border-b border-border last:border-0">
-                    <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                    <div>
-                      <p className="text-sm text-foreground">{activity.text}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+              {recentActivity.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Clock className="h-10 w-10 text-muted-foreground/50 mb-3" />
+                  <p className="text-sm font-medium text-foreground mb-1">No activity yet</p>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Start by browsing equipment or finding technicians
+                  </p>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href="/products">Browse Equipment</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentActivity.map((activity, index) => (
+                    <div key={index} className="flex items-start gap-3 pb-3 border-b border-border last:border-0">
+                      <div className="w-2 h-2 rounded-full bg-primary mt-2" />
+                      <div>
+                        <p className="text-sm text-foreground">{activity.text}</p>
+                        <p className="text-xs text-muted-foreground">{activity.time}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Become a Vendor CTA */}
