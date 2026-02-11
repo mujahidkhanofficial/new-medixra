@@ -1,3 +1,5 @@
+import { ZodError } from 'zod'
+
 /**
  * Error handling utilities for API calls and async operations
  */
@@ -47,6 +49,10 @@ type ErrorMessage = typeof ERROR_MESSAGES[keyof typeof ERROR_MESSAGES]
  * Converts error objects into user-friendly messages
  */
 export function getErrorMessage(error: unknown): string {
+  if (error instanceof ZodError) {
+    return error.errors[0]?.message || 'Validation failed. Please check your input.'
+  }
+
   if (error instanceof AppError) {
     return error.message
   }
@@ -54,7 +60,7 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     // Check for known error messages
     const message = error.message.toLowerCase()
-    
+
     if (message.includes('invalid')) {
       return ERROR_MESSAGES.INVALID_CREDENTIALS
     }
@@ -64,7 +70,19 @@ export function getErrorMessage(error: unknown): string {
     if (message.includes('timeout')) {
       return ERROR_MESSAGES.TIMEOUT
     }
-    
+
+    // Check if it's a raw Zod error string (fallback)
+    if (message.startsWith('[') && message.includes('"code":')) {
+      try {
+        const zodErrors = JSON.parse(message)
+        if (Array.isArray(zodErrors) && zodErrors[0]?.message) {
+          return zodErrors[0].message
+        }
+      } catch {
+        // Ignore parse error
+      }
+    }
+
     return error.message
   }
 
@@ -80,7 +98,7 @@ export function getErrorMessage(error: unknown): string {
  */
 export function parseApiError(response: Response): AppError {
   const statusCode = response.status
-  
+
   // Map common HTTP status codes to user-friendly messages
   const statusMessages: Record<number, string> = {
     400: 'Invalid request. Please check your input.',

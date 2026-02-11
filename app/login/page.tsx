@@ -73,7 +73,6 @@ export default function LoginPage() {
             router.refresh()
         } catch (err) {
             setError(getErrorMessage(err))
-        } finally {
             setIsLoading(false)
         }
     }

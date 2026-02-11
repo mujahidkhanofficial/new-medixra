@@ -41,6 +41,10 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "debug-db.ts",
+    "lib/db/add-product-fk.ts",
+    "inspect-fk.ts",
+    "test-insert.ts"
   ]
 }

@@ -34,6 +34,9 @@ export const productSchema = z.object({
   condition: z.enum(['New', 'Used', 'Refurbished']),
   location: z.string().min(2, 'Location is required'),
   images: z.array(z.instanceof(File)).min(1, 'At least one image is required'),
+  speciality: z.string().optional(),
+  brand: z.string().optional(),
+  warranty: z.string().optional(),
 })
 
 // Vendor signup validation

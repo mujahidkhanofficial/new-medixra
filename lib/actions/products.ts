@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
 
 // ... imports
 
@@ -49,7 +50,8 @@ export async function getProducts(options: ProductFilterOptions = {}) {
       vendor:profiles!vendor_id (
         full_name,
         city
-      )
+      ),
+      images:product_images(url)
     `)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
@@ -93,7 +95,8 @@ export async function getProducts(options: ProductFilterOptions = {}) {
     return products.map((p: any) => ({
         ...p,
         vendor_name: (p.vendor as any)?.full_name || 'Unknown Vendor',
-        location: (p.vendor as any)?.city || p.location || 'Pakistan'
+        location: (p.vendor as any)?.city || p.location || 'Pakistan',
+        image_url: p.image_url || (p.images && p.images[0]?.url) || null
     }))
 }
 
@@ -151,11 +154,38 @@ export async function getVendorProducts(vendorId: string) {
 
     const { data: products, error } = await supabase
         .from('products')
-        .select('*')
+        .select('*, images:product_images(url)')
         .eq('vendor_id', vendorId)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
 
     if (error) return []
-    return products
+
+    return products.map((p: any) => ({
+        ...p,
+        image_url: p.image_url || (p.images && p.images[0]?.url) || null
+    }))
 }
+
+export async function deleteProduct(productId: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId)
+
+    if (error) {
+        console.error('Error deleting product:', error)
+        try {
+            // Fallback for when RLS policy is strict but user is owner
+            // Sometimes error messages are obscure
+        } catch (e) { }
+        return { success: false, error: error.message }
+    }
+
+    revalidatePath('/dashboard/vendor')
+    revalidatePath('/products')
+    return { success: true }
+}
+

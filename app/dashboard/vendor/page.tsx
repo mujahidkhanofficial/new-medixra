@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Package, Eye, TrendingUp, Plus, Edit2, Trash2, Star, BarChart3, MessageSquare } from 'lucide-react'
+import { Package, Eye, TrendingUp, Plus, Edit2, Trash2, Star, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ViewsChart, ProductPerformanceChart } from '@/components/dashboard/analytics-charts'
 import { getVendorAnalytics, generateViewsChartData } from '@/lib/actions/analytics'
+import { getVendorProfile } from '@/lib/actions/vendor'
+import { getVendorProducts, deleteProduct } from '@/lib/actions/products'
 import { useAuth } from '@/components/providers/auth-provider'
 import {
   AlertDialog,
@@ -24,16 +26,35 @@ import { DashboardLoader } from '@/components/ui/dashboard-loader'
 
 export default function VendorDashboard() {
   const { user } = useAuth()
-  const [deleteId, setDeleteId] = useState<number | null>(null)
   const [analyticsData, setAnalyticsData] = useState<any>(null)
   const [viewsData, setViewsData] = useState<any[]>([])
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('products')
+
+  const [vendorProfile, setVendorProfile] = useState<any>(null)
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (user?.id) {
-      loadAnalytics()
+    async function loadData() {
+      if (!user?.id) return
+      setLoading(true)
+      try {
+        const [profile, prods] = await Promise.all([
+          getVendorProfile(user.id),
+          getVendorProducts(user.id)
+        ])
+        setVendorProfile(profile)
+        setProducts(prods || [])
+
+        // Allow analytics to load independently
+        loadAnalytics()
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setLoading(false)
+      }
     }
+    loadData()
   }, [user?.id])
 
   const loadAnalytics = async () => {
@@ -51,57 +72,46 @@ export default function VendorDashboard() {
     }
   }
 
-  const vendorInfo = {
-    name: 'MediTech Pakistan',
-    rating: 4.8,
-    reviews: 287,
-    location: 'Lahore',
-    joinDate: 'March 2023',
-    products: 24,
-    activeListings: 22,
-    monthlyViews: 12450,
-    whatsappNumber: '+92-300-1234567',
-    contactPhone: '+92-42-35234567',
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const res = await deleteProduct(productId)
+      if (res.success) {
+        setProducts(products.filter(p => p.id !== productId))
+      }
+    } catch (error) {
+      console.error("Failed to delete product", error)
+    }
   }
 
-  const products = [
-    {
-      id: 1,
-      name: 'Portable Ultrasound Machine',
-      price: '₨ 450,000',
-      status: 'Active',
-      views: 1204,
-      messages: 34,
-      image: 'bg-gradient-to-br from-purple-100 to-purple-50',
-    },
-    {
-      id: 2,
-      name: 'Advanced ECG Monitor',
-      price: '₨ 95,000',
-      status: 'Active',
-      views: 892,
-      messages: 28,
-      image: 'bg-gradient-to-br from-orange-100 to-orange-50',
-    },
-    {
-      id: 3,
-      name: 'X-Ray Protective Apron',
-      price: '₨ 12,500',
-      status: 'Active',
-      views: 456,
-      messages: 12,
-      image: 'bg-gradient-to-br from-blue-100 to-blue-50',
-    },
-  ]
+  // Helper to safely get display values
+  const getDisplayInfo = () => {
+    if (!vendorProfile) return {
+      name: user?.user_metadata?.full_name || 'Vendor',
+      location: 'Pakistan',
+      joinDate: new Date().toLocaleDateString(),
+      whatsapp: '',
+      phone: ''
+    }
+
+    return {
+      name: vendorProfile.business_name || vendorProfile.full_name || 'Vendor',
+      location: vendorProfile.city || 'Pakistan',
+      joinDate: new Date(vendorProfile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      whatsapp: vendorProfile.whatsapp_number || vendorProfile.phone || '',
+      phone: vendorProfile.contact_phone || vendorProfile.phone || ''
+    }
+  }
+
+  const info = getDisplayInfo()
 
   const analytics = [
-    { label: 'Total Views', value: vendorInfo.monthlyViews, change: '+12%', icon: Eye },
-    { label: 'Active Listings', value: vendorInfo.activeListings, change: '+2', icon: Package },
-    { label: 'Avg Rating', value: `${vendorInfo.rating}★`, change: '+0.1', icon: Star },
-    { label: 'Products Listed', value: vendorInfo.products, change: '+3', icon: TrendingUp },
+    { label: 'Total Views', value: analyticsData?.metrics?.[1]?.value || 0, change: analyticsData?.metrics?.[1]?.change || '', icon: Eye },
+    { label: 'Active Listings', value: analyticsData?.metrics?.[0]?.value || 0, change: analyticsData?.metrics?.[0]?.change || '', icon: Package },
+    { label: 'Avg Rating', value: '4.8★', change: '+0.0', icon: Star }, // Placeholder rating
+    { label: 'Products Listed', value: products.length, change: '', icon: TrendingUp },
   ]
 
-  if (analyticsLoading) {
+  if (loading) {
     return <DashboardLoader />
   }
 
@@ -114,7 +124,7 @@ export default function VendorDashboard() {
         <div className="mb-8 rounded-lg border border-border bg-card p-6 md:p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">{vendorInfo.name}</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">{info.name}</h1>
               <div className="flex items-center gap-3 mb-3">
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
@@ -124,10 +134,10 @@ export default function VendorDashboard() {
                     />
                   ))}
                 </div>
-                <span className="text-sm text-muted-foreground">({vendorInfo.reviews} reviews)</span>
+                <span className="text-sm text-muted-foreground">({0} reviews)</span>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                {vendorInfo.location} • Member since {vendorInfo.joinDate}
+                {info.location} • Member since {info.joinDate}
               </p>
 
               {/* Contact Information */}
@@ -135,15 +145,15 @@ export default function VendorDashboard() {
                 <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Contact Information</p>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <MessageSquare className="h-4 w-4" />
-                  <a href={`https://wa.me/${vendorInfo.whatsappNumber.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                    {vendorInfo.whatsappNumber}
+                  <a href={`https://wa.me/${info.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                    {info.whatsapp}
                   </a>
                 </div>
               </div>
             </div>
             <div className="flex flex-col gap-3">
               <WhatsAppContact
-                phoneNumber={vendorInfo.whatsappNumber}
+                phoneNumber={info.whatsapp}
                 name="Contact on WhatsApp"
                 message="Hi, I'm interested in your products and services."
               />
@@ -158,33 +168,55 @@ export default function VendorDashboard() {
         </div>
 
         {/* Analytics Cards */}
-        {/* No analytics cards - keep only vendor info and product listing */}
-
-        {/* Tabs */}
-        {/* No tabs - just show product listing and add/edit/delete */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          {analytics.map((item, idx) => (
+            <div key={idx} className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-muted-foreground">{item.label}</span>
+                <item.icon className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex items-end justify-between">
+                <span className="text-2xl font-bold text-foreground">{item.value}</span>
+                {item.change && (
+                  <span className="text-xs text-primary font-medium">{item.change}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* Products Tab */}
         <div>
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-xl font-bold text-foreground">Active Listings</h2>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-              <Plus className="h-4 w-4" />
-              Add New Equipment
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2" asChild>
+              <Link href="/post-ad">
+                <Plus className="h-4 w-4" />
+                Add New Equipment
+              </Link>
             </Button>
           </div>
 
           <div className="space-y-4">
-            {products.map((product) => (
+            {products.length > 0 ? (products.map((product) => (
               <div key={product.id} className="rounded-lg border border-border bg-card p-4 md:p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="flex gap-4">
-                    <div className={`${product.image} w-24 h-24 rounded-lg flex-shrink-0`} />
+                    <div className={`w-24 h-24 rounded-lg shrink-0 bg-muted overflow-hidden relative`}>
+                      {product.image_url ? (
+                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                          <Package className="h-8 w-8" />
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-foreground mb-1">{product.name}</h3>
-                      <p className="text-primary font-bold text-lg mb-2">{product.price}</p>
+                      <p className="text-primary font-bold text-lg mb-2">₨ {product.price?.toLocaleString()}</p>
                       {/* WhatsApp Contact Button for each product */}
                       <WhatsAppContact
-                        phoneNumber={vendorInfo.whatsappNumber}
+                        phoneNumber={info.whatsapp}
                         name="Contact Vendor"
                         message={`Hi, I'm interested in ${product.name}. Please provide more details.`}
                         size="sm"
@@ -213,7 +245,10 @@ export default function VendorDashboard() {
                         </AlertDialogHeader>
                         <div className="flex gap-3 justify-end">
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
+                          <AlertDialogAction
+                            className="bg-destructive hover:bg-destructive/90"
+                            onClick={() => handleDeleteProduct(product.id)}
+                          >
                             Delete
                           </AlertDialogAction>
                         </div>
@@ -222,82 +257,47 @@ export default function VendorDashboard() {
                   </div>
                 </div>
               </div>
-            ))}
+            ))) : (
+              <div className="text-center py-12 bg-muted/20 rounded-xl border border-dashed border-border">
+                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-foreground">No equipment listed yet</h3>
+                <p className="text-muted-foreground mb-4">Start selling by adding your first product.</p>
+                <Button asChild>
+                  <Link href="/post-ad">Post Ad</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Analytics Tab */}
-        {activeTab === 'analytics' && (
-          <div className="space-y-6">
-            {/* Views Chart */}
-            <div className="rounded-lg border border-border bg-card p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Views & Inquiries (Last 30 Days)</h3>
-              {viewsData.length > 0 ? (
-                <ViewsChart data={viewsData} />
-              ) : (
-                <div className="h-80 flex items-center justify-center text-muted-foreground">
-                  Loading chart...
-                </div>
-              )}
-            </div>
-
-            {/* Product Performance Chart */}
-            <div className="rounded-lg border border-border bg-card p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Product Performance</h3>
-              {analyticsData?.productPerformance && analyticsData.productPerformance.length > 0 ? (
-                <ProductPerformanceChart data={analyticsData.productPerformance} />
-              ) : (
-                <div className="h-80 flex items-center justify-center text-muted-foreground">
-                  No products to display
-                </div>
-              )}
-            </div>
-
-            {/* Summary Stats */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-lg border border-border bg-card p-6">
-                <h4 className="font-semibold text-foreground mb-4">Top Performing Products</h4>
-                {analyticsData?.productPerformance && analyticsData.productPerformance.length > 0 ? (
-                  <div className="space-y-3">
-                    {analyticsData.productPerformance.slice(0, 3).map((p: any, idx: number) => (
-                      <div key={idx} className="flex items-center justify-between p-2 rounded hover:bg-muted transition-colors">
-                        <div>
-                          <span className="text-sm text-foreground font-medium block">{p.name}</span>
-                          <span className="text-xs text-muted-foreground">{p.views} views • {p.inquiries} inquiries</span>
-                        </div>
-                        <span className="text-xs font-bold text-primary">{p.conversion}%</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No data available</p>
-                )}
+        {/* Charts Section */}
+        <div className="mt-12 space-y-6">
+          <h2 className="text-xl font-bold text-foreground">Performance Analytics</h2>
+          {/* Views Chart */}
+          <div className="rounded-lg border border-border bg-card p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Views & Inquiries (Last 30 Days)</h3>
+            {viewsData.length > 0 ? (
+              <ViewsChart data={viewsData} />
+            ) : (
+              <div className="h-80 flex items-center justify-center text-muted-foreground">
+                {analyticsLoading ? 'Loading chart...' : 'No data available'}
               </div>
-
-              <div className="rounded-lg border border-border bg-card p-6">
-                <h4 className="font-semibold text-foreground mb-4">Quick Stats</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Total Views</span>
-                    <span className="text-lg font-bold text-primary">
-                      {analyticsData?.metrics?.[1]?.value?.toLocaleString() || '0'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Avg. Conversion</span>
-                    <span className="text-lg font-bold text-primary">
-                      {analyticsData?.metrics?.[3]?.value?.toFixed(1) || '0'}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between pt-3 border-t border-border">
-                    <span className="text-sm text-muted-foreground">Response Rate</span>
-                    <span className="text-lg font-bold text-accent">94%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
-        )}
+
+          {/* Product Performance Chart */}
+          <div className="rounded-lg border border-border bg-card p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Product Performance</h3>
+            {analyticsData?.productPerformance && analyticsData.productPerformance.length > 0 ? (
+              <ProductPerformanceChart data={analyticsData.productPerformance} />
+            ) : (
+              <div className="h-80 flex items-center justify-center text-muted-foreground">
+                {analyticsLoading ? 'Loading chart...' : 'No products to display'}
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
 
       <Footer />

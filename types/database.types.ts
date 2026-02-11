@@ -237,61 +237,6 @@ export interface Database {
                     }
                 ]
             }
-            inquiries: {
-                Row: {
-                    id: string
-                    buyer_id: string
-                    product_id: string
-                    vendor_id: string
-                    message: string
-                    status: 'pending' | 'responded' | 'closed'
-                    created_at: string
-                    updated_at: string
-                }
-                Insert: {
-                    id?: string
-                    buyer_id: string
-                    product_id: string
-                    vendor_id: string
-                    message: string
-                    status?: 'pending' | 'responded' | 'closed'
-                    created_at?: string
-                    updated_at?: string
-                }
-                Update: {
-                    id?: string
-                    buyer_id?: string
-                    product_id?: string
-                    vendor_id?: string
-                    message?: string
-                    status?: 'pending' | 'responded' | 'closed'
-                    created_at?: string
-                    updated_at?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "inquiries_buyer_id_fkey"
-                        columns: ["buyer_id"]
-                        isOneToOne: false
-                        referencedRelation: "profiles"
-                        referencedColumns: ["id"]
-                    },
-                    {
-                        foreignKeyName: "inquiries_product_id_fkey"
-                        columns: ["product_id"]
-                        isOneToOne: false
-                        referencedRelation: "products"
-                        referencedColumns: ["id"]
-                    },
-                    {
-                        foreignKeyName: "inquiries_vendor_id_fkey"
-                        columns: ["vendor_id"]
-                        isOneToOne: false
-                        referencedRelation: "profiles"
-                        referencedColumns: ["id"]
-                    }
-                ]
-            }
         }
         Views: {
             [_ in never]: never
