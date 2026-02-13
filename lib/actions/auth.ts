@@ -241,3 +241,31 @@ export const deleteProfile = authenticatedAction(
         }
     }
 )
+
+export const updateProfile = authenticatedAction(
+    z.object({
+        fullName: z.string().min(2, 'Name must be at least 2 characters').optional(),
+        city: z.string().optional(),
+    }),
+    async (data, userId) => {
+        try {
+            const updateData: any = {
+                updated_at: new Date().toISOString()
+            }
+
+            if (data.fullName) updateData.full_name = data.fullName
+            if (data.city) updateData.city = data.city
+
+            await db.update(profiles)
+                .set(updateData)
+                .where(eq(profiles.id, userId))
+
+            revalidatePath('/dashboard/settings')
+            revalidatePath('/dashboard/user')
+            
+            return { success: true }
+        } catch (error: any) {
+            throw new Error(error?.message || 'Failed to update profile')
+        }
+    }
+)

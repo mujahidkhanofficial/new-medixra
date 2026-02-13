@@ -26,7 +26,7 @@ export const ROLE_DASHBOARDS: Record<UserRole, RoleDashboard> = {
  */
 export const ROLE_PROTECTED_ROUTES: Record<string, UserRole[]> = {
     '/admin': ['admin'],
-    '/post-ad': ['vendor'],
+    '/post-ad': ['vendor', 'user'],
     '/dashboard/vendor': ['vendor'],
     '/dashboard/technician': ['technician'],
     '/dashboard/user': ['user', 'vendor', 'technician'], // Users can access other user dashboards

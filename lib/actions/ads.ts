@@ -34,11 +34,11 @@ export async function createAd(prevState: any, formData: FormData): Promise<Crea
         return { success: false, message: 'Profile not found. Contact support.' }
     }
 
-    if (profile.role !== 'vendor') {
-        return { success: false, message: 'Unauthorized: only vendors can post ads.' }
+    if (profile.role !== 'vendor' && profile.role !== 'user') {
+        return { success: false, message: 'Unauthorized: only vendors and individuals can post ads.' }
     }
 
-    if (profile.approval_status !== 'approved') {
+    if (profile.role === 'vendor' && profile.approval_status !== 'approved') {
         return { success: false, message: 'Vendor account not approved yet.' }
     }
 

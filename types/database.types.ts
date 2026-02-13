@@ -16,6 +16,7 @@ export interface Database {
                     full_name: string | null
                     role: 'user' | 'vendor' | 'technician' | 'admin'
                     approval_status: 'approved' | 'pending' | 'rejected'
+                    status: 'active' | 'suspended'
                     avatar_url: string | null
                     phone: string | null
                     city: string | null
@@ -28,6 +29,7 @@ export interface Database {
                     full_name?: string | null
                     role?: 'user' | 'vendor' | 'technician' | 'admin'
                     approval_status?: 'approved' | 'pending' | 'rejected'
+                    status?: 'active' | 'suspended'
                     avatar_url?: string | null
                     phone?: string | null
                     city?: string | null
@@ -40,6 +42,7 @@ export interface Database {
                     full_name?: string | null
                     role?: 'user' | 'vendor' | 'technician' | 'admin'
                     approval_status?: 'approved' | 'pending' | 'rejected'
+                    status?: 'active' | 'suspended'
                     avatar_url?: string | null
                     phone?: string | null
                     city?: string | null

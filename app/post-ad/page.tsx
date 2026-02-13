@@ -67,10 +67,14 @@ export default function PostAdPage() {
                 return
             }
 
-            if (profile?.role !== 'vendor') {
-                // Send to unauthorized page or their dashboard
-                router.replace(profile ? `/unauthorized` : '/')
-                return
+            // Allow all authenticated users to post ads (User role acts as individual seller)
+            if (profile?.role === 'technician') {
+                 // Technicians might be restricted or allowed, but for now let's just block suspended
+            }
+
+            if (profile?.status === 'suspended') {
+                 router.replace('/account-suspended')
+                 return
             }
 
             if (profile?.approval_status !== 'approved') {
