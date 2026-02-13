@@ -75,7 +75,7 @@ export function ProductFilters({
                             <select
                                 value={selectedCategory}
                                 onChange={(e) => onCategoryChange(e.target.value)}
-                                className="w-full h-10 px-3 rounded-md bg-secondary/50 text-sm focus:outline-none focus:ring-0"
+                                className="w-full h-10 px-4 rounded-full bg-secondary/50 text-sm focus:outline-none focus:ring-0"
                             >
                                 {categories.map((category) => (
                                     <option key={category} value={category}>
@@ -142,7 +142,7 @@ export function ProductFilters({
                             <select
                                 value={selectedSpeciality}
                                 onChange={(e) => onSpecialityChange(e.target.value)}
-                                className="w-full h-10 px-3 rounded-md bg-secondary/50 text-sm focus:outline-none focus:ring-0"
+                                className="w-full h-10 px-4 rounded-full bg-secondary/50 text-sm focus:outline-none focus:ring-0"
                             >
                                 {specialties.map((speciality) => (
                                     <option key={speciality} value={speciality}>
@@ -162,7 +162,7 @@ export function ProductFilters({
                             <select
                                 value={selectedLocation}
                                 onChange={(e) => onLocationChange(e.target.value)}
-                                className="w-full h-10 px-3 rounded-md bg-secondary/50 text-sm focus:outline-none focus:ring-0"
+                                className="w-full h-10 px-4 rounded-full bg-secondary/50 text-sm focus:outline-none focus:ring-0"
                             >
                                 {locations.map((location) => (
                                     <option key={location} value={location}>

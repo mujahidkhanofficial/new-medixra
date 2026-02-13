@@ -23,14 +23,36 @@ export async function createAd(prevState: any, formData: FormData): Promise<Crea
         return { success: false, message: 'Authentication failed. Please log in.' }
     }
 
+    // 1.5. Authorization: only APPROVED vendors may create ads
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, approval_status')
+        .eq('id', user.id)
+        .single()
+
+    if (profileError || !profile) {
+        return { success: false, message: 'Profile not found. Contact support.' }
+    }
+
+    if (profile.role !== 'vendor') {
+        return { success: false, message: 'Unauthorized: only vendors can post ads.' }
+    }
+
+    if (profile.approval_status !== 'approved') {
+        return { success: false, message: 'Vendor account not approved yet.' }
+    }
+
     // 2. Parse Data
+    const specialitiesRaw = formData.get('specialities')
+    const specialities = specialitiesRaw ? JSON.parse(specialitiesRaw as string) : []
+    
     const rawData = {
         name: formData.get('name'),
         description: formData.get('description'),
         price: Number(formData.get('price')),
         category: formData.get('category'),
         condition: formData.get('condition'),
-        speciality: formData.get('speciality'),
+        specialities: specialities,
         brand: formData.get('brand'),
         warranty: formData.get('warranty'),
         city: formData.get('city'),
@@ -58,7 +80,7 @@ export async function createAd(prevState: any, formData: FormData): Promise<Crea
                 price: validatedData.price,
                 category: validatedData.category,
                 condition: validatedData.condition,
-                speciality: validatedData.speciality || null,
+                speciality: validatedData.specialities && validatedData.specialities.length > 0 ? JSON.stringify(validatedData.specialities) : null,
                 brand: validatedData.brand || null,
                 warranty: validatedData.warranty || null,
                 city: city,

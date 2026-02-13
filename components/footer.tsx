@@ -20,7 +20,7 @@ export default function Footer() {
                             <span className="font-bold text-foreground">Medixra</span>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            Connecting buyers with medical equipment vendors directly across Pakistan.
+                            Connecting users with medical equipment vendors directly across Pakistan.
                         </p>
                     </div>
 
@@ -30,16 +30,16 @@ export default function Footer() {
                             <li><Link href="/products" className="text-muted-foreground hover:text-primary transition-colors">Browse Equipment</Link></li>
                             <li><Link href="/technicians" className="text-muted-foreground hover:text-primary transition-colors">Find Technicians</Link></li>
                             <li><Link href="/how-it-works" className="text-muted-foreground hover:text-primary transition-colors">How it Works</Link></li>
-                            <li><Link href="/become-vendor" className="text-muted-foreground hover:text-primary transition-colors">Become a Vendor</Link></li>
+                            <li><Link href="/signup?role=vendor" className="text-muted-foreground hover:text-primary transition-colors">Become a Vendor</Link></li>
                         </ul>
                     </div>
 
                     <div>
                         <h4 className="font-semibold text-foreground mb-4">For Vendors</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><Link href="/become-vendor" className="text-muted-foreground hover:text-primary transition-colors">Vendor Registration</Link></li>
+                            <li><Link href="/signup?role=vendor" className="text-muted-foreground hover:text-primary transition-colors">Vendor Registration</Link></li>
                             <li><Link href="/login" className="text-muted-foreground hover:text-primary transition-colors">Member Login</Link></li>
-                            <li><Link href="/become-vendor" className="text-muted-foreground hover:text-primary transition-colors">Vendor Guide</Link></li>
+                            <li><Link href="/signup?role=vendor" className="text-muted-foreground hover:text-primary transition-colors">Vendor Guide</Link></li>
                             <li><Link href="/safety-compliance" className="text-muted-foreground hover:text-primary transition-colors">Safety & Standards</Link></li>
                         </ul>
                     </div>
@@ -59,7 +59,7 @@ export default function Footer() {
 
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <p className="text-sm text-muted-foreground">
-                        © 2024 Medixra. All rights reserved. Pakistan&apos;s trusted medical equipment marketplace.
+                        © 2026 Medixra. All rights reserved. Pakistan&apos;s trusted medical equipment marketplace.
                     </p>
 
                     <div className="flex gap-4">
@@ -77,7 +77,7 @@ export default function Footer() {
 
                 <div className="mt-8 rounded-lg border border-border bg-muted/50 p-4">
                     <p className="text-xs leading-relaxed text-muted-foreground">
-                        <strong>Important Disclaimer:</strong> Medixra is a listing platform only and is not the manufacturer or seller of equipment. Responsibility for regulatory compliance with Pakistani laws (including DRAP and other health authorities) lies with the vendor and buyer, not Medixra.
+                        <strong>Important Disclaimer:</strong> Medixra is a listing platform only and is not the manufacturer or seller of equipment. Responsibility for regulatory compliance with Pakistani laws (including DRAP and other health authorities) lies with the vendor and user, not Medixra.
                     </p>
                 </div>
             </div>

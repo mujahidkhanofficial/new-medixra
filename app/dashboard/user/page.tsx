@@ -9,7 +9,7 @@ import Footer from '@/components/footer'
 import { useAuth } from '@/components/providers/auth-provider'
 import { DashboardSkeleton } from '@/components/skeletons'
 
-export default function BuyerDashboard() {
+export default function UserDashboard() {
   const { user, loading } = useAuth()
   const [userName, setUserName] = useState('')
 
@@ -20,8 +20,8 @@ export default function BuyerDashboard() {
   }, [user])
 
   const quickActions = [
-    { label: 'Browse Equipment', href: '/products', icon: Package },
-    { label: 'Find Technicians', href: '/technicians', icon: Search },
+    { label: 'Post an Ad', href: '/post-ad', icon: Package },
+    { label: 'Browse Equipment', href: '/products', icon: Search },
     { label: 'Saved Items', href: '/dashboard/saved-items', icon: Heart },
     { label: 'Profile Settings', href: '/dashboard/settings', icon: User },
   ]
@@ -112,7 +112,7 @@ export default function BuyerDashboard() {
             </div>
 
             {/* Become a Vendor CTA */}
-            <div className="rounded-lg border border-border bg-gradient-to-br from-primary/10 to-primary/5 p-6">
+            <div className="rounded-lg border border-border bg-linear-to-br from-primary/10 to-primary/5 p-6">
               <h2 className="text-lg font-semibold text-foreground mb-2">
                 Have equipment to sell?
               </h2>
@@ -120,7 +120,7 @@ export default function BuyerDashboard() {
                 Join as a vendor and reach thousands of medical professionals looking for equipment.
               </p>
               <Button asChild className="bg-primary hover:bg-primary/90">
-                <Link href="/become-vendor">Become a Vendor</Link>
+                <Link href="/signup?role=vendor">Become a Vendor</Link>
               </Button>
             </div>
           </div>

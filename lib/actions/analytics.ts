@@ -1,6 +1,11 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { db } from '@/lib/db/drizzle'
+import { products, profiles } from '@/lib/db/schema'
+import { eq, sql } from 'drizzle-orm'
+import { authenticatedAction, publicAction } from '@/lib/safe-action'
+import { z } from 'zod'
 
 export interface AnalyticsMetric {
   label: string
@@ -23,59 +28,96 @@ export interface ViewsData {
   inquiries: number
 }
 
+// Track WhatsApp Click (Public Action as users might not be logged in)
+export const trackWhatsAppClick = publicAction(
+    z.object({ productId: z.string().uuid() }),
+    async ({ productId }) => {
+        await db.update(products)
+            .set({ whatsappClicks: sql`${products.whatsappClicks} + 1` })
+            .where(eq(products.id, productId))
+            
+        return { success: true }
+    }
+)
+
 export async function getVendorAnalytics(vendorId: string) {
   try {
+    // Verify caller is the vendor themselves or an admin
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        console.error('getVendorAnalytics: no authenticated user')
+        return { metrics: [], productPerformance: [] }
+    }
+    // Only allow vendor to see their own analytics (or admin to see any)
+    if (user.id !== vendorId) {
+        const callerProfile = await db
+            .select({ role: profiles.role })
+            .from(profiles)
+            .where(eq(profiles.id, user.id))
+            .limit(1)
+        if (!callerProfile[0] || callerProfile[0].role !== 'admin') {
+            console.error('getVendorAnalytics: unauthorized access attempt')
+            return { metrics: [], productPerformance: [] }
+        }
+    }
 
-    // Get product stats
-    const { data: products, error: productsError } = await supabase
-      .from('products')
-      .select('id, name, views, whatsapp_clicks, created_at')
-      .eq('vendor_id', vendorId)
-      .eq('status', 'active')
+    // using Drizzle for analytics
+    const vendorProducts = await db.query.products.findMany({
+        where: eq(products.vendorId, vendorId),
+        columns: {
+            id: true,
+            name: true,
+            views: true,
+            whatsappClicks: true,
+            createdAt: true
+        }
+    })
 
-    if (productsError) throw productsError
-
-    const totalProducts = products?.length || 0
-    const totalViews = products?.reduce((sum, p) => sum + (p.views || 0), 0) || 0
-    const totalInquiries = products?.reduce((sum, p) => sum + (p.whatsapp_clicks || 0), 0) || 0
+    const totalProducts = vendorProducts.length
+    const totalViews = vendorProducts.reduce((sum, p) => sum + (p.views || 0), 0)
+    const totalInquiries = vendorProducts.reduce((sum, p) => sum + (p.whatsappClicks || 0), 0)
     const avgConversion = totalViews > 0 ? ((totalInquiries / totalViews) * 100).toFixed(1) : '0'
 
     const metrics: AnalyticsMetric[] = [
       {
         label: 'Products Listed',
         value: totalProducts,
-        trend: 2,
-        change: '+2 this month',
+        trend: 0, // Calculate trend if we have historical data
+        change: 'Total Active',
       },
       {
         label: 'Total Views',
         value: totalViews,
-        trend: 12,
-        change: '+12% this month',
+        trend: 0,
+        change: 'All time',
       },
       {
         label: 'Inquiries',
         value: totalInquiries,
-        trend: 8,
-        change: '+8 this month',
+        trend: 0,
+        change: 'WhatsApp Clicks',
       },
       {
         label: 'Conversion Rate',
-        value: parseFloat(avgConversion as string),
-        trend: 2,
-        change: '+2% this month',
+        value: parseFloat(avgConversion),
+        trend: 0,
+        change: 'Click Rate',
       },
     ]
 
     // Get product performance
     const productPerformance: ProductPerformance[] =
-      products?.map((p) => ({
-        name: p.name,
-        views: p.views || 0,
-        inquiries: p.whatsapp_clicks || 0,
-        conversion: p.views > 0 ? Math.round(((p.whatsapp_clicks || 0) / p.views) * 100) : 0,
-      })) || []
+      vendorProducts.map((p) => {
+        const views = p.views || 0
+        const inquiries = p.whatsappClicks || 0
+        return {
+          name: p.name,
+          views,
+          inquiries,
+          conversion: views > 0 ? Math.round((inquiries / views) * 100) : 0,
+        }
+      })
 
     return {
       metrics,
@@ -83,73 +125,8 @@ export async function getVendorAnalytics(vendorId: string) {
     }
   } catch (error) {
     console.error('Error fetching vendor analytics:', error)
-    // Return mock data if query fails
-    return await getMockVendorAnalytics()
+    return { metrics: [], productPerformance: [] }
   }
-}
-
-export async function getMockVendorAnalytics() {
-  const metrics: AnalyticsMetric[] = [
-    {
-      label: 'Products Listed',
-      value: 12,
-      trend: 2,
-      change: '+2 this month',
-    },
-    {
-      label: 'Total Views',
-      value: 1250,
-      trend: 12,
-      change: '+12% this month',
-    },
-    {
-      label: 'Inquiries',
-      value: 85,
-      trend: 8,
-      change: '+8 this month',
-    },
-    {
-      label: 'Conversion Rate',
-      value: 6.8,
-      trend: 2,
-      change: '+2% this month',
-    },
-  ]
-
-  const productPerformance: ProductPerformance[] = [
-    {
-      name: 'Portable Ultrasound',
-      views: 342,
-      inquiries: 28,
-      conversion: 8,
-    },
-    {
-      name: 'ECG Monitor',
-      views: 287,
-      inquiries: 18,
-      conversion: 6,
-    },
-    {
-      name: 'Blood Pressure Unit',
-      views: 195,
-      inquiries: 12,
-      conversion: 6,
-    },
-    {
-      name: 'Oxygen Meter',
-      views: 156,
-      inquiries: 8,
-      conversion: 5,
-    },
-    {
-      name: 'Thermometer Digital',
-      views: 270,
-      inquiries: 19,
-      conversion: 7,
-    },
-  ]
-
-  return { metrics, productPerformance }
 }
 
 export async function generateViewsChartData() {

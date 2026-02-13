@@ -35,13 +35,13 @@ export default function TermsOfServicePage() {
                             2. Platform Description
                         </h2>
                         <p className="text-muted-foreground leading-relaxed mb-4">
-                            Medixra is a B2B marketplace connecting medical equipment vendors with buyers in Pakistan.
+                            Medixra is a B2B marketplace connecting medical equipment vendors with users in Pakistan.
                             We provide a listing platform only and do not:
                         </p>
                         <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                             <li>Sell or purchase medical equipment directly</li>
                             <li>Guarantee the quality or regulatory compliance of listed equipment</li>
-                            <li>Handle payments between buyers and vendors</li>
+                            <li>Handle payments between users and vendors</li>
                             <li>Provide medical advice or equipment recommendations</li>
                         </ul>
                     </section>
@@ -58,7 +58,7 @@ export default function TermsOfServicePage() {
                             <li>Ensure all listed equipment complies with DRAP regulations</li>
                             <li>Provide accurate product descriptions and pricing</li>
                             <li>Maintain valid business licenses and certifications</li>
-                            <li>Respond to buyer inquiries in a timely manner</li>
+                            <li>Respond to user inquiries in a timely manner</li>
                         </ul>
                         <p className="text-muted-foreground leading-relaxed mb-4">
                             <strong>Buyers must:</strong>
@@ -77,7 +77,7 @@ export default function TermsOfServicePage() {
                         </h2>
                         <p className="text-muted-foreground leading-relaxed">
                             Medixra is not responsible for any transactions, disputes, or damages arising from
-                            the use of our platform. All transactions are conducted directly between buyers and vendors.
+                            the use of our platform. All transactions are conducted directly between users and vendors.
                             Users assume full responsibility for verifying regulatory compliance.
                         </p>
                     </section>
@@ -89,7 +89,7 @@ export default function TermsOfServicePage() {
                         </h2>
                         <p className="text-muted-foreground leading-relaxed">
                             Medixra is currently free to use. We do not charge vendors for listings
-                            or buyers for accessing the platform. This may change in the future with prior notice.
+                            or users for accessing the platform. This may change in the future with prior notice.
                         </p>
                     </section>
 

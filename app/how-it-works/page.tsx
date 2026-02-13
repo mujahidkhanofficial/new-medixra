@@ -40,7 +40,7 @@ export default function HowItWorksPage() {
                     <div className="mx-auto max-w-4xl px-4 text-center">
                         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">How Medixra Works</h1>
                         <p className="text-xl text-muted-foreground">
-                            A direct bridge between medical equipment buyers and sellers in Pakistan.
+                            A direct bridge between medical equipment users, sellers, and specialized technicians in Pakistan.
                         </p>
                     </div>
                 </section>
@@ -74,7 +74,7 @@ export default function HowItWorksPage() {
                             <div className="p-8 bg-card rounded-3xl border border-border">
                                 <h3 className="text-xl font-bold text-foreground mb-4">Direct Communication</h3>
                                 <p className="text-muted-foreground leading-relaxed">
-                                    Medixra is a listing marketplace. We do not handle payments, logistics, or deliveries. All discussions regarding price, warranty, and shipping happen directly between the buyer and the seller.
+                                    Medixra is a listing marketplace. We do not handle payments, logistics, or deliveries. All discussions regarding price, warranty, and shipping happen directly between the user and the seller.
                                 </p>
                             </div>
                             <div className="p-8 bg-card rounded-3xl border border-border">

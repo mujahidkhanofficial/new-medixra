@@ -18,7 +18,7 @@ export function HomeSearchBar() {
 
     return (
         <form onSubmit={handleSearch} className="mx-auto max-w-2xl">
-            <div className="flex gap-2 rounded-lg border border-border bg-card p-2 shadow-lg">
+            <div className="flex gap-2 rounded-full border border-border bg-card p-2 shadow-lg">
                 <Search className="ml-3 h-5 w-5 text-muted-foreground self-center" />
                 <input
                     type="text"

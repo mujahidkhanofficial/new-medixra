@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { CheckCircle2, ShieldCheck, Database, LayoutDashboard } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 interface DashboardLoaderProps {
     className?: string
@@ -53,11 +54,12 @@ export function DashboardLoader({ className }: DashboardLoaderProps) {
                 <div className="mb-12 relative animate-in zoom-in-50 duration-500">
                     <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full" />
                     <div className="relative">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <Image
                             src="/logo.svg"
                             alt="Medixra"
-                            className="h-20 w-auto object-contain drop-shadow-sm"
+                            width={150}
+                            height={80}
+                            className="object-contain drop-shadow-sm"
                         />
                     </div>
                 </div>

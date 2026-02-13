@@ -14,7 +14,8 @@ export interface Database {
                     id: string
                     email: string
                     full_name: string | null
-                    role: 'buyer' | 'vendor' | 'admin'
+                    role: 'user' | 'vendor' | 'technician' | 'admin'
+                    approval_status: 'approved' | 'pending' | 'rejected'
                     avatar_url: string | null
                     phone: string | null
                     city: string | null
@@ -25,7 +26,8 @@ export interface Database {
                     id: string
                     email: string
                     full_name?: string | null
-                    role?: 'buyer' | 'vendor' | 'admin'
+                    role?: 'user' | 'vendor' | 'technician' | 'admin'
+                    approval_status?: 'approved' | 'pending' | 'rejected'
                     avatar_url?: string | null
                     phone?: string | null
                     city?: string | null
@@ -36,7 +38,8 @@ export interface Database {
                     id?: string
                     email?: string
                     full_name?: string | null
-                    role?: 'buyer' | 'vendor' | 'admin'
+                    role?: 'user' | 'vendor' | 'technician' | 'admin'
+                    approval_status?: 'approved' | 'pending' | 'rejected'
                     avatar_url?: string | null
                     phone?: string | null
                     city?: string | null
@@ -88,6 +91,44 @@ export interface Database {
                 Relationships: [
                     {
                         foreignKeyName: "vendors_id_fkey"
+                        columns: ["id"]
+                        isOneToOne: true
+                        referencedRelation: "profiles"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            technicians: {
+                Row: {
+                    id: string
+                    speciality: string | null
+                    experience_years: string | null
+                    is_verified: boolean
+                    city: string | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id: string
+                    speciality?: string | null
+                    experience_years?: string | null
+                    is_verified?: boolean
+                    city?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    speciality?: string | null
+                    experience_years?: string | null
+                    is_verified?: boolean
+                    city?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "technicians_id_fkey"
                         columns: ["id"]
                         isOneToOne: true
                         referencedRelation: "profiles"

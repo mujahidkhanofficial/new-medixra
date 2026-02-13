@@ -12,7 +12,8 @@ create table if not exists public.profiles (
   avatar_url text,
   phone text,
   city text,
-  role text default 'buyer' check (role in ('buyer', 'vendor', 'admin')),
+  role text default 'user' check (role in ('user', 'vendor', 'technician', 'admin')),
+  approval_status text default 'approved' check (approval_status in ('approved', 'pending', 'rejected')),
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -33,7 +34,18 @@ create table if not exists public.vendors (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 4. Create PRODUCTS Table
+-- 4. Create TECHNICIANS Table (Service Profiles)
+create table if not exists public.technicians (
+  id uuid references public.profiles(id) on delete cascade primary key,
+  speciality text,
+  experience_years text,
+  is_verified boolean default false,
+  city text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 5. Create PRODUCTS Table
 create table if not exists public.products (
   id uuid default uuid_generate_v4() primary key,
   vendor_id uuid references public.profiles(id) on delete cascade not null,
@@ -68,6 +80,7 @@ create table if not exists public.product_images (
 -- 6. Enable Row Level Security (RLS)
 alter table public.profiles enable row level security;
 alter table public.vendors enable row level security;
+alter table public.technicians enable row level security;
 alter table public.products enable row level security;
 alter table public.product_images enable row level security;
 
@@ -82,6 +95,11 @@ create policy "Users can insert own profile" on public.profiles for insert with 
 create policy "Public Vendors" on public.vendors for select using (true);
 create policy "Vendors can update own business" on public.vendors for update using (auth.uid() = id);
 create policy "Vendors can insert own business" on public.vendors for insert with check (auth.uid() = id);
+
+-- Technicians: Public Read, Technician Edit Own
+create policy "Public Technicians" on public.technicians for select using (true);
+create policy "Technicians can update own profile" on public.technicians for update using (auth.uid() = id);
+create policy "Technicians can insert own profile" on public.technicians for insert with check (auth.uid() = id);
 
 -- Products: Public Read (Active), Vendor Edit Own
 create policy "Public Active Products" on public.products for select using (status = 'active' OR auth.uid() = vendor_id);
@@ -106,14 +124,29 @@ $$ language plpgsql;
 
 create trigger set_profiles_updated_at before update on public.profiles for each row execute procedure public.handle_updated_at();
 create trigger set_vendors_updated_at before update on public.vendors for each row execute procedure public.handle_updated_at();
+create trigger set_technicians_updated_at before update on public.technicians for each row execute procedure public.handle_updated_at();
 create trigger set_products_updated_at before update on public.products for each row execute procedure public.handle_updated_at();
 
 -- 9. Auto-create Profile on Signup (Optional but recommended)
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, email, full_name, avatar_url)
-  values (new.id, new.email, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url');
+  insert into public.profiles (id, email, full_name, avatar_url, role, phone, approval_status)
+  values (
+    new.id, 
+    new.email, 
+    new.raw_user_meta_data->>'full_name', 
+    new.raw_user_meta_data->>'avatar_url',
+    case
+      when (new.raw_user_meta_data->>'role') in ('vendor', 'technician') then (new.raw_user_meta_data->>'role')
+      else 'user'
+    end,
+    new.raw_user_meta_data->>'phone',
+    case 
+      when (new.raw_user_meta_data->>'role') in ('vendor', 'technician') then 'pending'
+      else 'approved'
+    end
+  );
   return new;
 end;
 $$ language plpgsql security definer;

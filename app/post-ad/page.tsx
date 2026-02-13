@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { FormField } from '@/components/ui/form-field'
 import { FormError } from '@/components/ui/form-error'
+import { MultiSelectSpecialities } from '@/components/ui/multi-select-specialities'
 import { productSchema } from '@/lib/validation'
 import { getErrorMessage } from '@/lib/error-handler'
 import { createAd, saveAdImages } from '@/lib/actions/ads'
@@ -56,7 +57,37 @@ const CATEGORY_ICONS: Record<string, any> = {
 export default function PostAdPage() {
     const router = useRouter()
     const supabase = createClient()
-    const { user, loading } = useAuth()
+    const { user, profile, loading } = useAuth()
+
+    // Client-side guard: block non-vendors and unapproved vendors
+    useEffect(() => {
+        if (!loading) {
+            if (!user) {
+                router.replace('/login')
+                return
+            }
+
+            if (profile?.role !== 'vendor') {
+                // Send to unauthorized page or their dashboard
+                router.replace(profile ? `/unauthorized` : '/')
+                return
+            }
+
+            if (profile?.approval_status !== 'approved') {
+                router.replace('/pending-approval')
+                return
+            }
+        }
+    }, [user, profile, loading, router])
+
+    // If still loading or redirecting, show spinner
+    if (loading || (user && profile?.role !== 'vendor')) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        )
+    }
 
     // State
     const [step, setStep] = useState(1)
@@ -74,7 +105,7 @@ export default function PostAdPage() {
         description: '',
         price: '',
         condition: 'Used',
-        speciality: '',
+        specialities: [] as string[],
         brand: '',
         warranty: 'No Warranty',
         city: '',
@@ -224,7 +255,7 @@ export default function PostAdPage() {
             adFormData.append('price', formData.price)
             adFormData.append('category', formData.category)
             adFormData.append('condition', formData.condition)
-            if (formData.speciality) adFormData.append('speciality', formData.speciality)
+            if (formData.specialities.length > 0) adFormData.append('specialities', JSON.stringify(formData.specialities))
             if (formData.brand) adFormData.append('brand', formData.brand)
             if (formData.warranty) adFormData.append('warranty', formData.warranty)
             adFormData.append('city', formData.city)
@@ -383,18 +414,13 @@ export default function PostAdPage() {
                         ))}
                     </div>
                 </div>
-                <FormField label="Medical Speciality (Optional)">
-                    <select
-                        value={formData.speciality}
-                        onChange={e => setFormData({ ...formData, speciality: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary outline-none appearance-none text-foreground"
+                <FormField label="Medical Specialities (Optional)">
+                    <MultiSelectSpecialities
+                        specialities={SPECIALTIES as any}
+                        selected={formData.specialities}
+                        onChange={(specialities) => setFormData({ ...formData, specialities })}
                         disabled={formLoading}
-                    >
-                        <option value="">Select Speciality</option>
-                        {SPECIALTIES.map(s => (
-                            <option key={s} value={s}>{s}</option>
-                        ))}
-                    </select>
+                    />
                 </FormField>
             </div>
             <div className="flex justify-between pt-4">
@@ -547,10 +573,10 @@ export default function PostAdPage() {
                             <span className="text-muted-foreground block text-xs">Location</span>
                             <span className="font-medium">{formData.city}, {formData.area}</span>
                         </div>
-                        {formData.speciality && (
+                        {formData.specialities.length > 0 && (
                             <div>
-                                <span className="text-muted-foreground block text-xs">Speciality</span>
-                                <span className="font-medium">{formData.speciality}</span>
+                                <span className="text-muted-foreground block text-xs">Specialities</span>
+                                <span className="font-medium">{formData.specialities.join(', ')}</span>
                             </div>
                         )}
                         <div>
@@ -564,7 +590,7 @@ export default function PostAdPage() {
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg flex items-start gap-3 border border-blue-100 dark:border-blue-800">
                 <ShieldCheck className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-800 dark:text-blue-200">
-                    <strong>Safe Selling Tip:</strong> Always meet in a safe, public location. Verify the buyer before handing over equipment.
+                    <strong>Safe Selling Tip:</strong> Always meet in a safe, public location. Verify the user before handing over equipment.
                 </p>
             </div>
 

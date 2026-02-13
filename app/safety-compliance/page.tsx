@@ -27,32 +27,32 @@ export default function SafetyCompliancePage() {
               All medical equipment bought and sold in Pakistan must comply with the Drug Regulatory Authority of Pakistan (DRAP) Medical Devices Rules involving registration, import, and sale.
             </p>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Medixra strictly facilitates connections between buyers and vendors. We do not verify the physical condition or legal compliance of every item listed. <strong>It is the buyer's responsibility to verify DRAP registration certificates before purchase.</strong>
+              Medixra strictly facilitates connections between users and vendors. We do not verify the physical condition or legal compliance of every item listed. <strong>It is the user's responsibility to verify DRAP registration certificates before purchase.</strong>
             </p>
           </section>
 
           <section className="mb-10">
             <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-primary" />
-              Buyer Safety Checklist
+              User Safety Checklist
             </h2>
             <div className="space-y-4">
               <div className="flex gap-4 p-5 rounded-lg bg-card border border-border hover:border-primary/50 transition-colors">
-                <Search className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+                <Search className="h-6 w-6 text-primary shrink-0 mt-1" />
                 <div>
                   <h3 className="font-semibold text-foreground mb-1 text-base">1. Verify Vendor Credentials</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">Check the vendor's profile for verified status, years in business, and physical location. Ask for their business license number.</p>
                 </div>
               </div>
               <div className="flex gap-4 p-5 rounded-lg bg-card border border-border hover:border-primary/50 transition-colors">
-                <FileText className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+                <FileText className="h-6 w-6 text-primary shrink-0 mt-1" />
                 <div>
                   <h3 className="font-semibold text-foreground mb-1 text-base">2. Request Documentation</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">Ask for original invoices, warranty cards, and DRAP registration forms (Form-6 or Form-7) for imported devices.</p>
                 </div>
               </div>
               <div className="flex gap-4 p-5 rounded-lg bg-card border border-border hover:border-primary/50 transition-colors">
-                <Eye className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+                <Eye className="h-6 w-6 text-primary shrink-0 mt-1" />
                 <div>
                   <h3 className="font-semibold text-foreground mb-1 text-base">3. Inspect Equipment</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">For used/refurbished items, inspect personally or hire a biomedical engineer. Verify serial numbers match the paperwork.</p>

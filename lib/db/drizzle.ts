@@ -1,10 +1,15 @@
-
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import * as schema from './schema';
 
 const connectionString = process.env.DATABASE_URL!;
 
-const client = (() => {
+// Singleton pattern to prevent connection leaks during hot reloads in development
+const globalForDb = global as unknown as {
+    client: ReturnType<typeof postgres> | undefined;
+};
+
+const client = globalForDb.client || (() => {
     try {
         const url = new URL(connectionString);
         return postgres({
@@ -20,4 +25,7 @@ const client = (() => {
         return postgres(connectionString, { prepare: false });
     }
 })();
-export const db = drizzle(client);
+
+if (process.env.NODE_ENV !== 'production') globalForDb.client = client;
+
+export const db = drizzle(client, { schema });

@@ -19,7 +19,7 @@ export interface AuthResponse {
   user?: {
     id: string
     email: string
-    role: 'buyer' | 'vendor' | 'admin'
+    role: 'user' | 'vendor' | 'technician' | 'admin'
   }
   error?: string
 }

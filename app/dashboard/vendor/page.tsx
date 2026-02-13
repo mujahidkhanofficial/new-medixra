@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Package, Eye, TrendingUp, Plus, Edit2, Trash2, Star, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ViewsChart, ProductPerformanceChart } from '@/components/dashboard/analytics-charts'
@@ -74,7 +75,7 @@ export default function VendorDashboard() {
 
   const handleDeleteProduct = async (productId: string) => {
     try {
-      const res = await deleteProduct(productId)
+      const res = await deleteProduct({ productId })
       if (res.success) {
         setProducts(products.filter(p => p.id !== productId))
       }
@@ -158,7 +159,7 @@ export default function VendorDashboard() {
                 message="Hi, I'm interested in your products and services."
               />
               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2" asChild>
-                <Link href="/dashboard/settings">
+                <Link href="/dashboard/vendor/edit">
                   <Edit2 className="h-4 w-4" />
                   Edit Profile
                 </Link>
@@ -204,7 +205,13 @@ export default function VendorDashboard() {
                   <div className="flex gap-4">
                     <div className={`w-24 h-24 rounded-lg shrink-0 bg-muted overflow-hidden relative`}>
                       {product.image_url ? (
-                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                        <Image
+                          src={product.image_url}
+                          alt={product.name}
+                          fill
+                          sizes="96px"
+                          className="object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                           <Package className="h-8 w-8" />
@@ -225,9 +232,11 @@ export default function VendorDashboard() {
                   </div>
 
                   <div className="flex gap-2 md:flex-col">
-                    <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-                      <Edit2 className="h-4 w-4" />
-                      Edit
+                    <Button variant="outline" size="sm" className="gap-2 bg-transparent" asChild>
+                      <Link href={`/product/${product.id}/edit`}>
+                        <Edit2 className="h-4 w-4" />
+                        Edit
+                      </Link>
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>

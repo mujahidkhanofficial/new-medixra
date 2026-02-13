@@ -4,6 +4,7 @@ import { MessageCircle, MapPin, CheckCircle2, ShieldCheck, Tag, Stethoscope, Ale
 import { Button } from '@/components/ui/button'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
+import WhatsAppContact from '@/components/whatsapp-contact'
 import { getProductById } from '@/lib/actions/products'
 import { ProductGallery } from '@/components/product/product-gallery'
 import { TrustSignals } from '@/components/product/trust-signals'
@@ -29,8 +30,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
         id: product.vendor_id,
         name: product.vendor_name || 'Member',
         joinedAt: product.vendor_joined_at,
-        city: product.vendor_city,
-        phone: product.vendor_phone,
+        city: product.vendor_city ?? undefined,
+        phone: product.vendor_phone ?? undefined,
         isVerified: !!product.vendor_phone // Simple verification logic for now
     }
 
@@ -148,16 +149,14 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
                                 <div className="space-y-3">
                                     {product.vendor_whatsapp ? (
-                                        <Link
-                                            href={`https://wa.me/${product.vendor_whatsapp}?text=Hi, I am interested in ${encodeURIComponent(product.name)} on Medixra.`}
-                                            target="_blank"
-                                            className="w-full"
-                                        >
-                                            <Button className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white gap-2 h-12 text-lg font-medium shadow-md transition-all hover:shadow-lg">
-                                                <MessageCircle className="h-5 w-5" />
-                                                Chat on WhatsApp
-                                            </Button>
-                                        </Link>
+                                        <WhatsAppContact
+                                            phoneNumber={product.vendor_whatsapp}
+                                            message={`Hi, I am interested in ${product.name} on Medixra.`}
+                                            name="Chat on WhatsApp"
+                                            size="lg"
+                                            fullWidth
+                                            productId={product.id}
+                                        />
                                     ) : (
                                         <Button disabled className="w-full gap-2 h-12 text-lg font-medium opacity-70">
                                             <MessageCircle className="h-5 w-5" />

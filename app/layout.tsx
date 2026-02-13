@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-
+import { createClient } from '@/lib/supabase/server'
 import { Toaster } from 'sonner'
 
 const _geist = Geist({ subsets: ["latin"], variable: '--font-geist-sans' });
@@ -44,15 +44,18 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${_geist.className} font-sans antialiased`} suppressHydrationWarning>
-        <AuthProvider>
+        <AuthProvider initialSession={session}>
           {children}
           <Analytics />
           <Toaster position="top-center" richColors />

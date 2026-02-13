@@ -1,5 +1,9 @@
+'use client'
+
 import { MessageCircle, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { trackWhatsAppClick } from '@/lib/actions/analytics'
+import { useTransition } from 'react'
 
 interface WhatsAppContactProps {
   phoneNumber: string
@@ -10,6 +14,7 @@ interface WhatsAppContactProps {
   className?: string
   showIcon?: boolean
   fullWidth?: boolean
+  productId?: string // Optional product ID for analytics
 }
 
 /**
@@ -26,8 +31,11 @@ export default function WhatsAppContact({
   className = '',
   showIcon = true,
   fullWidth = false,
+  productId
 }: WhatsAppContactProps) {
-  // Format phone number - remove non-digits except leading +
+  const [isPending, startTransition] = useTransition()
+
+  // Format phone number - remove non-digits
   const cleanPhone = phoneNumber.replace(/\D/g, '')
 
   // Create WhatsApp URL with message
@@ -39,21 +47,23 @@ export default function WhatsAppContact({
     lg: 'h-12 px-6 text-base',
   }
 
+  const handleClick = () => {
+      if (productId) {
+          startTransition(() => {
+              trackWhatsAppClick({ productId })
+          })
+      }
+      window.open(whatsappUrl, '_blank')
+  }
+
   return (
     <Button
-      asChild
+      onClick={handleClick}
       className={`gap-2 bg-green-600 hover:bg-green-700 text-white ${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
-      variant={variant === 'outline' ? 'outline' : 'default'}
+      variant={variant === 'outline' ? 'outline' : 'default'} // Keep compatibility but usually green for WA
     >
-      <a
-        href={whatsappUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        title={`Contact ${name} on WhatsApp`}
-      >
         {showIcon && <MessageCircle className={`${size === 'sm' ? 'h-3 w-3' : size === 'lg' ? 'h-5 w-5' : 'h-4 w-4'}`} />}
         {name}
-      </a>
     </Button>
   )
 }

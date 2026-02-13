@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Heart, Trash2, Loader2, AlertCircle, ArrowLeft } from 'lucide-react'
+import Image from 'next/image'
+import { Heart, Trash2, Loader2, AlertCircle, ArrowLeft, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
@@ -76,7 +77,7 @@ export default function SavedItemsPage() {
         <div className="mx-auto max-w-6xl px-4 py-12">
           {/* Header */}
           <div className="mb-8">
-            <Link href="/dashboard/buyer" className="inline-flex items-center gap-2 text-primary hover:underline mb-4">
+            <Link href="/dashboard/user" className="inline-flex items-center gap-2 text-primary hover:underline mb-4">
               <ArrowLeft className="h-4 w-4" />
               Back to Dashboard
             </Link>
@@ -89,7 +90,7 @@ export default function SavedItemsPage() {
           {/* Error State */}
           {error && (
             <div className="mb-6 rounded-lg bg-destructive/10 p-4 flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-destructive">{error}</p>
               </div>
@@ -126,13 +127,17 @@ export default function SavedItemsPage() {
                 <div key={item.id} className="rounded-lg border border-border bg-card overflow-hidden hover:shadow-lg transition-shadow">
                   {/* Image */}
                   {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.productName}
-                      className="w-full h-48 object-cover"
-                    />
+                    <div className="relative w-full h-48">
+                      <Image
+                        src={item.image}
+                        alt={item.productName}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover"
+                      />
+                    </div>
                   ) : (
-                    <div className="w-full h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                    <div className="w-full h-48 bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center">
                       <Heart className="h-12 w-12 text-primary/30" />
                     </div>
                   )}

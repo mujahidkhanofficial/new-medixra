@@ -28,7 +28,6 @@ export default function PrivacyPolicyPage() {
                             <li>Account information (name, email, phone number)</li>
                             <li>Business details for vendors (company name, location, certifications)</li>
                             <li>Product listings and descriptions</li>
-                            <li>Messages exchanged through the platform</li>
                         </ul>
                     </section>
 
@@ -39,7 +38,7 @@ export default function PrivacyPolicyPage() {
                         </h2>
                         <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                             <li>To provide and improve our marketplace services</li>
-                            <li>To connect buyers with vendors</li>
+                            <li>To connect users with vendors</li>
                             <li>To verify vendor credentials</li>
                             <li>To send platform updates and notifications</li>
                             <li>To ensure platform security and prevent fraud</li>
@@ -55,7 +54,7 @@ export default function PrivacyPolicyPage() {
                             We share your information only in these cases:
                         </p>
                         <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                            <li>Vendor profiles are visible to registered buyers</li>
+                            <li>Vendor profiles are visible to registered users</li>
                             <li>Contact details are shared when you initiate communication</li>
                             <li>When required by Pakistani law or legal process</li>
                             <li>To protect the rights and safety of our users</li>

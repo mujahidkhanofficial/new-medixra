@@ -31,11 +31,11 @@ export const useAuth = () => {
     return useContext(AuthContext)
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [session, setSession] = useState<Session | null>(null)
-    const [user, setUser] = useState<User | null>(null)
+export function AuthProvider({ children, initialSession = null }: { children: React.ReactNode, initialSession?: Session | null }) {
+    const [session, setSession] = useState<Session | null>(initialSession)
+    const [user, setUser] = useState<User | null>(initialSession?.user ?? null)
     const [profile, setProfile] = useState<Profile | null>(null)
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(!initialSession)
     const supabase = createClient()
 
     const fetchProfile = async (userId: string) => {
@@ -48,7 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 .single()
 
             if (error) {
-                console.error('Error fetching profile:', error)
+                // Ignore "No rows found" error (PGRST116) as it just means profile doesn't exist yet
+                if (error.code === 'PGRST116') {
+                    return null
+                }
+                console.error('Error fetching profile:', error.message || error)
                 return null
             }
 
@@ -76,12 +80,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (data) setProfile(data)
     }
 
+    // Handle props change (server-side update of session)
+    useEffect(() => {
+        if (initialSession?.user?.id !== user?.id) {
+            setSession(initialSession)
+            setUser(initialSession?.user ?? null)
+            if (initialSession?.user) {
+                fetchProfile(initialSession.user.id).then(data => setProfile(data))
+            } else {
+                setProfile(null)
+            }
+        }
+    }, [initialSession])
+
     useEffect(() => {
         let mounted = true
 
         const initializeAuth = async () => {
             try {
-                // 1. Get initial session (cached from localStorage by Supabase)
+                // If we already have a session from props, we might just want to fetch the profile if missing
+                if (initialSession?.user && !profile) {
+                    const profileData = await fetchProfile(initialSession.user.id)
+                    if (mounted) setProfile(profileData)
+                    if (mounted) setLoading(false)
+                    return
+                }
+
+                // Fallback to client-side session fetch if no prop provided or strict check needed
                 const { data: { session }, error } = await supabase.auth.getSession()
 
                 if (error) throw error
@@ -99,13 +124,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
             } catch (error) {
                 console.error("Auth initialization error:", error)
-                // Only show error toast for actual auth failures, not network timeouts
-                const errorMsg = (error as any)?.message || ''
-                if (mounted && !errorMsg.includes('timeout') && !errorMsg.includes('network')) {
-                    toast.error('Authentication Error', {
-                        description: 'Please check your connection and refresh.'
-                    })
-                }
             } finally {
                 if (mounted) setLoading(false)
             }

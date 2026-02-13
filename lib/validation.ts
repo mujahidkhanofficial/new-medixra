@@ -34,7 +34,7 @@ export const productSchema = z.object({
   condition: z.enum(['New', 'Used', 'Refurbished']),
   location: z.string().min(2, 'Location is required'),
   images: z.array(z.instanceof(File)).min(1, 'At least one image is required'),
-  speciality: z.string().optional(),
+  specialities: z.array(z.string()).optional(),
   brand: z.string().optional(),
   warranty: z.string().optional(),
 })
@@ -60,7 +60,26 @@ export const signupSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
-  role: z.enum(['buyer', 'vendor']),
+  phoneNumber: phoneSchema,
+  role: z.enum(['user', 'vendor', 'technician']),
+})
+
+// Additional validation for vendor-specific signup fields
+export const vendorSignupSchema = z.object({
+  companyName: z.string().min(2, 'Company name is required'),
+  businessType: z.string().min(2, 'Business type is required'),
+  phone: phoneSchema.optional(),
+  city: z.string().min(2, 'City is required'),
+  yearsInBusiness: z.string().optional(),
+  description: z.string().optional(),
+})
+
+// Technician-specific signup fields
+export const technicianSignupSchema = z.object({
+  phone: phoneSchema.optional(),
+  city: z.string().min(2, 'City is required'),
+  specialities: z.array(z.string()).optional(),
+  experienceYears: z.string().optional(),
 })
 
 export type ProductFormData = z.infer<typeof productSchema>

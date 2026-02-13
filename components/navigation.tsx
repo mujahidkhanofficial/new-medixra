@@ -17,28 +17,42 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { logout } from '@/lib/actions/auth'
+import { toast } from 'sonner'
 
 export default function Navigation() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [isLoggingOut, setIsLoggingOut] = useState(false)
     const { user, profile, loading } = useAuth()
     const router = useRouter()
-    const supabase = createClient()
+    // const supabase = createClient() // Removed in favor of server action
 
     const handleLogout = async () => {
-        await supabase.auth.signOut()
-        router.refresh()
+        setIsLoggingOut(true)
+        try {
+            await logout() // Call server action
+            // Optimization: Client-side toast can be shown immediately
+            // toast.success('Logged out successfully') 
+        } catch (error) {
+            console.error('Logout failed', error)
+        } finally {
+            // No need to set false if redirected, but good practice
+            // setIsLoggingOut(false) 
+        }
     }
 
     const getDashboardLink = () => {
-        if (profile?.role === 'vendor') return '/vendor/dashboard'
-        if (profile?.role === 'admin') return '/admin/dashboard'
-        return '/dashboard'
+        if (profile?.role === 'vendor') return '/dashboard/vendor'
+        if (profile?.role === 'admin') return '/admin'
+        if (profile?.role === 'technician') return '/dashboard/technician'
+        return '/dashboard/user'
     }
 
     const getDashboardLabel = () => {
         if (profile?.role === 'vendor') return 'Vendor Dashboard'
         if (profile?.role === 'admin') return 'Admin Dashboard'
-        return 'Dashboard'
+        if (profile?.role === 'technician') return 'Technician Dashboard'
+        return 'My Dashboard'
     }
 
     return (
@@ -79,16 +93,16 @@ export default function Navigation() {
                          */}
 
                         {profile?.role !== 'vendor' && (
-                            <Link href="/become-vendor" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                            <Link href="/signup?role=vendor" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                                 For Vendors
                             </Link>
                         )}
                     </div>
 
                     <div className="hidden items-center gap-3 md:flex">
-                        <Link href="/post-ad" className="group relative inline-flex items-center justify-center rounded-lg p-[2px] focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition-all duration-300 hover:shadow-lg hover:shadow-amber-400/30">
-                            <span className="absolute inset-0 rounded-lg bg-gradient-to-br from-amber-400 via-orange-500 to-yellow-500 opacity-100 transition-opacity duration-300 group-hover:opacity-110"></span>
-                            <span className="relative flex h-full w-full items-center gap-2 rounded-lg bg-background px-6 py-2 text-sm font-bold text-foreground transition-all group-hover:bg-transparent group-hover:text-white group-hover:scale-105">
+                        <Link href="/post-ad" className="group relative inline-flex items-center justify-center rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition-all duration-300 hover:shadow-lg hover:shadow-amber-400/30">
+                            <span className="absolute inset-0 rounded-full bg-linear-to-br from-amber-400 via-orange-500 to-yellow-500 opacity-100 transition-opacity duration-300 group-hover:opacity-110"></span>
+                            <span className="relative flex h-full w-full items-center gap-2 rounded-full bg-background px-6 py-2 text-sm font-bold text-foreground transition-all group-hover:bg-transparent group-hover:text-white group-hover:scale-105">
                                 <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
                                 SELL NOW
                             </span>
@@ -123,7 +137,7 @@ export default function Navigation() {
                                                 {user.email}
                                             </p>
                                             <p className="text-xs text-primary font-semibold mt-1 capitalize">
-                                                {profile?.role || 'Buyer'}
+                                                {profile?.role === 'user' ? 'Individual' : profile?.role || 'Individual'}
                                             </p>
                                         </div>
                                     </DropdownMenuLabel>
@@ -143,15 +157,15 @@ export default function Navigation() {
                                         </DropdownMenuItem>
                                     )}
                                     <DropdownMenuItem asChild>
-                                        <Link href="/settings">
+                                        <Link href="/dashboard/settings">
                                             <User className="mr-2 h-4 w-4" />
                                             Profile Settings
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                                    <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer" disabled={isLoggingOut}>
                                         <LogOut className="mr-2 h-4 w-4" />
-                                        Log out
+                                        {isLoggingOut ? 'Logging out...' : 'Log out'}
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -159,10 +173,10 @@ export default function Navigation() {
                             <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
                         ) : (
                             <>
-                                <Button variant="ghost" asChild>
+                                <Button variant="ghost" className="rounded-full" asChild>
                                     <Link href="/login">Sign In</Link>
                                 </Button>
-                                <Button variant="outline" asChild>
+                                <Button variant="outline" className="rounded-full" asChild>
                                     <Link href="/signup">Sign Up</Link>
                                 </Button>
                             </>
@@ -193,7 +207,7 @@ export default function Navigation() {
                                                 <AvatarImage src={profile.avatar_url} alt={profile?.full_name || ''} />
                                             </Avatar>
                                         ) : (
-                                            <div className="h-10 w-10 flex-shrink-0">
+                                            <div className="h-10 w-10 shrink-0">
                                                 <Image
                                                     src="/user-icon.svg"
                                                     alt="User Profile"
@@ -224,7 +238,7 @@ export default function Navigation() {
                             </Link>
 
                             {profile?.role !== 'vendor' && (
-                                <Link href="/become-vendor" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
+                                <Link href="/signup?role=vendor" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
                                     For Vendors
                                 </Link>
                             )}
@@ -240,23 +254,24 @@ export default function Navigation() {
                                         </Link>
                                         <button
                                             onClick={handleLogout}
-                                            className="flex items-center gap-2 py-2 text-sm font-medium text-red-500 hover:bg-red-50 rounded w-full text-left"
+                                            disabled={isLoggingOut}
+                                            className="flex items-center gap-2 py-2 text-sm font-medium text-red-500 hover:bg-red-50 rounded w-full text-left disabled:opacity-50"
                                         >
                                             <LogOut className="h-4 w-4" />
-                                            Logout
+                                            {isLoggingOut ? 'Logging out...' : 'Logout'}
                                         </button>
                                     </>
                                 ) : (
                                     <div className="grid grid-cols-2 gap-2">
-                                        <Button variant="outline" className="w-full" asChild>
+                                        <Button variant="outline" className="w-full rounded-full" asChild>
                                             <Link href="/login">Sign In</Link>
                                         </Button>
-                                        <Button className="w-full" asChild>
+                                        <Button className="w-full rounded-full" asChild>
                                             <Link href="/signup">Sign Up</Link>
                                         </Button>
                                     </div>
                                 )}
-                                <Button variant="cta" className="w-full gap-2 group hover:shadow-lg hover:shadow-amber-400/30 transition-all duration-300 hover:scale-105" asChild>
+                                <Button variant="cta" className="w-full gap-2 group hover:shadow-lg hover:shadow-amber-400/30 transition-all duration-300 hover:scale-105 rounded-full" asChild>
                                     <Link href="/post-ad">
                                         <PlusCircle className="h-4 w-4 transition-transform group-hover:rotate-90" />
                                         SELL NOW

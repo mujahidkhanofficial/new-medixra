@@ -1,9 +1,12 @@
 'use server'
 
+import { db } from '@/lib/db/drizzle'
+import { products, profiles, productImages } from '@/lib/db/schema'
+import { eq, desc, and, or, ilike, gte, lte, sql } from 'drizzle-orm'
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
-
-// ... imports
+import { authenticatedAction } from '@/lib/safe-action'
+import { z } from 'zod'
 
 export type Product = {
     id: string
@@ -30,8 +33,6 @@ export type Product = {
     images?: { id: string; url: string }[]
 }
 
-// ... imports
-
 export type ProductFilterOptions = {
     query?: string
     category?: string
@@ -43,151 +44,303 @@ export type ProductFilterOptions = {
 }
 
 export async function getProducts(options: ProductFilterOptions = {}) {
-    const supabase = await createClient()
+    const getCachedProducts = unstable_cache(
+        async () => {
+            try {
+                const conditions = [eq(products.status, 'active')];
 
-    let query = supabase
-        .from('products')
-        .select(`
-      *,
-      vendor:profiles!vendor_id (
-        full_name,
-        city
-      ),
-      images:product_images(url)
-    `)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
+                if (options.category && options.category !== 'All Categories') {
+                    conditions.push(eq(products.category, options.category));
+                }
 
-    if (options.limit) {
-        query = query.limit(options.limit)
-    }
+                if (options.condition && options.condition !== 'All') {
+                    conditions.push(eq(products.condition, options.condition as "New" | "Used" | "Refurbished"));
+                }
 
-    if (options.category && options.category !== 'All Categories') {
-        query = query.eq('category', options.category)
-    }
+                if (options.city && options.city !== 'All Pakistan') {
+                    conditions.push(or(
+                        eq(products.city, options.city),
+                        ilike(products.location, `%${options.city}%`)
+                    )!);
+                }
 
-    if (options.condition && options.condition !== 'All') {
-        query = query.eq('condition', options.condition as "New" | "Used" | "Refurbished")
-    }
+                if (options.minPrice !== undefined) {
+                    conditions.push(gte(products.price, options.minPrice.toString()));
+                }
 
-    if (options.city && options.city !== 'All Pakistan') {
-        query = query.or(`city.eq.${options.city},location.ilike.%${options.city}%`)
-    }
+                if (options.maxPrice !== undefined && options.maxPrice < 10000000) {
+                    conditions.push(lte(products.price, options.maxPrice.toString()));
+                }
 
-    if (options.minPrice !== undefined) {
-        query = query.gte('price', options.minPrice)
-    }
+                let orderByClause: any[] = [desc(products.createdAt)];
+                let extras = {};
 
-    if (options.maxPrice !== undefined && options.maxPrice < 10000000) {
-        query = query.lte('price', options.maxPrice)
-    }
+                if (options.query) {
+                    const searchQuery = sql`plainto_tsquery('english', ${options.query})`;
+                    conditions.push(sql`${products.searchVector} @@ ${searchQuery}`);
+                    
+                    // Add ranking
+                    extras = {
+                        rank: sql<number>`ts_rank(${products.searchVector}, ${searchQuery})`.as('rank')
+                    };
+                    orderByClause = [desc(sql`rank`)];
+                }
 
-    if (options.query) {
-        query = query.or(`name.ilike.%${options.query}%,description.ilike.%${options.query}%,brand.ilike.%${options.query}%`)
-    }
+                const data = await db.query.products.findMany({
+                    where: and(...conditions),
+                    orderBy: orderByClause,
+                    limit: options.limit,
+                    extras: extras,
+                    with: {
+                        vendor: {
+                            columns: {
+                                fullName: true,
+                                city: true
+                            }
+                        },
+                        productImages: {
+                            columns: {
+                                url: true
+                            }
+                        }
+                    }
+                });
 
-    // Execute query
-    const { data: products, error } = await query
+                return data.map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    category: p.category,
+                    vendor_id: p.vendorId,
+                    price: Number(p.price),
+                    description: p.description || '',
+                    condition: p.condition as "New" | "Used" | "Refurbished",
+                    speciality: p.speciality,
+                    brand: p.brand,
+                    warranty: p.warranty,
+                    location: p.location || '',
+                    city: p.city,
+                    area: p.area,
+                    image_url: p.imageUrl || (p.productImages && p.productImages[0]?.url) || '',
+                    views: p.views || 0,
+                    whatsapp_clicks: p.whatsappClicks || 0,
+                    status: p.status as any,
+                    created_at: p.createdAt,
+                    updated_at: p.updatedAt,
+                    vendor_name: p.vendor?.fullName || 'Unknown Vendor',
+                }));
 
-    if (error) {
-        console.error('Error fetching products detailed:', JSON.stringify(error, null, 2))
-        return []
-    }
+            } catch (error) {
+                console.error('Error fetching products detailed:', JSON.stringify(error, null, 2));
+                return [];
+            }
+        },
+        ['products-list', JSON.stringify(options)], 
+        { tags: ['products'], revalidate: 3600 }
+    );
 
-    return products.map((p: any) => ({
-        ...p,
-        vendor_name: (p.vendor as any)?.full_name || 'Unknown Vendor',
-        location: (p.vendor as any)?.city || p.location || 'Pakistan',
-        image_url: p.image_url || (p.images && p.images[0]?.url) || null
-    }))
+    return getCachedProducts();
 }
 
 export async function getProductById(id: string) {
-    const supabase = await createClient()
+    const getCachedProduct = unstable_cache(
+        async () => {
+            try {
+                const product = await db.query.products.findFirst({
+                    where: eq(products.id, id),
+                    with: {
+                        vendor: {
+                            with: {
+                                vendors: true // Fetch vendor business details
+                            }
+                        },
+                        productImages: {
+                            columns: {
+                                id: true,
+                                url: true,
+                                displayOrder: true
+                            },
+                            orderBy: (images, { asc }) => [asc(images.displayOrder)]
+                        }
+                    }
+                });
 
-    // Increment View Count (Fire and forget)
+                if (!product) {
+                    return null;
+                }
 
-    const { data: product, error } = await supabase
-        .from('products')
-        .select(`
-            *,
-            vendor:profiles!vendor_id (
-                full_name,
-                avatar_url,
-                phone,
-                city,
-                created_at,
-                vendors (
-                    whatsapp_number,
-                    is_verified
-                )
-            ),
-            images:product_images(id, url, display_order)
-        `)
-        .eq('id', id)
-        .single()
+                const vendorProfile = product.vendor;
+                const vendorProDetails = vendorProfile?.vendors && vendorProfile.vendors.length > 0 ? vendorProfile.vendors[0] : null;
 
-    if (error) {
-        console.error('Error fetching product:', error)
-        return null
-    }
-
-    // Sort images by display_order
-    const sortedImages = (product.images as any[])?.sort((a, b) => (a.display_order || 0) - (b.display_order || 0)) || []
-
-    const vendorProfile = product.vendor as any
-    const vendorProDetails = Array.isArray(vendorProfile?.vendors) ? vendorProfile.vendors[0] : vendorProfile?.vendors
-
-    return {
-        ...product,
-        vendor_name: vendorProfile?.full_name || 'Medixra Member',
-        vendor_avatar: vendorProfile?.avatar_url,
-        vendor_phone: vendorProfile?.phone,
-        vendor_city: vendorProfile?.city,
-        vendor_joined_at: vendorProfile?.created_at,
-        vendor_whatsapp: vendorProDetails?.whatsapp_number || vendorProfile?.phone,
-        vendor_verified: vendorProDetails?.is_verified || false,
-        images: sortedImages
-    }
+                return {
+                    id: product.id,
+                    name: product.name,
+                    category: product.category,
+                    vendor_id: product.vendorId,
+                    price: Number(product.price),
+                    description: product.description || '',
+                    condition: product.condition as "New" | "Used" | "Refurbished",
+                    speciality: product.speciality,
+                    brand: product.brand,
+                    warranty: product.warranty,
+                    location: product.location || '',
+                    city: product.city,
+                    area: product.area,
+                    image_url: product.imageUrl || (product.productImages && product.productImages[0]?.url) || '',
+                    views: product.views || 0,
+                    whatsapp_clicks: product.whatsappClicks || 0,
+                    status: product.status as any,
+                    created_at: product.createdAt,
+                    updated_at: product.updatedAt,
+                    
+                    vendor_name: vendorProfile?.fullName || 'Medixra Member',
+                    vendor_avatar: vendorProfile?.avatarUrl,
+                    vendor_phone: vendorProfile?.phone,
+                    vendor_city: vendorProfile?.city,
+                    vendor_joined_at: vendorProfile?.createdAt,
+                    vendor_whatsapp: vendorProDetails?.whatsappNumber || vendorProfile?.phone,
+                    vendor_verified: vendorProDetails?.isVerified || false,
+                    images: product.productImages?.map(img => ({ id: img.id, url: img.url })) || []
+                };
+            } catch (error) {
+                console.error('Error fetching product:', error);
+                return null;
+            }
+        },
+        [`product-${id}`],
+        { tags: ['products', `product-${id}`], revalidate: 3600 }
+    );
+    
+    return getCachedProduct();
 }
 
 export async function getVendorProducts(vendorId: string) {
-    const supabase = await createClient()
+    const getCachedVendorProducts = unstable_cache(
+        async () => {
+            try {
+                const data = await db.query.products.findMany({
+                    where: and(
+                        eq(products.vendorId, vendorId),
+                        eq(products.status, 'active')
+                    ),
+                    orderBy: [desc(products.createdAt)],
+                    with: {
+                        productImages: {
+                            columns: {
+                                url: true
+                            }
+                        }
+                    }
+                });
 
-    const { data: products, error } = await supabase
-        .from('products')
-        .select('*, images:product_images(url)')
-        .eq('vendor_id', vendorId)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
+                return data.map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    category: p.category,
+                    vendor_id: p.vendorId,
+                    price: Number(p.price),
+                    description: p.description || '',
+                    condition: p.condition as "New" | "Used" | "Refurbished",
+                    speciality: p.speciality,
+                    brand: p.brand,
+                    warranty: p.warranty,
+                    location: p.location || '',
+                    city: p.city,
+                    area: p.area,
+                    image_url: p.imageUrl || (p.productImages && p.productImages[0]?.url) || '',
+                    views: p.views || 0,
+                    whatsapp_clicks: p.whatsappClicks || 0,
+                    status: p.status as any,
+                    created_at: p.createdAt,
+                    updated_at: p.updatedAt,
+                }));
 
-    if (error) return []
+            } catch (error) {
+                return [];
+            }
+        },
+        [`vendor-products-${vendorId}`],
+        { tags: ['products', `vendor-${vendorId}`], revalidate: 600 }
+    );
 
-    return products.map((p: any) => ({
-        ...p,
-        image_url: p.image_url || (p.images && p.images[0]?.url) || null
-    }))
+    return getCachedVendorProducts();
 }
 
-export async function deleteProduct(productId: string) {
-    const supabase = await createClient()
+export const deleteProduct = authenticatedAction(
+    z.object({ productId: z.string().uuid() }),
+    async ({ productId }, userId) => {
+        const product = await db.query.products.findFirst({
+            where: eq(products.id, productId),
+            columns: { vendorId: true }
+        })
 
-    const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId)
+        if (!product) {
+            throw new Error('Product not found')
+        }
 
-    if (error) {
-        console.error('Error deleting product:', error)
-        try {
-            // Fallback for when RLS policy is strict but user is owner
-            // Sometimes error messages are obscure
-        } catch (e) { }
-        return { success: false, error: error.message }
+        if (product.vendorId !== userId) {
+            throw new Error('Unauthorized: You do not own this product')
+        }
+
+        await db.delete(products).where(eq(products.id, productId));
+
+        revalidatePath('/dashboard/vendor');
+        revalidatePath('/products');
+
+        return { success: true };
     }
+);
 
-    revalidatePath('/dashboard/vendor')
-    revalidatePath('/products')
-    return { success: true }
-}
+export const updateProduct = authenticatedAction(
+    z.object({
+        productId: z.string().uuid(),
+        name: z.string().min(3, 'Product name must be at least 3 characters').optional(),
+        description: z.string().min(10, 'Description must be at least 10 characters').optional(),
+        price: z.string().optional(),
+        category: z.string().optional(),
+        condition: z.enum(['New', 'Used', 'Refurbished']).optional(),
+        speciality: z.string().optional(),
+        brand: z.string().optional(),
+        warranty: z.string().optional(),
+        city: z.string().optional(),
+        location: z.string().optional(),
+        area: z.string().optional(),
+    }),
+    async (data, userId) => {
+        const product = await db.query.products.findFirst({
+            where: eq(products.id, data.productId),
+            columns: { vendorId: true }
+        })
 
+        if (!product) {
+            throw new Error('Product not found')
+        }
+
+        if (product.vendorId !== userId) {
+            throw new Error('Unauthorized: You do not own this product')
+        }
+
+        const updateData: any = {
+            updated_at: new Date().toISOString()
+        }
+
+        if (data.name) updateData.name = data.name
+        if (data.description) updateData.description = data.description
+        if (data.price) updateData.price = data.price
+        if (data.category) updateData.category = data.category
+        if (data.condition) updateData.condition = data.condition
+        if (data.speciality) updateData.speciality = data.speciality
+        if (data.brand) updateData.brand = data.brand
+        if (data.warranty) updateData.warranty = data.warranty
+        if (data.city) updateData.city = data.city
+        if (data.location) updateData.location = data.location
+        if (data.area) updateData.area = data.area
+
+        await db.update(products).set(updateData).where(eq(products.id, data.productId));
+
+        revalidatePath('/dashboard/vendor');
+        revalidatePath('/products');
+        revalidatePath(`/product/${data.productId}`);
+
+        return { success: true };
+    }
+);

@@ -52,7 +52,7 @@ export default async function Home() {
     {
       icon: <MessageCircle className="w-8 h-8" />,
       title: 'Direct WhatsApp',
-      description: 'Message vendors directly',
+      description: 'Chat via WhatsApp',
     },
     {
       icon: <Building2 className="w-8 h-8" />,
@@ -71,7 +71,7 @@ export default async function Home() {
       <Navigation />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-primary/5 to-background py-12 md:py-20">
+      <section className="relative overflow-hidden bg-linear-to-b from-primary/5 to-background py-16 md:py-24 tracking-tight">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-12 text-center">
             <h1 className="mb-4 text-4xl font-bold text-foreground md:text-5xl">
@@ -255,7 +255,7 @@ export default async function Home() {
         <div className="mx-auto max-w-6xl px-4">
           <h3 className="mb-4 font-semibold text-foreground">Safety & Compliance</h3>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            <strong>Medixra is a listing platform only</strong> and is not the manufacturer or seller of equipment. Responsibility for regulatory compliance with Pakistani laws (including DRAP and other health authorities) lies with the vendor and buyer, not Medixra. Some medical equipment may be regulated or restricted in Pakistan and may require licenses, approvals, or certifications. Buyers must verify that the equipment, seller, and use are compliant with applicable Pakistani laws and medical regulations before purchase or use. For more information, see our Safety & Compliance guidelines.
+            <strong>Medixra is a listing platform only</strong> and is not the manufacturer or seller of equipment. Responsibility for regulatory compliance with Pakistani laws (including DRAP and other health authorities) lies with the vendor and user, not Medixra. Some medical equipment may be regulated or restricted in Pakistan and may require licenses, approvals, or certifications. Users must verify that the equipment, seller, and use are compliant with applicable Pakistani laws and medical regulations before purchase or use. For more information, see our Safety & Compliance guidelines.
           </p>
         </div>
       </section>

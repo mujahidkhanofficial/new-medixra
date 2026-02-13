@@ -171,14 +171,14 @@ export default function ProductDetailPage() {
             <ul className="space-y-2 mb-6">
               {product.regulations.map((reg, idx) => (
                 <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   {reg}
                 </li>
               ))}
             </ul>
 
             <div className="rounded-lg bg-accent/10 border border-accent/20 p-3 text-sm text-accent">
-              <strong>Note:</strong> Buyer must verify compliance with local regulations before purchase.
+              <strong>Note:</strong> User must verify compliance with local regulations before purchase.
             </div>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function ProductDetailPage() {
             <ul className="space-y-2">
               {product.features.map((feature, idx) => (
                 <li key={idx} className="flex items-start gap-3 text-sm text-muted-foreground">
-                  <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                   <span>{feature}</span>
                 </li>
               ))}
@@ -230,7 +230,7 @@ export default function ProductDetailPage() {
           <div className="grid gap-6 md:grid-cols-3">
             {product.relatedProducts.map((item) => (
               <div key={item.id} className="rounded-lg border border-border bg-card p-4 hover:border-primary transition-all">
-                <div className="bg-gradient-to-br from-blue-100 to-blue-50 aspect-square rounded-lg mb-3" />
+                <div className="w-full h-full bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center rounded-lg mb-3" />
                 <h3 className="font-semibold text-foreground mb-2">{item.name}</h3>
                 <p className="text-lg font-bold text-primary mb-4">{item.price}</p>
                 <Button variant="outline" className="w-full gap-2 bg-transparent">
@@ -246,7 +246,7 @@ export default function ProductDetailPage() {
         <div className="rounded-lg bg-muted/50 border border-border p-6 mb-8">
           <h3 className="font-semibold text-foreground mb-3">Safety & Compliance</h3>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            <strong>Important:</strong> Medixra is a listing platform only. Responsibility for regulatory compliance with Pakistani laws (including DRAP) lies with the vendor and buyer, not Medixra. Buyers must verify that the equipment, seller, and use are compliant with applicable Pakistani laws and medical regulations before purchase. For more information, see our Safety & Compliance guidelines.
+            <strong>Important:</strong> Medixra is a listing platform only. Responsibility for regulatory compliance with Pakistani laws (including DRAP) lies with the vendor and user, not Medixra. Users must verify that the equipment, seller, and use are compliant with applicable Pakistani laws and medical regulations before purchase. For more information, see our Safety & Compliance guidelines.
           </p>
         </div>
       </div>
