@@ -77,7 +77,7 @@ export default function PostAdPage() {
                  return
             }
 
-            if (profile?.approval_status !== 'approved') {
+            if ((profile?.role === 'vendor' || profile?.role === 'technician') && profile?.approval_status !== 'approved') {
                 router.replace('/pending-approval')
                 return
             }
