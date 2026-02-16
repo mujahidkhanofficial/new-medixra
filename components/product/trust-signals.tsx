@@ -18,56 +18,49 @@ export function TrustSignals({ vendor }: TrustSignalsProps) {
     const joinedDate = vendor.joinedAt ? format(new Date(vendor.joinedAt), 'MMM yyyy') : 'Unknown'
 
     return (
-        <div className="space-y-6">
-            <div className="rounded-xl border border-border bg-card p-5">
-                <p className="text-sm font-medium text-muted-foreground mb-4">Sold by</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Sold By</h3>
 
-                <div className="flex items-start gap-4 mb-4">
-                    <Link href={`/shop/${vendor.id}`} className="hover:opacity-80 transition-opacity">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                            {vendor.name.charAt(0).toUpperCase()}
-                        </div>
-                    </Link>
-                    <div>
-                        <Link href={`/shop/${vendor.id}`} className="hover:underline">
-                            <h3 className="font-bold text-lg flex items-center gap-1.5">
-                                {vendor.name}
-                                {vendor.isVerified && (
-                                    <CheckCircle2 className="h-4 w-4 text-blue-500 fill-blue-500/10" />
-                                )}
-                            </h3>
-                        </Link>
-                        <div className="flex flex-col gap-1 mt-1">
-                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                                <Calendar className="h-3.5 w-3.5" />
-                                <span>Member since {joinedDate}</span>
-                            </div>
-                            {vendor.city && (
-                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                                    <MapPin className="h-3.5 w-3.5" />
-                                    <span>{vendor.city}</span>
-                                </div>
-                            )}
-                        </div>
+            <Link href={`/shop/${vendor.id}`} className="flex items-center gap-4 group mb-6">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
+                    {vendor.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-gray-900 truncate group-hover:text-primary transition-colors flex items-center gap-1.5">
+                        {vendor.name}
+                        {vendor.isVerified && <CheckCircle2 className="h-4 w-4 text-blue-500 fill-blue-50/50" />}
+                    </h4>
+                    <div className="flex flex-wrap items-center text-xs text-muted-foreground gap-2 mt-1">
+                        <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" /> Since {joinedDate}
+                        </span>
+                        {vendor.city && (
+                            <>
+                                <span className="text-gray-300">•</span>
+                                <span className="flex items-center gap-1 truncate" title="Seller Location">
+                                    <MapPin className="h-3 w-3" /> From {vendor.city}
+                                </span>
+                            </>
+                        )}
                     </div>
                 </div>
+            </Link>
 
+            <div className="space-y-3 pt-4 border-t border-gray-100">
                 {vendor.phone && (
-                    <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30 px-3 py-2 rounded-lg border border-green-200 dark:border-green-900">
+                    <div className="flex items-center gap-2.5 text-xs text-green-700 bg-green-50 px-3 py-2.5 rounded-lg border border-green-100/50">
                         <ShieldCheck className="h-4 w-4" />
-                        <span className="font-medium">Phone Number Verified</span>
+                        <span className="font-medium">Identity Verified</span>
                     </div>
                 )}
-            </div>
 
-            <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-xl border border-blue-200 dark:border-blue-900 flex gap-3">
-                <ShieldCheck className="h-5 w-5 text-blue-700 dark:text-blue-400 flex-shrink-0" />
-                <div className="space-y-1">
-                    <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Safety Tips</h4>
-                    <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
-                        1. Meet in a safe, public place.<br />
-                        2. Check the item before paying.<br />
-                        3. Don't pay in advance for delivery.
+                <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-gray-50/50 border border-gray-100 text-xs text-gray-600">
+                    <div className="font-medium text-gray-900 flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                        Safe Trading Tips
+                    </div>
+                    <p className="leading-relaxed pl-3.5 opacity-80">
+                        Meet in public, inspect item, don't pay in advance.
                     </p>
                 </div>
             </div>

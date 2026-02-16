@@ -12,6 +12,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { createClient } from '@/lib/supabase/server'
 import { checkSavedStatus } from '@/lib/actions/saved-items'
 import { SaveButton } from '@/components/product/save-button'
+import { ViewTracker } from '@/components/product/view-tracker'
 
 interface PageProps {
     params: Promise<{ id: string }>
@@ -30,6 +31,32 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
     if (!product) {
         notFound()
+    }
+
+    // Access Control for non-active products
+    if (product.status !== 'active') {
+        if (!user) {
+            notFound()
+        }
+
+        // Check if user is owner
+        const isOwner = user.id === product.vendor_id
+        let isAdmin = false
+
+        // Check if user is admin (fetch profile to be safe)
+        if (supabase) {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+
+            isAdmin = profile?.role === 'admin'
+        }
+
+        if (!isOwner && !isAdmin) {
+            notFound()
+        }
     }
 
     // Check saved status
@@ -56,265 +83,216 @@ export default async function ProductDetailPage({ params }: PageProps) {
             : []
 
     return (
-        <div className="min-h-screen bg-background flex flex-col">
+        <div className="min-h-screen bg-gray-50/50 flex flex-col font-sans">
             <Navigation />
 
-            <main className="flex-1">
-                <div className="mx-auto max-w-screen-2xl px-4 py-8">
-
-                    {/* Breadcrumbs */}
-                    <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto whitespace-nowrap">
-                        <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-                        <span className="text-border">/</span>
-                        <Link href="/products" className="hover:text-primary transition-colors">Browse</Link>
-                        <span className="text-border">/</span>
-                        <span className="text-foreground font-medium truncate max-w-[200px]">{product.name}</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-                        {/* LEFT COLUMN: Gallery & Description (8 cols) */}
-                        <div className="lg:col-span-8 space-y-8">
-                            {/* Gallery */}
-                            <ProductGallery images={galleryImages} productName={product.name} />
-
-                            {/* Mobile-Only Title & Price (Visible on small screens) */}
-                            <div className="block lg:hidden space-y-4">
-                                <div>
-                                    <span className="text-sm font-medium text-muted-foreground mr-2">{product.category}</span>
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                                        {product.condition}
-                                    </span>
-                                </div>
-                                <h1 className="text-2xl font-bold text-foreground">{product.name}</h1>
-                                <p className="text-3xl font-bold text-primary">
-                                    {product.price_type === 'quote'
-                                        ? 'Quote Only'
-                                        : `${product.currency || 'Rs'} ${product.price.toLocaleString()}`}
+            <main className="flex-1 py-6 px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl">
+                    {/* Status Alert for Owner/Admin */}
+                    {product.status !== 'active' && (
+                        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center gap-3">
+                            <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                            <div>
+                                <h3 className="text-sm font-semibold text-yellow-900">
+                                    This product is currently {product.status}
+                                </h3>
+                                <p className="text-sm text-yellow-700">
+                                    It is only visible to you (the owner) and administrators. Public users cannot see this page.
                                 </p>
                             </div>
+                        </div>
+                    )}
 
-                            {/* Industrial Data Grid */}
-                            <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-6">
-                                <h3 className="font-semibold text-lg flex items-center gap-2">
-                                    <Factory className="h-5 w-5 text-primary" />
-                                    Technical Specifications
-                                </h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                    <div className="space-y-1">
-                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <Tag className="h-3 w-3" /> Brand
-                                        </span>
-                                        <p className="font-medium text-foreground">{product.brand || 'N/A'}</p>
+                    {/* Breadcrumbs */}
+                    <nav className="flex items-center text-sm text-muted-foreground mb-6 overflow-hidden whitespace-nowrap">
+                        <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+                        <span className="mx-2 text-border">/</span>
+                        <Link href="/products" className="hover:text-primary transition-colors">Browse</Link>
+                        <span className="mx-2 text-border">/</span>
+                        <span className="font-medium text-foreground truncate">{product.name}</span>
+                    </nav>
+
+                    <ViewTracker productId={product.id} />
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+                        {/* LEFT COLUMN: Gallery (7 Cols) */}
+                        <div className="lg:col-span-7 space-y-6">
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                                <ProductGallery images={galleryImages} productName={product.name} />
+                            </div>
+
+                            {/* Description & Details (Moved to left col for better flow) */}
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-8">
+
+                                {/* Technical Specs Grid */}
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900">
+                                        <Factory className="h-5 w-5 text-primary" />
+                                        Specifications
+                                    </h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-8">
+                                        <SpecItem label="Brand" value={product.brand} />
+                                        <SpecItem label="Model" value={product.model} />
+                                        <SpecItem label="Condition" value={product.condition} />
+                                        <SpecItem label="Warranty" value={product.warranty} />
+                                        <SpecItem label="Origin" value={product.origin_country} />
+                                        {product.refurbishment_country && <SpecItem label="Refurbished In" value={product.refurbishment_country} />}
                                     </div>
-                                    <div className="space-y-1">
-                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <Package className="h-3 w-3" /> Model
-                                        </span>
-                                        <p className="font-medium text-foreground">{product.model || 'N/A'}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <ShieldCheck className="h-3 w-3" /> Warranty
-                                        </span>
-                                        <p className="font-medium text-foreground">{product.warranty || 'No Warranty'}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <CheckCircle2 className="h-3 w-3" /> Condition
-                                        </span>
-                                        <p className="font-medium text-foreground">{product.condition}</p>
+
+                                    {/* Badges */}
+                                    <div className="mt-6 flex flex-wrap gap-2">
+                                        {product.ce_certified && <Badge>CE Certified</Badge>}
+                                        {product.fda_approved && <Badge>FDA Approved</Badge>}
+                                        {product.iso_certified && <Badge>ISO Certified</Badge>}
+                                        {product.drap_registered && <Badge>DRAP Registered</Badge>}
+                                        {product.other_certifications && <Badge>{product.other_certifications}</Badge>}
                                     </div>
                                 </div>
 
-                                {product.tags && product.tags.length > 0 && (
-                                    <div className="pt-4 border-t">
-                                        <span className="text-xs text-muted-foreground mb-2 block">Equipment Type</span>
-                                        <div className="flex flex-wrap gap-2">
-                                            {product.tags.map(tag => (
-                                                <span key={tag} className="px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium border border-border">
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                                <div className="h-px bg-gray-100" />
 
-                                {product.speciality && (
-                                    <div className="pt-4 border-t">
-                                        <span className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                                            <Stethoscope className="h-3 w-3" /> Medical Specialities
-                                        </span>
-                                        <div className="flex flex-wrap gap-2">
-                                            {(() => {
-                                                try {
-                                                    const specArray = JSON.parse(product.speciality);
-                                                    return Array.isArray(specArray) ? specArray.map((s: string) => (
-                                                        <span key={s} className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100">
-                                                            {s}
-                                                        </span>
-                                                    )) : <span className="px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium">{product.speciality}</span>
-                                                } catch {
-                                                    return <span className="px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium">{product.speciality}</span>
-                                                }
-                                            })()}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Compliance & Origin */}
-                            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-                                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                                    <Globe className="h-5 w-5 text-primary" />
-                                    Origin & Compliance
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-4">
-                                        <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Origin</h4>
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between items-center py-2 border-b border-dashed">
-                                                <span className="text-sm">Country of Origin</span>
-                                                <span className="font-medium">{product.origin_country || 'N/A'}</span>
-                                            </div>
-                                            {product.refurbishment_country && (
-                                                <div className="flex justify-between items-center py-2 border-b border-dashed">
-                                                    <span className="text-sm">Refurbished In</span>
-                                                    <span className="font-medium">{product.refurbishment_country}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                                            <FileCheck className="h-4 w-4" /> Certifications
-                                        </h4>
-                                        <div className="flex flex-wrap gap-2">
-                                            {product.ce_certified && <span className="px-3 py-1 bg-green-50 text-green-700 border border-green-200 rounded-lg text-sm font-medium">CE Certified</span>}
-                                            {product.fda_approved && <span className="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-sm font-medium">FDA Approved</span>}
-                                            {product.iso_certified && <span className="px-3 py-1 bg-sky-50 text-sky-700 border border-sky-200 rounded-lg text-sm font-medium">ISO Certified</span>}
-                                            {product.drap_registered && <span className="px-3 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-sm font-medium">DRAP Registered</span>}
-                                            {product.other_certifications && <span className="px-3 py-1 bg-secondary text-secondary-foreground border border-border rounded-lg text-sm font-medium">{product.other_certifications}</span>}
-
-                                            {!product.ce_certified && !product.fda_approved && !product.iso_certified && !product.drap_registered && !product.other_certifications && (
-                                                <span className="text-sm text-muted-foreground italic">No certifications listed</span>
-                                            )}
-                                        </div>
+                                {/* Description */}
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4 text-gray-900">Description</h3>
+                                    <div className="prose prose-sm prose-gray max-w-none text-gray-600 leading-relaxed whitespace-pre-wrap">
+                                        {product.description}
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Service & Support */}
-                            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-                                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                                    <Wrench className="h-5 w-5 text-primary" />
-                                    Service & Support
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className={`p-4 rounded-lg border flex flex-col items-center text-center gap-2 ${product.amc_available ? 'bg-primary/5 border-primary/20' : 'bg-muted/20 border-border opacity-60'}`}>
-                                        <ShieldCheck className={`h-6 w-6 ${product.amc_available ? 'text-primary' : 'text-muted-foreground'}`} />
-                                        <span className="font-medium text-sm">AMC Available</span>
-                                        <span className="text-xs text-muted-foreground">{product.amc_available ? 'Yes' : 'No'}</span>
-                                    </div>
-                                    <div className={`p-4 rounded-lg border flex flex-col items-center text-center gap-2 ${product.spare_parts_available ? 'bg-primary/5 border-primary/20' : 'bg-muted/20 border-border opacity-60'}`}>
-                                        <Package className={`h-6 w-6 ${product.spare_parts_available ? 'text-primary' : 'text-muted-foreground'}`} />
-                                        <span className="font-medium text-sm">Spare Parts</span>
-                                        <span className="text-xs text-muted-foreground">{product.spare_parts_available ? 'In Stock' : 'Not Listed'}</span>
-                                    </div>
-                                    <div className={`p-4 rounded-lg border flex flex-col items-center text-center gap-2 ${product.installation_included ? 'bg-primary/5 border-primary/20' : 'bg-muted/20 border-border opacity-60'}`}>
-                                        <Truck className={`h-6 w-6 ${product.installation_included ? 'text-primary' : 'text-muted-foreground'}`} />
-                                        <span className="font-medium text-sm">Installation</span>
-                                        <span className="text-xs text-muted-foreground">{product.installation_included ? 'Included' : 'Extra / Not Listed'}</span>
+                                <div className="h-px bg-gray-100" />
+
+                                {/* Service Support compact */}
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900">
+                                        <Wrench className="h-5 w-5 text-primary" />
+                                        Service & Support
+                                    </h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <SupportCard
+                                            icon={<ShieldCheck className="h-5 w-5" />}
+                                            title="AMC"
+                                            active={product.amc_available ?? false}
+                                            label={product.amc_available ? "Available" : "Not Provided"}
+                                        />
+                                        <SupportCard
+                                            icon={<Package className="h-5 w-5" />}
+                                            title="Spare Parts"
+                                            active={product.spare_parts_available ?? false}
+                                            label={product.spare_parts_available ? "In Stock" : "Check Availability"}
+                                        />
+                                        <SupportCard
+                                            icon={<Truck className="h-5 w-5" />}
+                                            title="Installation"
+                                            active={product.installation_included ?? false}
+                                            label={product.installation_included ? "Included" : "Not Included"}
+                                        />
                                     </div>
                                 </div>
-                                {product.installation_support_country && (
-                                    <div className="mt-4 pt-4 border-t flex items-center gap-2 text-sm">
-                                        <span className="text-muted-foreground">Installation Support available in:</span>
-                                        <span className="font-medium">{product.installation_support_country}</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Description */}
-                            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-                                <h3 className="font-semibold text-lg mb-4">Description</h3>
-                                <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
-                                    {product.description}
-                                </div>
-                            </div>
-
-                            {/* Location */}
-                            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-                                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                                    <MapPin className="h-5 w-5 text-primary" />
-                                    Location
-                                </h3>
-                                <p className="text-muted-foreground">{product.location}</p>
                             </div>
                         </div>
 
-                        {/* RIGHT COLUMN: Sidebar (4 cols) */}
-                        <div className="lg:col-span-4 space-y-6">
+                        {/* RIGHT COLUMN: Info & Actions (5 Cols) */}
+                        <div className="lg:col-span-5 space-y-5 sticky top-24">
 
-                            {/* Price Card (Desktop) */}
-                            <div className="hidden lg:block bg-card border border-border rounded-xl p-6 shadow-sm sticky top-24">
-                                <div className="mb-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm font-medium text-muted-foreground">{timeAgo}</span>
-                                        <div className="flex gap-2">
-                                            <SaveButton productId={product.id} initialIsSaved={isSaved} />
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                                                <Share2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+                            {/* Primary Action Card */}
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+                                <div className="flex justify-between items-start mb-4">
+                                    <span className="text-xs font-semibold tracking-wide text-primary bg-primary/5 px-2.5 py-1 rounded-full uppercase">
+                                        {product.category}
+                                    </span>
+                                    <div className="flex gap-2">
+                                        <SaveButton productId={product.id} initialIsSaved={isSaved} />
+                                        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
+                                            <Share2 className="h-4 w-4" />
+                                        </Button>
                                     </div>
-                                    <h1 className="text-2xl font-bold text-foreground mb-2 leading-tight">{product.name}</h1>
-                                    <p className="text-3xl font-bold text-primary">
-                                        {product.price_type === 'quote'
-                                            ? 'Quote Only'
-                                            : `${product.currency || 'Rs'} ${product.price.toLocaleString()}`}
-                                    </p>
                                 </div>
 
-                                <div className="space-y-3">
+                                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight mb-2">
+                                    {product.name}
+                                </h1>
+
+                                <div className="flex items-baseline gap-2 mb-6">
+                                    <p className="text-3xl sm:text-4xl font-bold text-primary tracking-tight">
+                                        {product.price_type === 'quote'
+                                            ? 'Quote Only'
+                                            : <>{product.currency || 'Rs'} <span className="text-foreground">{product.price.toLocaleString()}</span></>}
+                                    </p>
+                                    {product.price_type !== 'quote' && <span className="text-sm text-muted-foreground font-medium">fixed price</span>}
+                                </div>
+
+                                <div className="flex flex-col gap-3">
                                     {product.vendor_whatsapp ? (
                                         <WhatsAppContact
                                             phoneNumber={product.vendor_whatsapp}
-                                            message={`Hi, I am interested in ${product.name} on Medixra.`}
+                                            message={`Hi, I'm interested in ${product.name}...`}
                                             name="Chat on WhatsApp"
                                             size="lg"
                                             fullWidth
                                             productId={product.id}
+                                            // Ensure text is readable on green
+                                            className="font-semibold text-white shadow-md shadow-green-500/20"
                                         />
                                     ) : (
-                                        <Button disabled className="w-full gap-2 h-12 text-lg font-medium opacity-70">
-                                            <MessageCircle className="h-5 w-5" />
+                                        <Button disabled className="w-full h-12 text-base font-medium opacity-70">
                                             WhatsApp Unavailable
                                         </Button>
                                     )}
-
-                                    <Button variant="outline" className="w-full h-12 text-lg font-medium border-primary/20 hover:bg-primary/5 hover:text-primary">
+                                    <Button variant="outline" className="w-full h-12 text-base font-medium border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
                                         Show Phone Number
                                     </Button>
                                 </div>
-                            </div>
 
-                            {/* Trust Signals */}
-                            <TrustSignals vendor={vendorData} />
-
-                            {/* Safety Notice */}
-                            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900 rounded-xl p-4 flex gap-3">
-                                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
-                                <div className="text-xs text-amber-800 dark:text-amber-200">
-                                    <strong>Disclaimer:</strong> Medixra does not inspect equipment. Compliance with DRAP regulations is the buyer's responsibility.
+                                <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+                                    <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded text-xs font-medium text-gray-600">
+                                        <MapPin className="h-3.5 w-3.5" />
+                                        Item location: {product.location}
+                                    </div>
+                                    <span>Posted {timeAgo}</span>
                                 </div>
                             </div>
+
+                            {/* Seller & Trust Card */}
+                            <TrustSignals vendor={vendorData} />
 
                         </div>
                     </div>
                 </div>
             </main>
             <Footer />
+        </div>
+    )
+}
+
+// Sub-components for cleaner internal code
+function SpecItem({ label, value }: { label: string, value?: string | null }) {
+    return (
+        <div className="flex flex-col gap-1">
+            <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</dt>
+            <dd className="text-sm font-semibold text-gray-900 truncate">{value || 'N/A'}</dd>
+        </div>
+    )
+}
+
+function Badge({ children }: { children: React.ReactNode }) {
+    return (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-secondary-foreground border border-border/50">
+            {children}
+        </span>
+    )
+}
+
+function SupportCard({ icon, title, active, label }: { icon: React.ReactNode, title: string, active: boolean, label: string }) {
+    return (
+        <div className={`p-3 rounded-xl border flex items-center gap-3 transition-colors ${active ? 'bg-primary/5 border-primary/20' : 'bg-gray-50 border-transparent opacity-60'}`}>
+            <div className={`p-2 rounded-full ${active ? 'bg-white text-primary shadow-sm' : 'bg-gray-200 text-gray-400'}`}>
+                {icon}
+            </div>
+            <div>
+                <p className="text-xs font-medium text-gray-500">{title}</p>
+                <p className="text-sm font-semibold text-gray-900">{label}</p>
+            </div>
         </div>
     )
 }

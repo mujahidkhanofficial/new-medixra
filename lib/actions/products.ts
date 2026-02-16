@@ -251,10 +251,7 @@ export async function getVendorProducts(vendorId: string) {
         async () => {
             try {
                 const data = await db.query.products.findMany({
-                    where: and(
-                        eq(products.vendorId, vendorId),
-                        eq(products.status, 'active')
-                    ),
+                    where: eq(products.vendorId, vendorId),
                     orderBy: [desc(products.createdAt)],
                     with: {
                         productImages: {

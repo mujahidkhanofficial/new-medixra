@@ -219,7 +219,17 @@ export default function VendorDashboard() {
                       )}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-foreground mb-1">{product.name}</h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-foreground">{product.name}</h3>
+                        {product.status !== 'active' && (
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${product.status === 'suspended'
+                              ? 'bg-destructive/10 text-destructive border-destructive/20'
+                              : 'bg-muted text-muted-foreground border-border'
+                            }`}>
+                            {product.status}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-primary font-bold text-lg mb-2">₨ {product.price?.toLocaleString()}</p>
                       {/* WhatsApp Contact Button for each product */}
                       <WhatsAppContact

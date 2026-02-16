@@ -2,10 +2,11 @@
 
 import { db } from '@/lib/db/drizzle'
 import { profiles, products } from '@/lib/db/schema'
-import { sql, gt, desc } from 'drizzle-orm'
+import { sql, gt, desc, eq } from 'drizzle-orm'
 import { authenticatedAction } from '@/lib/safe-action'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { createNotification } from './notifications'
 
 async function checkAdmin() {
   const supabase = await createClient()
@@ -156,9 +157,46 @@ export const generateViewsChartData = async () => {
 export const trackWhatsAppClick = async ({ productId }: { productId?: string }) => {
   // This would ideally log to an events table
   if (productId) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Fetch product to get vendor details
+    const product = await db.query.products.findFirst({
+      where: eq(products.id, productId),
+      columns: { vendorId: true, name: true }
+    })
+
+    if (product && product.vendorId) {
+      // Don't notify if vendor clicks their own ad
+      if (user?.id !== product.vendorId) {
+        const clickerName = user?.user_metadata?.full_name || 'A visitor'
+        const clickerType = user ? 'Verified User' : 'Guest'
+
+        await createNotification(
+          product.vendorId,
+          'whatsapp_click',
+          'New Lead!',
+          `${clickerName} (${clickerType}) is interested in "${product.name}" and clicked to chat on WhatsApp.`,
+          `/dashboard/vendor`
+        )
+      }
+    }
+
     await db.update(products)
       .set({ whatsappClicks: sql`${products.whatsappClicks} + 1` })
       .where(sql`${products.id} = ${productId}`)
   }
   return { success: true }
+}
+
+export const incrementProductView = async (productId: string) => {
+  try {
+    await db.update(products)
+      .set({ views: sql`${products.views} + 1` })
+      .where(eq(products.id, productId))
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to increment view:', error)
+    return { success: false }
+  }
 }

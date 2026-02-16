@@ -198,6 +198,27 @@ export const productReports = pgTable("product_reports", {
     pgPolicy("Admins can view reports", { as: "permissive", for: "select", to: ["public"], using: sql`auth.jwt()->>'role' = 'admin'` }),
 ]);
 
+export const notifications = pgTable("notifications", {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    userId: uuid("user_id").notNull(),
+    type: text().notNull(), // 'ad_approved', 'ad_suspended', 'ad_rejected', 'message', 'system'
+    title: text().notNull(),
+    message: text(),
+    isRead: boolean("is_read").default(false),
+    link: text(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+    index("notifications_user_idx").on(table.userId),
+    index("notifications_unread_idx").on(table.userId, table.isRead),
+    foreignKey({
+        columns: [table.userId],
+        foreignColumns: [profiles.id],
+        name: "notifications_user_id_fkey"
+    }).onDelete("cascade"),
+    pgPolicy("Users can view own notifications", { as: "permissive", for: "select", to: ["public"], using: sql`auth.uid() = user_id` }),
+    pgPolicy("Users can update own notifications", { as: "permissive", for: "update", to: ["public"], using: sql`auth.uid() = user_id` }),
+]);
+
 // --- Relations ---
 
 export const vendorsRelations = relations(vendors, ({ one }) => ({

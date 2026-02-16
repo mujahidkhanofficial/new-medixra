@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import { db } from '@/lib/db/drizzle'
 import { profiles } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
-import { Toaster } from 'sonner'
 
 export default async function AdminLayout({
   children,
@@ -53,8 +52,6 @@ export default async function AdminLayout({
       {/* Admin Content - Isolated from Regular UI */}
       {/* We remove padding here because the children (Dashboard Shell) will manage their own layout */}
       {children}
-      {/* Toaster for notifications remains available */}
-      <Toaster position="top-center" richColors />
     </div>
   )
 }

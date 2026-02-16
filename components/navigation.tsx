@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { logout } from '@/lib/actions/auth'
+import { NotificationBell } from '@/components/notifications/notification-bell'
 
 export default function Navigation() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -126,6 +127,7 @@ export default function Navigation() {
                                 SELL NOW
                             </span>
                         </Link>
+                        <NotificationBell />
                         {user ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>

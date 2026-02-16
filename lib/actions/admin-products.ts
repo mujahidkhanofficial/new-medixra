@@ -7,6 +7,7 @@ import { authenticatedAction } from '@/lib/safe-action'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createNotification } from './notifications'
 
 // Helper to verify admin
 async function checkAdmin() {
@@ -122,9 +123,36 @@ export const adminUpdateProductStatus = authenticatedAction(
     async ({ productId, status }, userId) => {
         await checkAdmin()
 
+        // Fetch product to get vendorId and name
+        const product = await db.query.products.findFirst({
+            where: eq(products.id, productId),
+            columns: { vendorId: true, name: true }
+        })
+
+        if (!product) return { success: false, message: 'Product not found' }
+
         await db.update(products)
             .set({ status })
             .where(eq(products.id, productId))
+
+        // Notify vendor if suspended
+        if (status === 'suspended') {
+            await createNotification(
+                product.vendorId,
+                'ad_suspended',
+                'Action Required: Ad Suspended',
+                `Your ad "${product.name}" has been suspended. Please check your dashboard or contact support.`,
+                `/dashboard/vendor`
+            )
+        } else if (status === 'active') {
+            await createNotification(
+                product.vendorId,
+                'ad_approved',
+                'Ad Reactivated',
+                `Your ad "${product.name}" is now active and visible to buyers.`,
+                `/product/${productId}`
+            )
+        }
 
         revalidatePath('/admin')
         return { success: true }

@@ -38,7 +38,7 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
     const [loading, setLoading] = useState(!initialSession)
     const supabase = createClient()
 
-    const fetchProfile = async (userId: string) => {
+    const fetchProfile = async (userId: string, signal?: AbortSignal) => {
         try {
             // 1. Fetch basic profile first (fast)
             const { data: profileData, error } = await supabase
@@ -46,6 +46,8 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
                 .select('*')
                 .eq('id', userId)
                 .single()
+                // @ts-ignore
+                .abortSignal(signal as AbortSignal)
 
             if (error) {
                 // Ignore "No rows found" error (PGRST116) as it just means profile doesn't exist yet
@@ -63,12 +65,18 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
                     .select('showroom_slug')
                     .eq('id', userId)
                     .single()
+                    // @ts-ignore
+                    .abortSignal(signal as AbortSignal)
 
                 return { ...profileData, vendors: vendorData }
             }
 
             return profileData
-        } catch (error) {
+        } catch (error: any) {
+            // Ignore abort errors
+            if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+                return null
+            }
             console.error('Unexpected error fetching profile:', error)
             return null
         }
@@ -95,14 +103,17 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
 
     useEffect(() => {
         let mounted = true
+        const controller = new AbortController()
 
         const initializeAuth = async () => {
             try {
                 // If we already have a session from props, we might just want to fetch the profile if missing
                 if (initialSession?.user && !profile) {
-                    const profileData = await fetchProfile(initialSession.user.id)
-                    if (mounted) setProfile(profileData)
-                    if (mounted) setLoading(false)
+                    const profileData = await fetchProfile(initialSession.user.id, controller.signal)
+                    if (mounted) {
+                        setProfile(profileData)
+                        setLoading(false)
+                    }
                     return
                 }
 
@@ -116,14 +127,16 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
                     setUser(session?.user ?? null)
 
                     if (session?.user) {
-                        const profileData = await fetchProfile(session.user.id)
+                        const profileData = await fetchProfile(session.user.id, controller.signal)
                         if (mounted) setProfile(profileData)
                     } else {
                         if (mounted) setProfile(null)
                     }
                 }
-            } catch (error) {
-                console.error("Auth initialization error:", error)
+            } catch (error: any) {
+                if (error.name !== 'AbortError') {
+                    console.error("Auth initialization error:", error)
+                }
             } finally {
                 if (mounted) setLoading(false)
             }
@@ -154,6 +167,7 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
 
         return () => {
             mounted = false
+            controller.abort()
             subscription.unsubscribe()
         }
     }, []) // Empty dependency array is correct here
