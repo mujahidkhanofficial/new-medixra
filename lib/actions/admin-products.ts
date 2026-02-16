@@ -5,7 +5,7 @@ import { profiles, products } from '@/lib/db/schema'
 import { eq, desc, and, ilike, or, sql } from 'drizzle-orm'
 import { authenticatedAction } from '@/lib/safe-action'
 import { z } from 'zod'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from './notifications'
 
@@ -155,6 +155,9 @@ export const adminUpdateProductStatus = authenticatedAction(
         }
 
         revalidatePath('/admin')
+        revalidatePath(`/product/${productId}`)
+        revalidatePath('/', 'layout') // Force clear all data cache to ensure status update is reflected everywhere
+
         return { success: true }
     }
 )

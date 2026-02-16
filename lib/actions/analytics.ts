@@ -158,6 +158,7 @@ export const trackWhatsAppClick = async ({ productId }: { productId?: string }) 
   // This would ideally log to an events table
   if (productId) {
     const supabase = await createClient()
+    if (!supabase) return { success: false }
     const { data: { user } } = await supabase.auth.getUser()
 
     // Fetch product to get vendor details
