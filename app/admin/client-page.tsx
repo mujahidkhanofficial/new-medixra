@@ -19,8 +19,19 @@ import {
     LayoutDashboard,
     UserCheck,
     Flag,
-    User
+    User,
+    MoreHorizontal,
+    Copy,
+    Ban
 } from 'lucide-react'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Button } from '@/components/ui/button'
 import { approveUser, rejectUser, banUser, activateUser } from '@/lib/actions/admin'
 import { logout } from '@/lib/actions/auth'
@@ -29,6 +40,12 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
+import { AdminCharts } from './components/AdminCharts'
+import { ProductManager } from './components/ProductManager'
+
+import { UserDetailSheet } from './components/UserDetailSheet'
+import { ActivityFeed } from './components/ActivityFeed'
 
 interface AdminDashboardClientProps {
     initialStats: {
@@ -42,6 +59,11 @@ interface AdminDashboardClientProps {
     initialAllUsers: any[]
     initialReportedListings: any[]
     currentAdminId: string
+    analyticsData: {
+        growthData: any[]
+        categoryData: any[]
+    }
+    activityFeed: any[]
 }
 
 export default function AdminDashboardClient({
@@ -49,13 +71,17 @@ export default function AdminDashboardClient({
     initialPendingApprovals,
     initialAllUsers,
     initialReportedListings,
-    currentAdminId
+    currentAdminId,
+    analyticsData,
+    activityFeed
 }: AdminDashboardClientProps) {
     const [activeSection, setActiveSection] = useState('overview')
     const [userSearch, setUserSearch] = useState('')
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [isPending, startTransition] = useTransition()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+    const [selectedUser, setSelectedUser] = useState<any>(null)
+    const [isUserSheetOpen, setIsUserSheetOpen] = useState(false)
     const router = useRouter()
 
     // Local state to reflect optimistic updates
@@ -170,81 +196,84 @@ export default function AdminDashboardClient({
         u.email.toLowerCase().includes(userSearch.toLowerCase())
     )
 
-    const systemStats = [
-        { label: 'Platform Uptime', value: '99.9%', status: 'good' },
-        { label: 'Avg Response Time', value: '245ms', status: 'good' },
-        { label: 'Active API Calls', value: '1,204/min', status: 'good' },
-        { label: 'Database Health', value: 'Optimal', status: 'good' },
-    ]
+
 
     const navItems = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+        { id: 'inventory', label: 'All Inventory', icon: Package },
         { id: 'approvals', label: 'Pending Approvals', icon: UserCheck, count: pendingApprovals.length },
         { id: 'users', label: 'All Users', icon: Users },
         { id: 'reports', label: 'Reported Listings', icon: Flag, count: reportedListings.length },
     ]
 
     const SidebarContent = () => (
-        <div className="flex flex-col h-full">
-            <div className="p-6">
-                <h2 className="text-xl font-bold text-teal-700 flex items-center gap-2">
-                    <Shield className="h-6 w-6" />
-                    Medixra Admin
+        <div className="flex flex-col h-full bg-white">
+            <div className="p-6 mb-2">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                    <div className="h-8 w-8 bg-teal-600 rounded-lg flex items-center justify-center text-white shadow-sm">
+                        <Shield className="h-5 w-5" />
+                    </div>
+                    <span className="tracking-tight">Medixra</span>
                 </h2>
             </div>
 
-            <nav className="flex-1 px-4 space-y-2">
-                {navItems.map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => {
-                            setActiveSection(item.id)
-                            setIsMobileMenuOpen(false)
-                        }}
-                        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${activeSection === item.id
-                            ? 'bg-teal-50 text-teal-700 border-l-4 border-teal-600 shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-50'
-                            }`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <item.icon className={`h-5 w-5 ${activeSection === item.id ? 'text-teal-600' : 'text-gray-400'}`} />
-                            <span className="font-medium">{item.label}</span>
-                        </div>
-                        {item.count !== undefined && item.count > 0 && (
-                            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${activeSection === item.id ? 'bg-teal-200 text-teal-800' : 'bg-gray-100 text-gray-600'
-                                }`}>
-                                {item.count}
-                            </span>
-                        )}
-                    </button>
-                ))}
+            <nav className="flex-1 px-3 space-y-1">
+                {navItems.map((item) => {
+                    const isActive = activeSection === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => {
+                                setActiveSection(item.id)
+                                setIsMobileMenuOpen(false)
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive
+                                ? 'bg-teal-50 text-teal-700'
+                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                                }`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <item.icon className={`h-5 w-5 ${isActive ? 'text-teal-600' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                                <span className={`font-medium text-sm ${isActive ? 'font-semibold' : ''}`}>{item.label}</span>
+                            </div>
+                            {item.count !== undefined && item.count > 0 && (
+                                <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${isActive
+                                    ? 'bg-teal-100/50 text-teal-700'
+                                    : 'bg-gray-100 text-gray-500'
+                                    }`}>
+                                    {item.count}
+                                </span>
+                            )}
+                        </button>
+                    )
+                })}
             </nav>
 
-            <div className="p-4 border-t border-gray-100">
+            <div className="p-4 mt-auto border-t border-gray-50">
                 <Button
                     onClick={handleLogout}
                     disabled={isLoggingOut}
-                    variant="outline"
-                    className="w-full justify-start border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    variant="ghost"
+                    className="w-full justify-start text-xs font-medium text-gray-500 hover:text-red-600 hover:bg-red-50"
                 >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    {isLoggingOut ? 'Logging out...' : 'Logout System'}
+                    <LogOut className="h-4 w-4 mr-3" />
+                    {isLoggingOut ? 'Logging out...' : 'Sign Out'}
                 </Button>
             </div>
         </div>
     )
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex min-h-screen bg-gray-50/50">
             {/* Desktop Sidebar */}
-            <aside className="hidden md:flex flex-col w-[260px] fixed inset-y-0 bg-white border-r border-gray-200">
+            <aside className="hidden md:flex flex-col w-[260px] fixed inset-y-0 bg-white border-r border-gray-100">
                 <SidebarContent />
             </aside>
 
             {/* Main Content Area */}
             <div className="flex-1 md:pl-[260px] flex flex-col">
                 {/* Navbar */}
-                <header className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm h-16 flex items-center px-4 md:px-8 justify-between">
+                <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100 h-16 flex items-center px-4 md:px-8 justify-between">
                     <div className="flex items-center gap-4">
                         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                             <SheetTrigger asChild>
@@ -287,50 +316,56 @@ export default function AdminDashboardClient({
                             </div>
 
                             {/* Upgraded Stats Cards */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                                 {[
-                                    { label: 'Total Users', value: initialStats.totalUsers, icon: Users, color: 'bg-teal-100 text-teal-600' },
-                                    { label: 'Active Vendors', value: initialStats.activeVendors, icon: Package, color: 'bg-blue-100 text-blue-600' },
-                                    { label: 'Active Technicians', value: initialStats.activeTechnicians, icon: Shield, color: 'bg-amber-100 text-amber-600' },
-                                    { label: 'Listed Equipment', value: initialStats.listedProducts, icon: Eye, color: 'bg-purple-100 text-purple-600' },
-                                    { label: 'Inquiries', value: initialStats.totalInquiries, icon: MessageSquare, color: 'bg-emerald-100 text-emerald-600' },
+                                    { label: 'Total Users', value: initialStats.totalUsers, icon: Users, color: 'text-teal-600' },
+                                    { label: 'Active Vendors', value: initialStats.activeVendors, icon: Package, color: 'text-blue-600' },
+                                    { label: 'Technicians', value: initialStats.activeTechnicians, icon: Shield, color: 'text-amber-600' },
+                                    { label: 'Products', value: initialStats.listedProducts, icon: Eye, color: 'text-purple-600' },
+                                    { label: 'Inquiries', value: initialStats.totalInquiries, icon: MessageSquare, color: 'text-emerald-600' },
                                 ].map((stat) => (
-                                    <div key={stat.label} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                                    <div key={stat.label} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full group">
                                         <div className="flex items-center justify-between mb-4">
-                                            <div className={`p-3 rounded-full ${stat.color}`}>
-                                                <stat.icon className="h-6 w-6" />
-                                            </div>
+                                            <p className="text-sm font-medium text-gray-500 group-hover:text-gray-700 transition-colors">{stat.label}</p>
+                                            <stat.icon className={`h-5 w-5 ${stat.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-gray-500 mb-1">{stat.label}</p>
                                             <p className="text-3xl font-bold text-gray-900 tracking-tight">{stat.value}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            {/* Upgraded System Status */}
-                            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                                <div className="p-6 border-b border-gray-50">
-                                    <h3 className="text-lg font-bold text-gray-900">System Lifecycle Status</h3>
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+                                <div className="lg:col-span-2">
+                                    <AdminCharts
+                                        growthData={analyticsData.growthData}
+                                        categoryData={analyticsData.categoryData}
+                                    />
                                 </div>
-                                <div className="p-6">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        {systemStats.map((sys) => (
-                                            <div key={sys.label} className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-                                                <p className="text-xs uppercase tracking-wider font-bold text-gray-400 mb-2">{sys.label}</p>
-                                                <p className="text-xl font-bold text-gray-900 mb-2">{sys.value}</p>
-                                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-600">
-                                                    <CheckCircle className="h-3.5 w-3.5" />
-                                                    Operational
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
+                                <div className="lg:col-span-1 h-[500px]">
+                                    <ActivityFeed activities={activityFeed} />
                                 </div>
                             </div>
                         </div>
                     )}
+
+                    {activeSection === 'inventory' && (
+                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">Inventory Management</h2>
+                                <p className="text-sm text-gray-500">Manage all listed products and equipment on the platform</p>
+                            </div>
+                            <ProductManager />
+                        </div>
+                    )}
+
+                    {/* User Detail Sheet */}
+                    <UserDetailSheet
+                        user={selectedUser}
+                        isOpen={isUserSheetOpen}
+                        onClose={() => setIsUserSheetOpen(false)}
+                    />
 
                     {activeSection === 'users' && (
                         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
@@ -390,15 +425,42 @@ export default function AdminDashboardClient({
                                                     {u.id === currentAdminId || u.role === 'admin' ? (
                                                         <span className="text-xs font-bold text-gray-300">SYSTEM PROTECTED</span>
                                                     ) : (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className={`font-bold text-xs ${u.status === 'active' ? 'text-red-500 hover:text-red-700 hover:bg-red-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}`}
-                                                            onClick={() => handleToggleUserStatus(u.id, u.status, u.role)}
-                                                            disabled={isPending}
-                                                        >
-                                                            {u.status === 'active' ? 'Suspend' : 'Activate'}
-                                                        </Button>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                    <span className="sr-only">Open menu</span>
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                                <DropdownMenuItem onClick={() => {
+                                                                    setSelectedUser(u)
+                                                                    setIsUserSheetOpen(true)
+                                                                }}>
+                                                                    <Eye className="mr-2 h-4 w-4" /> View Details
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(u.email)}>
+                                                                    <Copy className="mr-2 h-4 w-4" /> Copy Email
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem
+                                                                    className={`${u.status === 'active' ? 'text-red-500 hover:text-red-700 hover:bg-red-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}`}
+                                                                    onClick={() => handleToggleUserStatus(u.id, u.status, u.role)}
+                                                                    disabled={isPending}
+                                                                >
+                                                                    {u.status === 'active' ? (
+                                                                        <>
+                                                                            <Ban className="mr-2 h-4 w-4" /> Suspend
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <CheckCircle className="mr-2 h-4 w-4" /> Activate
+                                                                        </>
+                                                                    )}
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
                                                     )}
                                                 </td>
                                             </tr>

@@ -12,6 +12,11 @@ import Link from 'next/link'
  */
 export default async function UnauthorizedPage() {
     const supabase = await createClient()
+
+    if (!supabase) {
+        redirect('/login')
+    }
+
     const { data: { user } } = await supabase.auth.getUser()
 
     // If not logged in, redirect to login

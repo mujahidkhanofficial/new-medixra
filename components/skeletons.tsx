@@ -91,7 +91,7 @@ export function DashboardSkeleton() {
       <div className="border-b border-border bg-card h-16 w-full" />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-6xl px-4 py-12 space-y-8">
+        <div className="mx-auto max-w-screen-2xl px-4 py-12 space-y-8">
           {/* Welcome Header */}
           <div className="space-y-4">
             <Skeleton className="h-10 w-96 max-w-full" />

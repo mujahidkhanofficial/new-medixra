@@ -17,6 +17,10 @@ export default async function VendorDashboardLayout({
 }) {
     const supabase = await createClient()
 
+    if (!supabase) {
+        redirect('/login')
+    }
+
     // 1. Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {

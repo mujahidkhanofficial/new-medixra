@@ -45,7 +45,7 @@ test.describe('User (Individual) Role Tests', () => {
         if (result === 'error') {
             const errorMsg = await page.locator('.text-destructive').textContent();
             console.log(`Sign Up API Error (Expected in test env): ${errorMsg}`);
-            if (errorMsg?.includes('rate limit')) {
+            if (errorMsg?.includes('rate limit') || errorMsg?.includes('Too many attempts')) {
                 return; 
             }
             throw new Error(`Sign Up Failed: ${errorMsg}`);

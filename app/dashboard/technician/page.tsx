@@ -69,7 +69,7 @@ export default function TechnicianDashboard() {
         <div className="min-h-screen bg-background">
             <Navigation />
 
-            <div className="mx-auto max-w-6xl px-4 py-12">
+            <div className="mx-auto max-w-screen-2xl px-4 py-12">
                 {/* Profile Card */}
                 <div className="mb-8 rounded-lg border border-border bg-card p-6 md:p-8">
                     <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">

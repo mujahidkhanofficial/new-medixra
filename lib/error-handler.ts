@@ -70,6 +70,9 @@ export function getErrorMessage(error: unknown): string {
     if (message.includes('timeout')) {
       return ERROR_MESSAGES.TIMEOUT
     }
+    if (message.includes('rate limit')) {
+      return 'Too many attempts. Please wait a moment.'
+    }
 
     // Check if it's a raw Zod error string (fallback)
     if (message.startsWith('[') && message.includes('"code":')) {

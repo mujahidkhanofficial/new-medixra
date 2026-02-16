@@ -163,6 +163,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export const getAdminStats = async () => {
     const supabase = await createClient()
+    if (!supabase) throw new Error('Service Unavailable')
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Unauthorized')
     await checkAdmin(user.id)
@@ -180,6 +181,7 @@ export const getAdminStats = async () => {
 
 export const getAllUsers = async () => {
     const supabase = await createClient()
+    if (!supabase) throw new Error('Service Unavailable')
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Unauthorized')
     await checkAdmin(user.id)
@@ -192,6 +194,7 @@ export const getAllUsers = async () => {
 
 export const getPendingApprovals = async () => {
     const supabase = await createClient()
+    if (!supabase) throw new Error('Service Unavailable')
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Unauthorized')
     await checkAdmin(user.id)

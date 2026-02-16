@@ -2,6 +2,10 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
 
+if (!process.env.DATABASE_URL) {
+    console.warn('DATABASE_URL is missing. Database connection will fail.')
+}
+
 const connectionString = process.env.DATABASE_URL!;
 
 // Singleton pattern to prevent connection leaks during hot reloads in development
@@ -10,6 +14,13 @@ const globalForDb = global as unknown as {
 };
 
 const client = globalForDb.client || (() => {
+    if (!connectionString) {
+        // Return a dummy client or handle gracefully if absolutely needed, 
+        // but likely we just want to avoid crashing the module.
+        // For now, let's create a dummy that will fail on query, not on import.
+        return postgres('postgres://user:pass@localhost:5432/db', { prepare: false });
+    }
+
     try {
         const url = new URL(connectionString);
         return postgres({
@@ -29,3 +40,4 @@ const client = globalForDb.client || (() => {
 if (process.env.NODE_ENV !== 'production') globalForDb.client = client;
 
 export const db = drizzle(client, { schema });
+export const endConnection = () => client.end();

@@ -42,7 +42,7 @@ export default async function VendorShowroomPage({ params }: PageProps) {
             </div>
 
             <main className="flex-1 -mt-20 relative z-10 px-4 pb-12">
-                <div className="mx-auto max-w-7xl">
+                <div className="mx-auto max-w-screen-2xl">
 
                     {/* Key Info Card */}
                     <div className="bg-card border border-border rounded-xl shadow-lg p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start md:items-center mb-8">

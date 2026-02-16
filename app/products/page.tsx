@@ -1,12 +1,14 @@
 import Link from 'next/link'
-import Image from 'next/image'
-import { Search, MapPin, Package, SlidersHorizontal } from 'lucide-react'
+import { Package, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
 import { getProducts } from '@/lib/actions/products'
 import { ProductFiltersClient } from '@/components/products/product-filters-client'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { createClient } from '@/lib/supabase/server'
+import { getSavedProductIds } from '@/lib/actions/saved-items'
+import { ProductCard } from '@/components/product/product-card'
 
 // Force dynamic rendering since we depend on searchParams
 export const dynamic = 'force-dynamic'
@@ -16,7 +18,7 @@ type Props = {
 }
 
 export default async function ProductsPage({ searchParams }: Props) {
-    const params = await searchParams; // searchParams is a promise in recent Next.js versions, but safe to await even if not
+    const params = await searchParams;
 
     // Parse search params
     const query = typeof params.q === 'string' ? params.q : undefined
@@ -30,18 +32,26 @@ export default async function ProductsPage({ searchParams }: Props) {
     const products = await getProducts({
         query,
         category,
-        city, // mapping 'city' param to location/city filter
+        city,
         minPrice,
         maxPrice,
         condition
     })
+
+    const supabase = await createClient()
+    let user = null
+    if (supabase) {
+        const { data } = await supabase.auth.getUser()
+        user = data.user
+    }
+    const savedIds = user ? await getSavedProductIds(user.id) : []
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
             <Navigation />
 
             <main className="flex-1">
-                <div className="mx-auto max-w-7xl px-4 py-8">
+                <div className="mx-auto max-w-screen-2xl px-4 py-8">
                     {/* Header */}
                     <div className="mb-8">
                         <h1 className="text-3xl font-bold text-foreground mb-2">Medical Equipment</h1>
@@ -50,7 +60,7 @@ export default async function ProductsPage({ searchParams }: Props) {
 
                     <div className="flex flex-col lg:flex-row gap-8">
                         {/* Sidebar Filters (Desktop) */}
-                        <aside className="hidden lg:block w-64 flex-shrink-0">
+                        <aside className="hidden lg:block w-64 shrink-0">
                             <div className="sticky top-24">
                                 <ProductFiltersClient />
                             </div>
@@ -94,51 +104,16 @@ export default async function ProductsPage({ searchParams }: Props) {
                             {products.length > 0 ? (
                                 <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                                     {products.map((product) => (
-                                        <Link
+                                        <ProductCard
                                             key={product.id}
-                                            href={`/product/${product.id}`}
-                                            className="group rounded-lg border border-border bg-card overflow-hidden hover:border-primary transition-all hover:shadow-lg"
-                                        >
-                                            <div className="relative aspect-square bg-muted">
-                                                {product.image_url ? (
-                                                    <Image
-                                                        src={product.image_url}
-                                                        alt={product.name}
-                                                        fill
-                                                        className="object-cover transition-transform group-hover:scale-105"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
-                                                        <Package className="h-12 w-12" />
-                                                    </div>
-                                                )}
-                                                <div className="absolute top-2 right-2">
-                                                    <span className="bg-background/80 backdrop-blur text-xs font-semibold px-2 py-1 rounded-full border border-border">
-                                                        {product.condition}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="p-4">
-                                                <p className="text-xs text-muted-foreground mb-1">{product.category}</p>
-                                                <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors line-clamp-1">
-                                                    {product.name}
-                                                </h3>
-                                                <p className="text-lg font-bold text-primary mb-3">
-                                                    ₨ {product.price.toLocaleString()}
-                                                </p>
-                                                <div className="flex items-center justify-between text-sm text-muted-foreground pt-3 border-t border-border">
-                                                    <div className="flex items-center gap-1">
-                                                        <MapPin className="h-3 w-3" />
-                                                        <span className="truncate max-w-[100px]">{product.location || 'Pakistan'}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </Link>
+                                            product={product}
+                                            isSaved={savedIds.includes(product.id)}
+                                        />
                                     ))}
                                 </div>
                             ) : (
                                 <div className="text-center py-16 bg-card rounded-lg border border-border">
-                                    <Package className="h-12 w-12 text-muted mx-auto mb-4" />
+                                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                                     <h3 className="text-lg font-semibold text-foreground mb-2">No products found</h3>
                                     <p className="text-muted-foreground mb-4">Try adjusting your filters or search query</p>
                                     <Button variant="outline" asChild><Link href="/products">Clear Filters</Link></Button>

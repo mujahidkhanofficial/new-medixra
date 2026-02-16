@@ -87,6 +87,7 @@ async function ensureDefaultAdminAccount(email: string, password: string) {
 
 export async function logout() {
     const supabase = await createClient()
+    if (!supabase) return { success: false, error: 'Service Unavailable' }
 
     const { error } = await supabase.auth.signOut()
 
@@ -114,6 +115,7 @@ export async function loginAction(prevState: any, formData: FormData) {
     }
 
     const supabase = await createClient()
+    if (!supabase) return { success: false, message: 'Service Unavailable', errors: {} }
 
     const defaultAdminEmail = process.env.ADMIN_DEFAULT_EMAIL?.trim().toLowerCase()
     const defaultAdminPassword = process.env.ADMIN_DEFAULT_PASSWORD
@@ -145,53 +147,65 @@ export async function loginAction(prevState: any, formData: FormData) {
         }
     }
 
-    // 3. User Role & Approval Check
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, message: 'User not found' }
+    try {
+        // 3. User Role & Approval Check
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return { success: false, message: 'User not found' }
 
-    const profile = await db.query.profiles.findFirst({
-        where: eq(profiles.id, user.id)
-    })
+        const profile = await db.query.profiles.findFirst({
+            where: eq(profiles.id, user.id)
+        })
 
-    if (!profile) return { success: false, message: 'Profile not found' }
+        if (!profile) return { success: false, message: 'Profile not found' }
 
-    // ⚠️ CRITICAL SECURITY: Block suspended accounts from logging in
-    if (profile.status === 'suspended') {
+        // ⚠️ CRITICAL SECURITY: Block suspended accounts from logging in
+        if (profile.status === 'suspended') {
+            return {
+                success: false,
+                message: 'Account Suspended',
+                errors: {}
+            }
+        }
+
+        if (isDefaultAdminLogin && profile.role !== 'admin') {
+            await db.update(profiles)
+                .set({ role: 'admin', approvalStatus: 'approved' })
+                .where(eq(profiles.id, user.id))
+        }
+
+        const effectiveProfile = isDefaultAdminLogin
+            ? { ...profile, role: 'admin', approvalStatus: 'approved' }
+            : profile
+
+        if (effectiveProfile.role === 'user' && effectiveProfile.approvalStatus !== 'approved') {
+            await db.update(profiles)
+                .set({ approvalStatus: 'approved' })
+                .where(eq(profiles.id, user.id))
+        }
+
+        revalidatePath('/', 'layout')
+
+        // Handle Pending/Rejected Status
+        if (effectiveProfile.role === 'vendor' || effectiveProfile.role === 'technician') {
+            if (effectiveProfile.approvalStatus !== 'approved') {
+                redirect('/pending-approval')
+            }
+        }
+
+        // Redirect to role-specific dashboard using centralized utility
+        const dashboardPath = getRoleDashboard(effectiveProfile.role)
+        redirect(dashboardPath)
+    } catch (error: any) {
+        // Allow redirects to bubble up
+        if (error.message === 'NEXT_REDIRECT') throw error;
+
+        console.error('Login error:', error)
         return {
             success: false,
-            message: 'Account Suspended',
+            message: 'Service Unavailable: Unable to retrieve user profile',
             errors: {}
         }
     }
-
-    if (isDefaultAdminLogin && profile.role !== 'admin') {
-        await db.update(profiles)
-            .set({ role: 'admin', approvalStatus: 'approved' })
-            .where(eq(profiles.id, user.id))
-    }
-
-    const effectiveProfile = isDefaultAdminLogin
-        ? { ...profile, role: 'admin', approvalStatus: 'approved' }
-        : profile
-
-    if (effectiveProfile.role === 'user' && effectiveProfile.approvalStatus !== 'approved') {
-        await db.update(profiles)
-            .set({ approvalStatus: 'approved' })
-            .where(eq(profiles.id, user.id))
-    }
-
-    revalidatePath('/', 'layout')
-
-    // Handle Pending/Rejected Status
-    if (effectiveProfile.role === 'vendor' || effectiveProfile.role === 'technician') {
-        if (effectiveProfile.approvalStatus !== 'approved') {
-            redirect('/pending-approval')
-        }
-    }
-
-    // Redirect to role-specific dashboard using centralized utility
-    const dashboardPath = getRoleDashboard(effectiveProfile.role)
-    redirect(dashboardPath)
 }
 
 export const deleteProfile = authenticatedAction(
@@ -230,7 +244,7 @@ export const deleteProfile = authenticatedAction(
 
             // 3. CRITICAL: Sign out the user to clear their session immediately
             const supabase = await createClient()
-            await supabase.auth.signOut()
+            if (supabase) await supabase.auth.signOut()
 
             revalidatePath('/', 'layout')
 
@@ -262,7 +276,7 @@ export const updateProfile = authenticatedAction(
 
             revalidatePath('/dashboard/settings')
             revalidatePath('/dashboard/user')
-            
+
             return { success: true }
         } catch (error: any) {
             throw new Error(error?.message || 'Failed to update profile')

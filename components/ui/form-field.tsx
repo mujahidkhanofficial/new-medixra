@@ -6,7 +6,7 @@ import { FieldError } from '@/components/ui/form-error'
 
 interface FormFieldProps {
   label?: string
-  error?: string
+  error?: string | string[]
   required?: boolean
   children: React.ReactNode
   className?: string

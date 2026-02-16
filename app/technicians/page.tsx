@@ -112,7 +112,7 @@ export default function TechniciansPage() {
 
       {/* Hero Section */}
       <section className="border-b border-border bg-gradient-to-b from-primary/5 to-background py-12 md:py-16">
-        <div className="mx-auto max-w-6xl px-4">
+        <div className="mx-auto max-w-screen-2xl px-4">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-foreground md:text-4xl mb-2">Equipment Repair & Maintenance</h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -137,7 +137,7 @@ export default function TechniciansPage() {
       </section>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-6xl px-4 py-12">
+      <div className="mx-auto max-w-screen-2xl px-4 py-12">
         {/* Filters */}
         <div className="mb-8">
           <h3 className="font-semibold text-foreground mb-4">Filter by City</h3>

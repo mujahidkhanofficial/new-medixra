@@ -1,129 +1,172 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Search, Heart, Clock, Package, User } from 'lucide-react'
+import { Plus, Search, Heart, User, LayoutDashboard, FileText, Eye, MessageCircle, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
-import { useAuth } from '@/components/providers/auth-provider'
-import { DashboardSkeleton } from '@/components/skeletons'
+import { createClient } from '@/lib/supabase/server'
+import { AdsTable } from '@/components/dashboard/ads-table'
+import { getSavedItems } from '@/lib/actions/saved-items'
+import Image from 'next/image'
 
-export default function UserDashboard() {
-  const { user, loading } = useAuth()
-  const [userName, setUserName] = useState('')
+import { db } from '@/lib/db/drizzle'
+import { products } from '@/lib/db/schema'
+import { eq, desc } from 'drizzle-orm'
 
-  useEffect(() => {
-    if (user?.user_metadata?.full_name) {
-      setUserName(user.user_metadata.full_name)
-    }
-  }, [user])
+export default async function UserDashboard() {
+  const supabase = await createClient()
 
-  const quickActions = [
-    { label: 'Post an Ad', href: '/post-ad', icon: Package },
-    { label: 'Browse Equipment', href: '/products', icon: Search },
-    { label: 'Saved Items', href: '/dashboard/saved-items', icon: Heart },
-    { label: 'Profile Settings', href: '/dashboard/settings', icon: User },
-  ]
+  if (!supabase) return null
 
-  const recentActivity: any[] = []
+  // Fetch user session
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (loading) {
-    return <DashboardSkeleton />
+  if (!user) {
+    // Should be handled by layout, but safe fallback
+    return null
   }
+
+  const userName = user.user_metadata?.full_name || 'User'
+
+  // Fetch user's ads using Drizzle
+  const ads = await db.query.products.findMany({
+    where: eq(products.vendorId, user.id),
+    orderBy: [desc(products.createdAt)],
+  })
+
+  // Fetch saved items
+  const savedItems = await getSavedItems(user.id)
+
+  // Calculate total views for "Activity"
+  const totalViews = ads?.reduce((acc, ad) => acc + (ad.views || 0), 0) || 0
+  const totalClicks = ads?.reduce((acc, ad) => acc + (ad.whatsappClicks || 0), 0) || 0
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navigation />
       <main className="flex-1">
-        <div className="mx-auto max-w-6xl px-4 py-12">
+        <div className="mx-auto max-w-screen-2xl px-4 py-12">
           {/* Welcome Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Welcome back{userName ? `, ${userName}` : ''}!
-            </h1>
-            <p className="text-muted-foreground">
-              Browse medical equipment from trusted vendors across Pakistan.
-            </p>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
-            {quickActions.map((action: any) => {
-              const Icon = action.icon
-              const isDisabled = action.disabled || false
-              return (
-                <Link
-                  key={action.label}
-                  href={isDisabled ? '#' : action.href}
-                  onClick={(e) => isDisabled && e.preventDefault()}
-                  className={`group rounded-lg border border-border bg-card p-6 transition-colors ${isDisabled
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:border-primary'
-                    }`}
-                >
-                  <Icon className="h-8 w-8 text-primary mb-3" />
-                  <p className={`font-semibold transition-colors ${isDisabled
-                    ? 'text-muted-foreground'
-                    : 'text-foreground group-hover:text-primary'
-                    }`}>
-                    {action.label}
-                  </p>
-                  {isDisabled && (
-                    <p className="text-xs text-muted-foreground mt-1">Coming soon</p>
-                  )}
-                </Link>
-              )
-            })}
-          </div>
-
-          {/* Two Column Layout */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Recent Activity */}
-            <div className="rounded-lg border border-border bg-card p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                Recent Activity
-              </h2>
-              {recentActivity.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Clock className="h-10 w-10 text-muted-foreground/50 mb-3" />
-                  <p className="text-sm font-medium text-foreground mb-1">No activity yet</p>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Start by browsing equipment or finding technicians
-                  </p>
-                  <Button asChild variant="outline" size="sm">
-                    <Link href="/products">Browse Equipment</Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {recentActivity.map((activity, index) => (
-                    <div key={index} className="flex items-start gap-3 pb-3 border-b border-border last:border-0">
-                      <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                      <div>
-                        <p className="text-sm text-foreground">{activity.text}</p>
-                        <p className="text-xs text-muted-foreground">{activity.time}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Become a Vendor CTA */}
-            <div className="rounded-lg border border-border bg-linear-to-br from-primary/10 to-primary/5 p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-2">
-                Have equipment to sell?
-              </h2>
-              <p className="text-muted-foreground mb-4">
-                Join as a vendor and reach thousands of medical professionals looking for equipment.
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                Welcome back, {userName}!
+              </h1>
+              <p className="text-muted-foreground">
+                Manage your ads and activity from here.
               </p>
-              <Button asChild className="bg-primary hover:bg-primary/90">
-                <Link href="/signup?role=vendor">Become a Vendor</Link>
-              </Button>
+            </div>
+            <Button asChild size="lg" className="rounded-full">
+              <Link href="/post-ad">
+                <Plus className="mr-2 h-4 w-4" /> Post New Ad
+              </Link>
+            </Button>
+          </div>
+
+          {/* Quick Stats / Activity Overview */}
+          <div className="grid gap-4 md:grid-cols-3 mb-8">
+            <div className="rounded-lg border bg-card p-6 shadow-xs">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Ads</p>
+                  <h3 className="text-2xl font-bold">{ads?.length || 0}</h3>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-card p-6 shadow-xs">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
+                  <Eye className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Views</p>
+                  <h3 className="text-2xl font-bold">{totalViews}</h3>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-card p-6 shadow-xs">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
+                  <MessageCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">WhatsApp Clicks</p>
+                  <h3 className="text-2xl font-bold">{totalClicks}</h3>
+                </div>
+              </div>
             </div>
           </div>
+
+          <div className="grid gap-8 lg:grid-cols-3">
+            {/* My Ads Section */}
+            <div className="lg:col-span-2 space-y-6">
+              <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                <LayoutDashboard className="h-5 w-5" />
+                My Ads
+              </h2>
+              <AdsTable ads={ads || []} />
+            </div>
+
+            {/* Saved Ads Section */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                  <Heart className="h-5 w-5" />
+                  Saved Ads
+                </h2>
+                <Link href="/dashboard/saved-items" className="text-sm text-primary hover:underline flex items-center gap-1">
+                  View All <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+
+              <div className="space-y-4">
+                {savedItems && savedItems.length > 0 ? (
+                  savedItems.slice(0, 3).map((item) => (
+                    <Link key={item.id} href={`/product/${item.productId}`} className="group block">
+                      <div className="flex gap-3 p-3 rounded-lg border bg-card hover:border-primary/50 transition-colors">
+                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-muted">
+                          {item.image ? (
+                            <Image
+                              src={item.image}
+                              alt={item.productName}
+                              fill
+                              className="object-cover transition-transform group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-secondary">
+                              <Heart className="h-6 w-6 text-muted-foreground/50" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-medium text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                            {item.productName}
+                          </h4>
+                          <p className="text-sm font-bold text-primary mt-1">
+                            {item.price}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                            {item.vendor}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="rounded-lg border border-dashed p-6 text-center">
+                    <Heart className="mx-auto h-8 w-8 text-muted-foreground/30 mb-2" />
+                    <p className="text-sm text-muted-foreground font-medium">No saved ads yet</p>
+                    <Button variant="link" size="sm" asChild className="mt-1">
+                      <Link href="/products">Browse Equipment</Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
         </div>
       </main>
       <Footer />

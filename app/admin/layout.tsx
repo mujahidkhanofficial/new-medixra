@@ -16,6 +16,11 @@ export default async function AdminLayout({
   // NO navbar, footer, or regular UI elements are included
 
   const supabase = await createClient()
+
+  if (!supabase) {
+    redirect('/login')
+  }
+
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   // 1. Check Authentication

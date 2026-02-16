@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FormField } from '@/components/ui/form-field'
 import { FormError } from '@/components/ui/form-error'
 import Navigation from '@/components/navigation'
@@ -25,6 +25,9 @@ export default function SignupPage() {
     const [phoneNumber, setPhoneNumber] = useState('')
     const [role, setRole] = useState<'user' | 'vendor' | 'technician'>((typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('role') === 'vendor') ? 'vendor' : 'user')
 
+    // User city (for all roles)
+    const [userCity, setUserCity] = useState('')
+
     // Vendor fields
     const [companyName, setCompanyName] = useState('')
     const [businessType, setBusinessType] = useState('')
@@ -37,7 +40,7 @@ export default function SignupPage() {
     const [specialities, setSpecialities] = useState<string[]>([])
     const [experienceYears, setExperienceYears] = useState('')
 
-    const [errors, setErrors] = useState<Record<string, string>>({})
+    const [errors, setErrors] = useState<Record<string, string | string[]>>({})
     const [error, setError] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [success, setSuccess] = useState(false)
@@ -62,6 +65,7 @@ export default function SignupPage() {
                 if (d.email) setEmail(d.email)
                 if (d.fullName) setFullName(d.fullName)
                 if (d.role) setRole(d.role)
+                if (d.userCity) setUserCity(d.userCity)
                 if (d.companyName) setCompanyName(d.companyName)
                 if (d.businessType) setBusinessType(d.businessType)
                 if (d.vendorCity) setVendorCity(d.vendorCity)
@@ -85,6 +89,7 @@ export default function SignupPage() {
                 email,
                 fullName,
                 phoneNumber,
+                userCity,
                 role,
                 companyName,
                 businessType,
@@ -100,7 +105,7 @@ export default function SignupPage() {
         } catch (err) {
             /* ignore */
         }
-    }, [email, fullName, phoneNumber, role, companyName, businessType, vendorCity, yearsInBusiness, techPhone, techCity, specialities, experienceYears, step])
+    }, [email, fullName, phoneNumber, userCity, role, companyName, businessType, vendorCity, yearsInBusiness, techPhone, techCity, specialities, experienceYears, step])
 
     const clearDraft = () => {
         try { localStorage.removeItem(DRAFT_KEY) } catch { }
@@ -232,6 +237,7 @@ export default function SignupPage() {
                         full_name: fullName,
                         role,
                         phone: phoneNumber,
+                        city: userCity,
                         vendor: role === 'vendor' ? {
                             company_name: companyName,
                             business_type: businessType,
@@ -268,18 +274,26 @@ export default function SignupPage() {
     const handleCheckConfirmation = async () => {
         setCheckingConfirmation(true)
         try {
-            const { data: { user }, error } = await supabase.auth.getUser()
+            // Attempt to sign in to check if email is confirmed
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            })
+
             if (error) {
-                toast.error(getErrorMessage(error))
+                if (error.message.includes('Email not confirmed')) {
+                    toast.info('Email not confirmed yet. Please check your inbox.', { id: 'signup-confirm-pending' })
+                } else {
+                    toast.error(getErrorMessage(error))
+                }
                 return
             }
 
-            // Supabase sets `email_confirmed_at` when the email is verified
-            if ((user as any)?.email_confirmed_at) {
-                toast.success('Email confirmed! Redirecting to login...', { id: 'signup-confirm-success' })
-                setTimeout(() => router.push('/login'), 1400)
-            } else {
-                toast('Email not confirmed yet. Please check your inbox and try again.', { id: 'signup-confirm-pending' })
+            if (data.user) {
+                toast.success('Email confirmed! Logging you in...', { id: 'signup-confirm-success' })
+                // Clear draft before redirecting
+                clearDraft()
+                setTimeout(() => router.push('/dashboard'), 1000)
             }
         } catch (err) {
             toast.error(getErrorMessage(err))
@@ -345,8 +359,7 @@ export default function SignupPage() {
                 </main>
                 <Footer />
 
-                {/* Local Toaster positioned at bottom-right for this flow */}
-                <Toaster position="bottom-right" richColors />
+                {/* Local Toaster removed - using global toaster in layout */}
             </div>
         )
     }
@@ -412,20 +425,37 @@ export default function SignupPage() {
                         {/* STEP 2 - BASIC ACCOUNT INFO */}
                         {step === 2 && (
                             <>
-                                <FormField label="Full Name" required error={errors.fullName}>
-                                    <Input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="John Doe" disabled={isLoading} />
-                                </FormField>
-
-                                <FormField label="Email Address" required error={errors.email}>
-                                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" disabled={isLoading} />
-                                </FormField>
-
-                                {/* Only ask for phone number in Step 2 for users and vendors (not technicians) */}
-                                {role !== 'technician' && (
-                                    <FormField label="Phone Number" required error={errors.phoneNumber}>
-                                        <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="+92 300 1234567" disabled={isLoading} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <FormField label="Full Name" required error={errors.fullName}>
+                                        <Input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="John Doe" disabled={isLoading} />
                                     </FormField>
-                                )}
+
+                                    {/* Only ask for phone number in Step 2 for users and vendors (not technicians) */}
+                                    {role !== 'technician' && (
+                                        <FormField label="Phone Number" required error={errors.phoneNumber}>
+                                            <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="+92 300 1234567" disabled={isLoading} />
+                                        </FormField>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <FormField label="Email Address" required error={errors.email}>
+                                        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" disabled={isLoading} />
+                                    </FormField>
+
+                                    <FormField label="City" required error={errors.city}>
+                                        <Select value={userCity} onValueChange={setUserCity} disabled={isLoading}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a city" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {CITIES.map((city) => (
+                                                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormField>
+                                </div>
 
                                 <FormField label="Password" required error={errors.password} helpText="Minimum 8 characters with uppercase, lowercase, and number">
                                     <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" disabled={isLoading} />
@@ -447,11 +477,15 @@ export default function SignupPage() {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <FormField label="City" required error={errors.city}>
-                                        <Select value={vendorCity} onChange={(e) => setVendorCity(e.target.value)} disabled={isLoading}>
-                                            <option value="">Select a city</option>
-                                            {CITIES.map((city) => (
-                                                <option key={city} value={city}>{city}</option>
-                                            ))}
+                                        <Select value={vendorCity} onValueChange={setVendorCity} disabled={isLoading}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a city" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {CITIES.map((city) => (
+                                                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                                                ))}
+                                            </SelectContent>
                                         </Select>
                                     </FormField>
 
@@ -482,11 +516,15 @@ export default function SignupPage() {
                                 </div>
 
                                 <FormField label="City" required error={errors.city}>
-                                    <Select value={techCity} onChange={(e) => setTechCity(e.target.value)} disabled={isLoading}>
-                                        <option value="">Select a city</option>
-                                        {CITIES.map((city) => (
-                                            <option key={city} value={city}>{city}</option>
-                                        ))}
+                                    <Select value={techCity} onValueChange={setTechCity} disabled={isLoading}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a city" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {CITIES.map((city) => (
+                                                <SelectItem key={city} value={city}>{city}</SelectItem>
+                                            ))}
+                                        </SelectContent>
                                     </Select>
                                 </FormField>
 
@@ -509,6 +547,7 @@ export default function SignupPage() {
                                     <div><strong>Name:</strong> {fullName}</div>
                                     <div><strong>Email:</strong> {email}</div>
                                     <div><strong>Phone:</strong> {role === 'technician' ? techPhone : phoneNumber}</div>
+                                    <div><strong>City:</strong> {role === 'vendor' ? vendorCity : role === 'technician' ? techCity : userCity}</div>
                                     <div><strong>Role:</strong> {role}</div>
                                     {role === 'vendor' && (
                                         <>
@@ -540,7 +579,7 @@ export default function SignupPage() {
                                 {step > 1 ? (
                                     <Button type="button" variant="outline" onClick={prevStep} disabled={isLoading}>Back</Button>
                                 ) : (
-                                    <Button type="button" variant="outline" onClick={() => { clearDraft(); setEmail(''); setFullName(''); setRole('user'); setCompanyName(''); setBusinessType(''); setVendorCity(''); setTechPhone(''); setTechCity(''); setSpecialities([]); setExperienceYears(''); }}>Clear Draft</Button>
+                                    <Button type="button" variant="outline" onClick={() => { clearDraft(); setEmail(''); setFullName(''); setUserCity(''); setRole('user'); setCompanyName(''); setBusinessType(''); setVendorCity(''); setTechPhone(''); setTechCity(''); setSpecialities([]); setExperienceYears(''); }}>Clear Draft</Button>
                                 )}
                             </div>
 

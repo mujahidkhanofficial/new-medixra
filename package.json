@@ -10,7 +10,8 @@
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio",
-    "db:secure": "tsx lib/db/setup-rls.ts"
+    "db:setup": "tsx lib/db/setup-db.ts",
+    "db:full": "npm run db:push && npm run db:setup"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -66,6 +67,7 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
+    "uuid": "^13.0.0",
     "vaul": "^1.1.2",
     "zod": "3.25.76"
   },

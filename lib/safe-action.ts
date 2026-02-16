@@ -57,6 +57,14 @@ export function authenticatedAction<T extends z.ZodType<any, any>, R>(
     return async (input: z.infer<T>): Promise<ActionState<R>> => {
         try {
             const supabase = await createClient()
+
+            if (!supabase) {
+                return {
+                    success: false,
+                    error: 'Service Unavailable: Database connection failed'
+                }
+            }
+
             const { data: { user }, error } = await supabase.auth.getUser()
 
             if (error || !user) {

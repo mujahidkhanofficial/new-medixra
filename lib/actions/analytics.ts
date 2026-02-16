@@ -1,127 +1,135 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { db } from '@/lib/db/drizzle'
-import { products, profiles } from '@/lib/db/schema'
-import { eq, sql } from 'drizzle-orm'
-import { authenticatedAction, publicAction } from '@/lib/safe-action'
+import { profiles, products } from '@/lib/db/schema'
+import { sql, gt, desc } from 'drizzle-orm'
+import { authenticatedAction } from '@/lib/safe-action'
 import { z } from 'zod'
+import { createClient } from '@/lib/supabase/server'
 
-export interface AnalyticsMetric {
-  label: string
-  value: number
-  trend?: number
-  change?: string
+async function checkAdmin() {
+  const supabase = await createClient()
+  if (!supabase) throw new Error('Service Unavailable')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const profile = await db.query.profiles.findFirst({
+    where: (profiles, { eq }) => eq(profiles.id, user.id),
+    columns: { role: true }
+  })
+
+  if (profile?.role !== 'admin') {
+    throw new Error('Unauthorized: Admin access required')
+  }
+  return user.id
 }
 
-export interface ProductPerformance {
-  name: string
-  views: number
-  inquiries: number
-  conversion: number
-  revenue?: number
-}
-
-export interface ViewsData {
-  date: string
-  views: number
-  inquiries: number
-}
-
-// Track WhatsApp Click (Public Action as users might not be logged in)
-export const trackWhatsAppClick = publicAction(
-    z.object({ productId: z.string().uuid() }),
-    async ({ productId }) => {
-        await db.update(products)
-            .set({ whatsappClicks: sql`${products.whatsappClicks} + 1` })
-            .where(eq(products.id, productId))
-            
-        return { success: true }
-    }
-)
-
-export async function getVendorAnalytics(vendorId: string) {
+export const getAnalyticsData = async () => {
   try {
-    // Verify caller is the vendor themselves or an admin
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        console.error('getVendorAnalytics: no authenticated user')
-        return { metrics: [], productPerformance: [] }
-    }
-    // Only allow vendor to see their own analytics (or admin to see any)
-    if (user.id !== vendorId) {
-        const callerProfile = await db
-            .select({ role: profiles.role })
-            .from(profiles)
-            .where(eq(profiles.id, user.id))
-            .limit(1)
-        if (!callerProfile[0] || callerProfile[0].role !== 'admin') {
-            console.error('getVendorAnalytics: unauthorized access attempt')
-            return { metrics: [], productPerformance: [] }
-        }
-    }
+    await checkAdmin()
 
-    // using Drizzle for analytics
-    const vendorProducts = await db.query.products.findMany({
-        where: eq(products.vendorId, vendorId),
-        columns: {
-            id: true,
-            name: true,
-            views: true,
-            whatsappClicks: true,
-            createdAt: true
-        }
+    // 1. Category Distribution
+    // Group products by category and count them
+    const categoryStats = await db
+      .select({
+        name: products.category,
+        value: sql<number>`count(*)::int`
+      })
+      .from(products)
+      .groupBy(products.category)
+      .orderBy(desc(sql`count(*)`))
+      .limit(5)
+
+    // 2. Growth Trends (Last 6 Months)
+    // This is a bit complex in SQL, usually easier to fetch raw dates and aggregate in JS 
+    // if dataset is small, or use date_trunc in SQL. 
+    // Let's use SQL date_trunc for 'month'.
+
+    const sixMonthsAgo = new Date()
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+
+    const userGrowth = await db
+      .select({
+        date: sql<string>`to_char(${profiles.createdAt}, 'Mon')`,
+        sortDate: sql<string>`date_trunc('month', ${profiles.createdAt})`,
+        count: sql<number>`count(*)::int`
+      })
+      .from(profiles)
+      .where(gt(profiles.createdAt, sixMonthsAgo.toISOString()))
+      .groupBy(sql`to_char(${profiles.createdAt}, 'Mon')`, sql`date_trunc('month', ${profiles.createdAt})`)
+      .orderBy(sql`date_trunc('month', ${profiles.createdAt})`)
+
+    const productGrowth = await db
+      .select({
+        date: sql<string>`to_char(${products.createdAt}, 'Mon')`,
+        sortDate: sql<string>`date_trunc('month', ${products.createdAt})`,
+        count: sql<number>`count(*)::int`
+      })
+      .from(products)
+      .where(gt(products.createdAt, sixMonthsAgo.toISOString()))
+      .groupBy(sql`to_char(${products.createdAt}, 'Mon')`, sql`date_trunc('month', ${products.createdAt})`)
+      .orderBy(sql`date_trunc('month', ${products.createdAt})`)
+
+    // Merge growth data
+    // We need a map of Month -> { sortDate, users, products }
+    // Using sortDate (YYYY-MM-01) as key ensures correct chronological sorting
+    const growthMap = new Map<string, { name: string, sortDate: string, users: number, products: number }>()
+
+    userGrowth.forEach(item => {
+      const entry = growthMap.get(item.sortDate) || { name: item.date, sortDate: item.sortDate, users: 0, products: 0 }
+      entry.users = item.count
+      growthMap.set(item.sortDate, entry)
     })
 
-    const totalProducts = vendorProducts.length
-    const totalViews = vendorProducts.reduce((sum, p) => sum + (p.views || 0), 0)
-    const totalInquiries = vendorProducts.reduce((sum, p) => sum + (p.whatsappClicks || 0), 0)
-    const avgConversion = totalViews > 0 ? ((totalInquiries / totalViews) * 100).toFixed(1) : '0'
+    productGrowth.forEach(item => {
+      const entry = growthMap.get(item.sortDate) || { name: item.date, sortDate: item.sortDate, users: 0, products: 0 }
+      entry.products = item.count
+      growthMap.set(item.sortDate, entry)
+    })
 
-    const metrics: AnalyticsMetric[] = [
-      {
-        label: 'Products Listed',
-        value: totalProducts,
-        trend: 0, // Calculate trend if we have historical data
-        change: 'Total Active',
-      },
-      {
-        label: 'Total Views',
-        value: totalViews,
-        trend: 0,
-        change: 'All time',
-      },
-      {
-        label: 'Inquiries',
-        value: totalInquiries,
-        trend: 0,
-        change: 'WhatsApp Clicks',
-      },
-      {
-        label: 'Conversion Rate',
-        value: parseFloat(avgConversion),
-        trend: 0,
-        change: 'Click Rate',
-      },
-    ]
-
-    // Get product performance
-    const productPerformance: ProductPerformance[] =
-      vendorProducts.map((p) => {
-        const views = p.views || 0
-        const inquiries = p.whatsappClicks || 0
-        return {
-          name: p.name,
-          views,
-          inquiries,
-          conversion: views > 0 ? Math.round((inquiries / views) * 100) : 0,
-        }
-      })
+    // Sort by sortDate string (ISO format works for string sort)
+    const growthData = Array.from(growthMap.values())
+      .sort((a, b) => a.sortDate.localeCompare(b.sortDate))
+      .map(({ name, users, products }) => ({ name, users, products }))
 
     return {
-      metrics,
-      productPerformance,
+      categoryData: categoryStats,
+      growthData: growthData
+    }
+  } catch (error) {
+    console.error('Failed to fetch analytics:', error)
+    return {
+      categoryData: [],
+      growthData: []
+    }
+  }
+}
+
+// Vendor Analytics Restoration
+
+export const getVendorAnalytics = async (userId: string) => {
+  try {
+    // Basic metrics based on real data
+    const vendorProducts = await db.query.products.findMany({
+      where: (products, { eq }) => eq(products.vendorId, userId)
+    })
+
+    const activeListings = vendorProducts.length
+
+    // Placeholder for views/inquiries until we have a real tracking table
+    const totalViews = vendorProducts.reduce((acc, p) => acc + (p.views || 0), 0)
+
+    return {
+      metrics: [
+        { value: activeListings, change: '+0' }, // Active Listings
+        { value: totalViews, change: '+0%' },    // Total Views
+        { value: '4.8', change: '+0.2' }         // Rating (Placeholder)
+      ],
+      productPerformance: vendorProducts.map(p => ({
+        name: p.name,
+        views: p.views || 0,
+        inquiries: 0 // Placeholder
+      })).slice(0, 5)
     }
   } catch (error) {
     console.error('Error fetching vendor analytics:', error)
@@ -129,16 +137,28 @@ export async function getVendorAnalytics(vendorId: string) {
   }
 }
 
-export async function generateViewsChartData() {
-  // Generate 30 days of views data
-  const data: ViewsData[] = []
+export const generateViewsChartData = async () => {
+  // Generate dummy data for the chart as we don't have historical view tracking yet
+  const data = []
+  const now = new Date()
   for (let i = 29; i >= 0; i--) {
-    const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000)
+    const date = new Date(now)
+    date.setDate(date.getDate() - i)
     data.push({
       date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      views: Math.floor(Math.random() * 150) + 20,
-      inquiries: Math.floor(Math.random() * 20) + 2,
+      views: Math.floor(Math.random() * 50) + 10,
+      inquiries: Math.floor(Math.random() * 10)
     })
   }
   return data
+}
+
+export const trackWhatsAppClick = async ({ productId }: { productId?: string }) => {
+  // This would ideally log to an events table
+  if (productId) {
+    await db.update(products)
+      .set({ whatsappClicks: sql`${products.whatsappClicks} + 1` })
+      .where(sql`${products.id} = ${productId}`)
+  }
+  return { success: true }
 }

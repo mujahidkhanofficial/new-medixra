@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: '/icon.svg',
   },
 }
 
@@ -50,7 +50,12 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+
+  let session = null
+  if (supabase) {
+    const { data } = await supabase.auth.getSession()
+    session = data.session
+  }
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -58,7 +63,7 @@ export default async function RootLayout({
         <AuthProvider initialSession={session}>
           {children}
           <Analytics />
-          <Toaster position="top-center" richColors />
+          <Toaster position="bottom-right" richColors />
         </AuthProvider>
       </body>
     </html>

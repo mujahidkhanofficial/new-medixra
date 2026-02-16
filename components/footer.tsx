@@ -5,19 +5,18 @@ import { Linkedin, Twitter, MessageCircle } from 'lucide-react'
 export default function Footer() {
     return (
         <footer className="border-t border-border bg-card mt-auto">
-            <div className="mx-auto max-w-6xl px-4 py-12 w-full">
+            <div className="mx-auto max-w-screen-2xl px-4 py-12 w-full">
                 <div className="grid gap-8 md:grid-cols-4">
                     <div className="md:col-span-1">
                         <div className="flex items-center gap-2 mb-4">
-                            <div className="relative h-10 w-10">
+                            <div className="relative h-12 w-[150px]">
                                 <Image
-                                    src="/logo.png"
+                                    src="/logo.svg"
                                     alt="Medixra Logo"
                                     fill
                                     className="object-contain"
                                 />
                             </div>
-                            <span className="font-bold text-foreground">Medixra</span>
                         </div>
                         <p className="text-sm text-muted-foreground">
                             Connecting users with medical equipment vendors directly across Pakistan.

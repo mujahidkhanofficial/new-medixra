@@ -10,6 +10,7 @@ import { z } from 'zod'
 
 export async function getVendorProfile(userId: string) {
     const supabase = await createClient()
+    if (!supabase) throw new Error('Service Unavailable')
     const { data: { user: currentUser } } = await supabase.auth.getUser()
 
     // SECURITY: Verify caller is authenticated and is the vendor themselves

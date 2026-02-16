@@ -62,7 +62,7 @@ export default function ProductDetailPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="mx-auto max-w-6xl px-4 py-12">
+      <div className="mx-auto max-w-screen-2xl px-4 py-12">
         {/* Breadcrumb */}
         <div className="mb-6 flex gap-2 text-sm text-muted-foreground">
           <a href="/" className="hover:text-primary">Home</a>

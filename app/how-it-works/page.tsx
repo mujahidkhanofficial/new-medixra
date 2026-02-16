@@ -37,7 +37,7 @@ export default function HowItWorksPage() {
             <main className="flex-1">
                 {/* Hero Section */}
                 <section className="py-20 bg-card border-b border-border">
-                    <div className="mx-auto max-w-4xl px-4 text-center">
+                    <div className="mx-auto max-w-screen-2xl px-4 text-center">
                         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">How Medixra Works</h1>
                         <p className="text-xl text-muted-foreground">
                             A direct bridge between medical equipment users, sellers, and specialized technicians in Pakistan.
@@ -47,7 +47,7 @@ export default function HowItWorksPage() {
 
                 {/* Steps Section */}
                 <section className="py-24">
-                    <div className="mx-auto max-w-6xl px-4">
+                    <div className="mx-auto max-w-screen-2xl px-4">
                         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
                             {steps.map((step, index) => (
                                 <div key={index} className="flex flex-col items-center text-center group">
@@ -64,7 +64,7 @@ export default function HowItWorksPage() {
 
                 {/* Platform Role Section */}
                 <section className="py-20 bg-muted/30">
-                    <div className="mx-auto max-w-4xl px-4 text-center">
+                    <div className="mx-auto max-w-screen-2xl px-4 text-center">
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-semibold mb-8">
                             <Info className="h-4 w-4" />
                             Our Role: Connection Platform

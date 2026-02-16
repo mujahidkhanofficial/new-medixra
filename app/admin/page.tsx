@@ -4,9 +4,15 @@ import { eq, desc, count, sql } from 'drizzle-orm'
 import AdminDashboardClient from './client-page'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getAnalyticsData } from '@/lib/actions/analytics'
 
 export default async function AdminDashboardPage() {
     const supabase = await createClient()
+
+    if (!supabase) {
+        redirect('/login')
+    }
+
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -41,7 +47,10 @@ export default async function AdminDashboardPage() {
         listedProductsResult,
         pendingApprovalsData,
         allUsersData,
-        totalInquiriesResult
+        totalInquiriesResult,
+        analyticsData, // New analytics data
+        recentProfiles, // Recent users for feed
+        recentProductsData // Recent products for feed
     ] = await Promise.all([
         db.select({ count: count() }).from(profiles),
         db.select({ count: count() }).from(vendors).where(eq(vendors.isVerified, true)),
@@ -63,9 +72,38 @@ export default async function AdminDashboardPage() {
             role: profiles.role,
             status: profiles.status,
             createdAt: profiles.createdAt
-        }).from(profiles).orderBy(desc(profiles.createdAt)), // Removed .limit(50) to fetch "all" as requested
-        db.select({ sum: sql<number>`sum(${products.whatsappClicks})` }).from(products)
+        }).from(profiles).orderBy(desc(profiles.createdAt)),
+        db.select({ sum: sql<number>`sum(${products.whatsappClicks})` }).from(products),
+        getAnalyticsData(),
+        db.select().from(profiles).orderBy(desc(profiles.createdAt)).limit(5),
+        db.select({
+            id: products.id,
+            name: products.name,
+            category: products.category,
+            createdAt: products.createdAt,
+            vendorId: products.vendorId
+        }).from(products).orderBy(desc(products.createdAt)).limit(5)
     ])
+
+    // Generate Activity Feed
+    const activityFeed = [
+        ...recentProfiles.map(p => ({
+            id: `user-${p.id}`,
+            type: 'user_join',
+            title: 'New User Joined',
+            description: `${p.fullName || p.email} created an account.`,
+            timestamp: new Date(p.createdAt),
+            user: { name: p.fullName || 'User', image: p.avatarUrl }
+        })),
+        ...recentProductsData.map(p => ({
+            id: `product-${p.id}`,
+            type: 'product_list',
+            title: 'New Product Listed',
+            description: `${p.name} added to ${p.category}`,
+            timestamp: new Date(p.createdAt),
+            // We could fetch vendor name here but for performance, skipping for now or can use "Vendor"
+        }))
+    ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10)
 
     // Fetch reported listings separately with error handling
     let reportedListingsData: any[] = []
@@ -160,6 +198,8 @@ export default async function AdminDashboardPage() {
             initialAllUsers={allUsers}
             initialReportedListings={reportedListings}
             currentAdminId={user.id}
+            analyticsData={analyticsData}
+            activityFeed={activityFeed}
         />
     )
 }

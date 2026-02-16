@@ -10,6 +10,7 @@ import { z } from 'zod'
 
 export async function getTechnicianProfile(userId: string) {
     const supabase = await createClient()
+    if (!supabase) return null
 
     const { data: profile, error: profileError } = await supabase
         .from('profiles')

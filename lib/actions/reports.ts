@@ -12,6 +12,7 @@ export async function getReportedListings() {
     try {
         // Verify caller is admin
         const supabase = await createClient()
+        if (!supabase) return []
         const { data: { user }, error: authError } = await supabase.auth.getUser()
         if (authError || !user) {
             console.error('getReportedListings: unauthorized - no user')

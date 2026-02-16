@@ -7,6 +7,10 @@ import { Loader2 } from 'lucide-react'
 export default async function DashboardPage() {
     const supabase = await createClient()
 
+    if (!supabase) {
+        redirect('/login')
+    }
+
     // 1. Check Auth (Server-Side)
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 

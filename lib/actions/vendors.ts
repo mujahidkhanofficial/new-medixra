@@ -19,6 +19,7 @@ export type VendorProfile = {
 
 export async function getVendorBySlug(slug: string) {
     const supabase = await createClient()
+    if (!supabase) return null
 
     // 1. Try to find by showroom_slug in vendors table
     const { data: vendorData, error: vendorError } = await supabase

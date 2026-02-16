@@ -13,7 +13,7 @@ export default function AboutUsPage() {
                     <div className="absolute top-0 left-0 w-full h-full opacity-5">
                         <Globe className="absolute -right-24 -top-24 h-[600px] w-[600px] text-primary" />
                     </div>
-                    <div className="mx-auto max-w-4xl px-4 text-center relative z-10">
+                    <div className="mx-auto max-w-screen-2xl px-4 text-center relative z-10">
                         <h1 className="text-4xl md:text-6xl font-extrabold text-foreground mb-6">About Medixra</h1>
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                             Revolutionizing the medical equipment ecosystem in Pakistan through transparency, technology, and trust.
@@ -23,7 +23,7 @@ export default function AboutUsPage() {
 
                 {/* Our Mission */}
                 <section className="py-24">
-                    <div className="mx-auto max-w-5xl px-4">
+                    <div className="mx-auto max-w-screen-2xl px-4">
                         <div className="grid md:grid-cols-2 gap-16 items-center">
                             <div>
                                 <h2 className="text-3xl font-bold text-foreground mb-6">Our Mission</h2>
@@ -54,7 +54,7 @@ export default function AboutUsPage() {
 
                 {/* Values Section */}
                 <section className="py-24 bg-muted/30">
-                    <div className="mx-auto max-w-6xl px-4">
+                    <div className="mx-auto max-w-screen-2xl px-4">
                         <div className="text-center mb-16">
                             <h2 className="text-3xl font-bold text-foreground mb-4">Our Core Values</h2>
                             <p className="text-muted-foreground">The principles that guide everything we do.</p>
@@ -90,7 +90,7 @@ export default function AboutUsPage() {
 
                 {/* Join Us Section */}
                 <section className="py-24">
-                    <div className="mx-auto max-w-4xl px-4 text-center">
+                    <div className="mx-auto max-w-screen-2xl px-4 text-center">
                         <div className="bg-primary/5 rounded-[40px] p-12 md:p-20 border border-primary/20">
                             <h2 className="text-4xl font-extrabold text-foreground mb-6">Join Our Growing Network</h2>
                             <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">

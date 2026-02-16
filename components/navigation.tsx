@@ -5,9 +5,10 @@ import { Menu, X, User, LogOut, Plus, LayoutDashboard, Store, ChevronDown, PlusC
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/providers/auth-provider'
+import { EQUIPMENT_HIERARCHY } from '@/lib/constants'
+
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -15,29 +16,28 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
+    DropdownMenuSub,
+    DropdownMenuSubTrigger,
+    DropdownMenuSubContent,
+    DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { logout } from '@/lib/actions/auth'
-import { toast } from 'sonner'
 
 export default function Navigation() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const { user, profile, loading } = useAuth()
     const router = useRouter()
-    // const supabase = createClient() // Removed in favor of server action
 
     const handleLogout = async () => {
         setIsLoggingOut(true)
         try {
             await logout() // Call server action
-            // Optimization: Client-side toast can be shown immediately
-            // toast.success('Logged out successfully') 
         } catch (error) {
             console.error('Logout failed', error)
         } finally {
-            // No need to set false if redirected, but good practice
-            // setIsLoggingOut(false) 
+            // isLoggingOut(false) 
         }
     }
 
@@ -57,19 +57,19 @@ export default function Navigation() {
 
     return (
         <nav className="sticky top-0 z-50 border-b border-border bg-card">
-            <div className="mx-auto max-w-6xl px-4 w-full">
+            <div className="mx-auto max-w-screen-2xl px-4 w-full">
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Link href="/" className="flex items-center gap-2">
-                            <div className="relative h-10 w-10">
+                            <div className="relative h-12 w-[150px]">
                                 <Image
-                                    src="/logo.png"
+                                    src="/logo.svg"
                                     alt="Medixra Logo"
                                     fill
                                     className="object-contain"
+                                    priority
                                 />
                             </div>
-                            <span className="hidden font-bold text-foreground text-lg sm:inline">Medixra</span>
                         </Link>
                     </div>
 
@@ -77,20 +77,39 @@ export default function Navigation() {
                         <Link href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                             Home
                         </Link>
-                        <Link href="/products" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                            Equipment
-                        </Link>
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors outline-none cursor-pointer">
+                                Equipment <ChevronDown className="h-4 w-4" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-64 max-h-[80vh] overflow-y-auto" align="start">
+                                {EQUIPMENT_HIERARCHY.map((category) => (
+                                    <DropdownMenuSub key={category.name}>
+                                        <DropdownMenuSubTrigger className="cursor-pointer">
+                                            {category.name}
+                                        </DropdownMenuSubTrigger>
+                                        <DropdownMenuPortal>
+                                            <DropdownMenuSubContent className="max-h-[80vh] overflow-y-auto">
+                                                {category.subcategories.map((sub) => (
+                                                    <DropdownMenuItem key={sub} asChild>
+                                                        <Link href={`/products?category=${encodeURIComponent(category.name)}&query=${encodeURIComponent(sub)}`} className="cursor-pointer w-full">
+                                                            {sub}
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </DropdownMenuSubContent>
+                                        </DropdownMenuPortal>
+                                    </DropdownMenuSub>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
                         <Link href="/technicians" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                             Technicians
                         </Link>
                         <Link href="/how-it-works" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                             How it Works
                         </Link>
-                        {/* 
-                        <Link href="/about-us" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                            About Us
-                        </Link>
-                         */}
 
                         {profile?.role !== 'vendor' && (
                             <Link href="/signup?role=vendor" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
@@ -251,6 +270,10 @@ export default function Navigation() {
                                         <Link href={getDashboardLink()} className="flex items-center gap-2 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
                                             <LayoutDashboard className="h-4 w-4" />
                                             {getDashboardLabel()}
+                                        </Link>
+                                        <Link href="/dashboard/settings" className="flex items-center gap-2 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
+                                            <User className="h-4 w-4" />
+                                            Profile Settings
                                         </Link>
                                         <button
                                             onClick={handleLogout}

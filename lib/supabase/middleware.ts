@@ -8,9 +8,16 @@ export async function updateSession(request: NextRequest) {
         request,
     })
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+        return supabaseResponse
+    }
+
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseKey,
         {
             cookies: {
                 getAll() {
@@ -86,7 +93,7 @@ export async function updateSession(request: NextRequest) {
         // CRITICAL: For vendor/technician restricted routes, also check approval status
         const vendorTechRoutes = ['/dashboard/vendor', '/dashboard/technician']
         const isVendorTechRoute = vendorTechRoutes.some(route => request.nextUrl.pathname.startsWith(route))
-        
+
         if (isVendorTechRoute && (userRole === 'vendor' || userRole === 'technician')) {
             if (approvalStatus !== 'approved') {
                 // Redirect to pending approval page, not unauthorized

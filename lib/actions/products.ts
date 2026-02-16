@@ -31,6 +31,22 @@ export type Product = {
     warranty?: string | null
     views?: number
     images?: { id: string; url: string }[]
+    // New Fields
+    model?: string | null
+    price_type?: string
+    currency?: string
+    ce_certified?: boolean
+    fda_approved?: boolean
+    iso_certified?: boolean
+    drap_registered?: boolean
+    other_certifications?: string | null
+    origin_country?: string | null
+    refurbishment_country?: string | null
+    installation_support_country?: string | null
+    amc_available?: boolean
+    spare_parts_available?: boolean
+    installation_included?: boolean
+    tags?: string[] | null
 }
 
 export type ProductFilterOptions = {
@@ -78,7 +94,7 @@ export async function getProducts(options: ProductFilterOptions = {}) {
                 if (options.query) {
                     const searchQuery = sql`plainto_tsquery('english', ${options.query})`;
                     conditions.push(sql`${products.searchVector} @@ ${searchQuery}`);
-                    
+
                     // Add ranking
                     extras = {
                         rank: sql<number>`ts_rank(${products.searchVector}, ${searchQuery})`.as('rank')
@@ -134,7 +150,7 @@ export async function getProducts(options: ProductFilterOptions = {}) {
                 return [];
             }
         },
-        ['products-list', JSON.stringify(options)], 
+        ['products-list', JSON.stringify(options)],
         { tags: ['products'], revalidate: 3600 }
     );
 
@@ -191,7 +207,7 @@ export async function getProductById(id: string) {
                     status: product.status as any,
                     created_at: product.createdAt,
                     updated_at: product.updatedAt,
-                    
+
                     vendor_name: vendorProfile?.fullName || 'Medixra Member',
                     vendor_avatar: vendorProfile?.avatarUrl,
                     vendor_phone: vendorProfile?.phone,
@@ -199,7 +215,24 @@ export async function getProductById(id: string) {
                     vendor_joined_at: vendorProfile?.createdAt,
                     vendor_whatsapp: vendorProDetails?.whatsappNumber || vendorProfile?.phone,
                     vendor_verified: vendorProDetails?.isVerified || false,
-                    images: product.productImages?.map(img => ({ id: img.id, url: img.url })) || []
+                    images: product.productImages?.map(img => ({ id: img.id, url: img.url })) || [],
+
+                    // New Fields mapped
+                    model: product.model,
+                    price_type: product.priceType,
+                    currency: product.currency,
+                    ce_certified: product.ceCertified,
+                    fda_approved: product.fdaApproved,
+                    iso_certified: product.isoCertified,
+                    drap_registered: product.drapRegistered,
+                    other_certifications: product.otherCertifications,
+                    origin_country: product.originCountry,
+                    refurbishment_country: product.refurbishmentCountry,
+                    installation_support_country: product.installationSupportCountry,
+                    amc_available: product.amcAvailable,
+                    spare_parts_available: product.sparePartsAvailable,
+                    installation_included: product.installationIncluded,
+                    tags: product.tags ? JSON.parse(product.tags) as string[] : []
                 };
             } catch (error) {
                 console.error('Error fetching product:', error);
@@ -209,7 +242,7 @@ export async function getProductById(id: string) {
         [`product-${id}`],
         { tags: ['products', `product-${id}`], revalidate: 3600 }
     );
-    
+
     return getCachedProduct();
 }
 
@@ -285,6 +318,8 @@ export const deleteProduct = authenticatedAction(
 
         revalidatePath('/dashboard/vendor');
         revalidatePath('/products');
+        revalidatePath('/'); // Homepage featured items
+        // revalidateTag('products'); // Invalidate product cache
 
         return { success: true };
     }
@@ -340,6 +375,9 @@ export const updateProduct = authenticatedAction(
         revalidatePath('/dashboard/vendor');
         revalidatePath('/products');
         revalidatePath(`/product/${data.productId}`);
+        revalidatePath('/'); // Homepage featured items
+        // revalidateTag('products'); // Invalidate product list cache
+        // revalidateTag(`product-${data.productId}`); // Invalidate specific product cache
 
         return { success: true };
     }

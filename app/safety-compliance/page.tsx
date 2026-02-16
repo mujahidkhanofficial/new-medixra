@@ -9,11 +9,10 @@ import Footer from '@/components/footer'
 export default function SafetyCompliancePage() {
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
-
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Safety & Compliance</h1>
+                  <Navigation />
+      
+                  <div className="mx-auto max-w-screen-2xl px-4 py-12">
+                      <div className="mb-8">          <h1 className="text-3xl font-bold text-foreground mb-2">Safety & Compliance</h1>
           <p className="text-muted-foreground">Guidelines for buying and selling medical equipment safely on Medixra</p>
         </div>
 

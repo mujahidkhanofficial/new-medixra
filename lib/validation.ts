@@ -29,7 +29,7 @@ export const urlSchema = z
 export const productSchema = z.object({
   name: z.string().min(3, 'Product name must be at least 3 characters').max(100),
   description: z.string().min(10, 'Description must be at least 10 characters').max(2000),
-  price: z.number().positive('Price must be greater than 0'),
+  price: z.number().min(0, 'Price cannot be negative'),
   category: z.string().min(1, 'Category is required'),
   condition: z.enum(['New', 'Used', 'Refurbished']),
   location: z.string().min(2, 'Location is required'),
@@ -37,6 +37,21 @@ export const productSchema = z.object({
   specialities: z.array(z.string()).optional(),
   brand: z.string().optional(),
   warranty: z.string().optional(),
+  model: z.string().optional(),
+  priceType: z.enum(['fixed', 'range', 'quote']).default('fixed'),
+  currency: z.string().default('PKR'),
+  ceCertified: z.boolean().default(false),
+  fdaApproved: z.boolean().default(false),
+  isoCertified: z.boolean().default(false),
+  drapRegistered: z.boolean().default(false),
+  otherCertifications: z.string().optional(),
+  originCountry: z.string().optional(),
+  refurbishmentCountry: z.string().optional(),
+  installationSupportCountry: z.string().optional(),
+  amcAvailable: z.boolean().default(false),
+  sparePartsAvailable: z.boolean().default(false),
+  installationIncluded: z.boolean().default(false),
+  tags: z.array(z.string()).optional(),
 })
 
 // Vendor signup validation
