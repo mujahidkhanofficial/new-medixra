@@ -3,29 +3,14 @@
 import { db } from '@/lib/db/drizzle'
 import { profiles, products } from '@/lib/db/schema'
 import { eq, desc, and, ilike, or, sql } from 'drizzle-orm'
-import { authenticatedAction } from '@/lib/safe-action'
+import { authenticatedAction, adminAction } from '@/lib/safe-action'
 import { z } from 'zod'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from './notifications'
 
-// Helper to verify admin
-async function checkAdmin() {
-    const supabase = await createClient()
-    if (!supabase) throw new Error('Service Unavailable')
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+// Helper to verification is now handled by adminAction
 
-    const profile = await db.query.profiles.findFirst({
-        where: (profiles, { eq }) => eq(profiles.id, user.id),
-        columns: { role: true }
-    })
-
-    if (profile?.role !== 'admin') {
-        throw new Error('Unauthorized: Admin access required')
-    }
-    return user.id
-}
 
 const GetProductsSchema = z.object({
     page: z.number().default(1),
@@ -35,10 +20,10 @@ const GetProductsSchema = z.object({
     category: z.string().optional()
 })
 
-export const adminGetAllProducts = authenticatedAction(
+export const adminGetAllProducts = adminAction(
     GetProductsSchema,
-    async ({ page, limit, search, status, category }, userId) => {
-        await checkAdmin()
+    async ({ page, limit, search, status, category }, adminId) => {
+        // CheckAdmin is handled by adminAction wrapper
 
         const offset = (page - 1) * limit
 
@@ -106,10 +91,10 @@ const ToggleProductStatusSchema = z.object({
     status: z.enum(['active', 'suspended', 'sold'])
 })
 
-export const adminDeleteProduct = authenticatedAction(
+export const adminDeleteProduct = adminAction(
     ProductActionSchema,
-    async ({ productId }, userId) => {
-        await checkAdmin()
+    async ({ productId }, adminId) => {
+        // CheckAdmin is handled by adminAction wrapper
 
         await db.delete(products).where(eq(products.id, productId))
 
@@ -118,10 +103,10 @@ export const adminDeleteProduct = authenticatedAction(
     }
 )
 
-export const adminUpdateProductStatus = authenticatedAction(
+export const adminUpdateProductStatus = adminAction(
     ToggleProductStatusSchema,
-    async ({ productId, status }, userId) => {
-        await checkAdmin()
+    async ({ productId, status }, adminId) => {
+        // CheckAdmin is handled by adminAction wrapper
 
         // Fetch product to get vendorId and name
         const product = await db.query.products.findFirst({

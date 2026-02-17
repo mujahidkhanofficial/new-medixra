@@ -3,7 +3,7 @@
 import { db } from '@/lib/db/drizzle'
 import { profiles, vendors, products, technicians } from '@/lib/db/schema'
 import { eq, and, ne, sql, desc } from 'drizzle-orm'
-import { authenticatedAction } from '@/lib/safe-action'
+import { authenticatedAction, adminAction } from '@/lib/safe-action'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 
@@ -22,10 +22,10 @@ async function checkAdmin(userId: string) {
 
 // --- Vendor Management ---
 
-export const approveUser = authenticatedAction(
+export const approveUser = adminAction(
     z.object({ userId: z.string().uuid() }),
     async ({ userId: targetUserId }, adminId) => {
-        await checkAdmin(adminId)
+        // CheckAdmin is handled by adminAction wrapper
 
         const user = await db.query.profiles.findFirst({
             where: eq(profiles.id, targetUserId)
@@ -69,10 +69,10 @@ export const approveUser = authenticatedAction(
     }
 )
 
-export const rejectUser = authenticatedAction(
+export const rejectUser = adminAction(
     z.object({ userId: z.string().uuid() }),
     async ({ userId: targetUserId }, adminId) => {
-        await checkAdmin(adminId)
+        // CheckAdmin is handled by adminAction wrapper
 
         await db.update(profiles)
             .set({ approvalStatus: 'rejected' })
@@ -89,10 +89,10 @@ export const rejectVendor = rejectUser
 
 // --- User Management ---
 
-export const banUser = authenticatedAction(
+export const banUser = adminAction(
     z.object({ userId: z.string().uuid() }),
     async ({ userId: targetUserId }, adminId) => {
-        await checkAdmin(adminId)
+        // CheckAdmin is handled by adminAction wrapper
 
         if (targetUserId === adminId) {
             throw new Error('Admin cannot suspend its own account')
@@ -128,10 +128,10 @@ export const banUser = authenticatedAction(
     }
 )
 
-export const activateUser = authenticatedAction(
+export const activateUser = adminAction(
     z.object({ userId: z.string().uuid(), role: z.enum(['user', 'vendor', 'technician']) }),
     async ({ userId: targetUserId, role }, adminId) => {
-        await checkAdmin(adminId)
+        // CheckAdmin is handled by adminAction wrapper
 
         // Activate user by setting status='active'
         // Role is optional — if provided, update it; otherwise just reactivate
@@ -208,10 +208,10 @@ export const getPendingApprovals = async () => {
 
 // --- Product Management ---
 
-export const adminDeleteProduct = authenticatedAction(
+export const adminDeleteProduct = adminAction(
     z.object({ productId: z.string().uuid() }),
     async ({ productId }, adminId) => {
-        await checkAdmin(adminId)
+        // CheckAdmin is handled by adminAction wrapper
 
         await db.delete(products).where(eq(products.id, productId))
 
@@ -219,3 +219,70 @@ export const adminDeleteProduct = authenticatedAction(
         return { success: true }
     }
 )
+
+export const getUserDetails = async (userId: string) => {
+    const supabase = await createClient()
+    if (!supabase) throw new Error('Service Unavailable')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Unauthorized')
+    await checkAdmin(user.id)
+
+    // Parallel fetch: Profile and their Products
+    const [profile, userProducts] = await Promise.all([
+        db.query.profiles.findFirst({
+            where: eq(profiles.id, userId)
+        }),
+        db.select({
+            id: products.id,
+            name: products.name,
+            category: products.category,
+            price: products.price,
+            status: products.status,
+            createdAt: products.createdAt,
+            imageUrl: products.imageUrl
+        }).from(products)
+            .where(eq(products.vendorId, userId))
+            .orderBy(desc(products.createdAt))
+            .limit(20)
+    ])
+
+    if (!profile) throw new Error('User not found')
+
+    // Construct Activity Log
+    const activities = [
+        {
+            type: 'joined',
+            date: profile.createdAt,
+            title: 'Account Created',
+            description: `Joined as ${profile.role}`
+        },
+        // Add product listings to activity
+        ...userProducts.map(p => ({
+            type: 'product_listing',
+            date: p.createdAt,
+            title: 'Listed Product',
+            description: `Listed ${p.name} in ${p.category}`
+        }))
+    ]
+
+    // If profile was updated significantly after creation (arbitrary 1 hour buffer), add update log
+    const createdTime = new Date(profile.createdAt).getTime()
+    const updatedTime = new Date(profile.updatedAt).getTime()
+    if (updatedTime - createdTime > 3600000) {
+        activities.push({
+            type: 'profile_update',
+            date: profile.updatedAt,
+            title: 'Profile Updated',
+            description: 'User updated profile details'
+        })
+    }
+
+    // Sort by date desc
+    const sortedActivity = activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+    return {
+        profile,
+        products: userProducts,
+        activity: sortedActivity
+    }
+}

@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { db } from '@/lib/db/drizzle'
+import { profiles } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 
 export type ActionState<T> = {
     success: boolean
@@ -92,6 +95,79 @@ export function authenticatedAction<T extends z.ZodType<any, any>, R>(
             }
         } catch (error: any) {
             console.error('Authenticated Action Error:', error)
+            return {
+                success: false,
+                error: error.message || 'An unexpected error occurred'
+            }
+        }
+    }
+}
+// Imports moved to top
+
+
+// ... existing code ...
+
+/**
+ * Creates an admin-only server action.
+ * Usage:
+ * export const myAdminAction = adminAction(mySchema, async (data, adminId) => { ... })
+ */
+export function adminAction<T extends z.ZodType<any, any>, R>(
+    schema: T,
+    handler: (data: z.infer<T>, adminId: string) => Promise<R>
+) {
+    return async (input: z.infer<T>): Promise<ActionState<R>> => {
+        try {
+            const supabase = await createClient()
+
+            if (!supabase) {
+                return {
+                    success: false,
+                    error: 'Service Unavailable: Database connection failed'
+                }
+            }
+
+            const { data: { user }, error } = await supabase.auth.getUser()
+
+            if (error || !user) {
+                return {
+                    success: false,
+                    error: 'Unauthorized'
+                }
+            }
+
+            // Verify Admin Role
+            const profileResult = await db
+                .select({ role: profiles.role })
+                .from(profiles)
+                .where(eq(profiles.id, user.id))
+                .limit(1)
+
+            if (!profileResult[0] || profileResult[0].role !== 'admin') {
+                return {
+                    success: false,
+                    error: 'Unauthorized: Admin access required'
+                }
+            }
+
+            const validationResult = schema.safeParse(input)
+
+            if (!validationResult.success) {
+                return {
+                    success: false,
+                    validationErrors: validationResult.error.flatten().fieldErrors,
+                    error: 'Validation failed'
+                }
+            }
+
+            const data = await handler(validationResult.data, user.id)
+
+            return {
+                success: true,
+                data
+            }
+        } catch (error: any) {
+            console.error('Admin Action Error:', error)
             return {
                 success: false,
                 error: error.message || 'An unexpected error occurred'

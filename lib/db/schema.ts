@@ -17,7 +17,7 @@ export const profiles = pgTable("profiles", {
     phone: text(),
     city: text(),
     role: text().default('user'), // 'user', 'vendor', 'technician', 'admin'
-    approvalStatus: text("approval_status").default('approved'), // 'approved', 'pending', 'rejected'
+    approvalStatus: text("approval_status").default('pending'), // 'approved', 'pending', 'rejected'
     status: text().default('active'), // 'active', 'suspended' — tracks suspension separately from role
     createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
