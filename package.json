@@ -88,6 +88,7 @@
     "@types/pg": "^8.16.0",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
+    "baseline-browser-mapping": "^2.9.19",
     "drizzle-kit": "^0.31.9",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",

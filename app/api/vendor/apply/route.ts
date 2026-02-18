@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { phoneSchema, emailSchema } from '@/lib/validation'
+import { verifyApiAuth } from '@/lib/api/protect-route'
+import { logAuditEvent } from '@/lib/audit/audit-logger'
 
 const applyVendorSchema = z.object({
   companyName: z.string().min(2),
@@ -23,32 +25,69 @@ function slugify(name: string, suffix = '') {
   )
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    // 1. Verify authentication and authorization
+    const authResult = await verifyApiAuth(req, {
+      requiredRoles: ['user', 'vendor', 'technician'],
+      auditAction: 'vendor.apply',
+      logSuccess: false,
+    })
+
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
+    const { user, profile } = authResult
+
+    // Validate user exists
+    if (!user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // 2. Parse request body
     const body = await req.json()
     const parsed = applyVendorSchema.safeParse(body)
+    
     if (!parsed.success) {
-      return NextResponse.json({ success: false, error: 'Invalid input' }, { status: 400 })
+      await logAuditEvent({
+        action: 'vendor.apply',
+        userId: user.id,
+        status: 'error',
+        reason: 'Invalid input',
+        route: '/api/vendor/apply',
+        metadata: { errors: parsed.error.flatten() },
+      })
+      return NextResponse.json(
+        { success: false, error: 'Invalid input' },
+        { status: 400 }
+      )
     }
 
     const supabase = await createClient()
-
     if (!supabase) {
-      return NextResponse.json({ success: false, error: 'Service Unavailable' }, { status: 503 })
-    }
-
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+      await logAuditEvent({
+        action: 'vendor.apply',
+        userId: user.id,
+        status: 'error',
+        reason: 'Service unavailable',
+        route: '/api/vendor/apply',
+      })
+      return NextResponse.json(
+        { success: false, error: 'Service Unavailable' },
+        { status: 503 }
+      )
     }
 
     const payload = parsed.data
 
-    // Create a stable showroom slug using user id suffix to avoid collisions
+    // 3. Create a stable showroom slug using user id suffix to avoid collisions
     const slug = slugify(payload.companyName, user.id.slice(0, 6))
 
-    // Upsert vendor record (vendors.id is FK to profiles.id)
+    // 4. Upsert vendor record (vendors.id is FK to profiles.id)
     const { data: vendorData, error: vendorError } = await supabase
       .from('vendors')
       .upsert({
@@ -67,10 +106,20 @@ export async function POST(req: Request) {
 
     if (vendorError) {
       console.error('Vendor upsert error:', vendorError)
-      return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 })
+      await logAuditEvent({
+        action: 'vendor.apply',
+        userId: user.id,
+        status: 'error',
+        reason: `Database error: ${vendorError.message}`,
+        route: '/api/vendor/apply',
+      })
+      return NextResponse.json(
+        { success: false, error: 'Failed to create vendor profile' },
+        { status: 500 }
+      )
     }
 
-    // Update profile role to vendor
+    // 5. Update profile role to vendor
     const { error: profileError } = await supabase
       .from('profiles')
       .update({ role: 'vendor' })
@@ -81,9 +130,32 @@ export async function POST(req: Request) {
       // not fatal for the applicant flow
     }
 
+    // 6. Log successful vendor application
+    await logAuditEvent({
+      action: 'vendor.apply',
+      userId: user.id,
+      status: 'success',
+      route: '/api/vendor/apply',
+      metadata: {
+        companyName: payload.companyName,
+        businessType: payload.businessType,
+        showroomSlug: slug,
+      },
+    })
+
     return NextResponse.json({ success: true, vendor: vendorData }, { status: 200 })
   } catch (err) {
     console.error('Apply Vendor error:', err)
-    return NextResponse.json({ success: false, error: 'Unexpected server error' }, { status: 500 })
+    await logAuditEvent({
+      action: 'vendor.apply',
+      userId: 'unknown',
+      status: 'error',
+      reason: `Unexpected error: ${err instanceof Error ? err.message : 'Unknown'}`,
+      route: '/api/vendor/apply',
+    })
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

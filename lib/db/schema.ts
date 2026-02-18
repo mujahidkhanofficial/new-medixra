@@ -219,6 +219,23 @@ export const notifications = pgTable("notifications", {
     pgPolicy("Users can update own notifications", { as: "permissive", for: "update", to: ["public"], using: sql`auth.uid() = user_id` }),
 ]);
 
+export const auditLogs = pgTable("audit_logs", {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    action: text().notNull(), // e.g., 'auth.login', 'admin.suspend_user'
+    userId: text("user_id").notNull(), // who performed the action
+    targetUserId: text("target_user_id"), // who was affected (if different)
+    status: text().notNull(), // 'success', 'error', 'unauthorized', 'forbidden'
+    reason: text(), // error message or reason for denial
+    route: text(), // API route or page path
+    metadata: text(), // JSON string with additional context
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+    index("audit_logs_user_idx").on(table.userId),
+    index("audit_logs_action_idx").on(table.action),
+    index("audit_logs_created_idx").on(table.createdAt),
+    pgPolicy("Admins can view audit logs", { as: "permissive", for: "select", to: ["public"], using: sql`true` }),
+]);
+
 // --- Relations ---
 
 export const vendorsRelations = relations(vendors, ({ one }) => ({

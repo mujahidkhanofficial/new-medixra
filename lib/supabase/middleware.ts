@@ -42,8 +42,10 @@ export async function updateSession(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     // Public routes that should be accessible to unauthenticated users
-    const publicPaths = ['/login', '/signup']
+    const publicPaths = ['/', '/login', '/signup', '/about-us', '/how-it-works', '/products', '/technicians', '/shop', '/privacy', '/terms', '/safety-compliance']
     const isPublicPath = publicPaths.some(path =>
+        path === '/' ? 
+        request.nextUrl.pathname === '/' : 
         request.nextUrl.pathname.startsWith(path)
     )
 

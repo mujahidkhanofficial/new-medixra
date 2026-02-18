@@ -12,6 +12,8 @@ import { authenticatedAction } from '@/lib/safe-action'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database.types'
 import { getRoleDashboard } from '@/lib/auth/role-redirect'
+import { checkRateLimit, resetRateLimit } from '@/lib/rate-limit/rate-limiter'
+import { logAuditEvent } from '@/lib/audit/audit-logger'
 
 async function ensureDefaultAdminAccount(email: string, password: string, userId?: string) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -103,18 +105,55 @@ async function ensureDefaultAdminAccount(email: string, password: string, userId
 
 
 export async function logout() {
-    const supabase = await createClient()
-    if (!supabase) return { success: false, error: 'Service Unavailable' }
+    try {
+        const supabase = await createClient()
+        if (!supabase) {
+            await logAuditEvent({
+                action: 'auth.logout.failed',
+                userId: 'unknown',
+                status: 'error',
+                reason: 'Service unavailable',
+            })
+            return { success: false, error: 'Service Unavailable' }
+        }
 
-    const { error } = await supabase.auth.signOut()
+        // Get current user for audit logging
+        const { data: { user } } = await supabase.auth.getUser()
 
-    if (error) {
+        const { error } = await supabase.auth.signOut()
+
+        if (error) {
+            console.error('Logout error:', error)
+            await logAuditEvent({
+                action: 'auth.logout.failed',
+                userId: user?.id || 'unknown',
+                status: 'error',
+                reason: error.message,
+            })
+            return { success: false, error: error.message }
+        }
+
+        // Log successful logout
+        if (user) {
+            await logAuditEvent({
+                action: 'auth.logout.success',
+                userId: user.id,
+                status: 'success',
+            })
+        }
+
+        revalidatePath('/', 'layout')
+        return { success: true }
+    } catch (error) {
         console.error('Logout error:', error)
-        return { success: false, error: error.message }
+        await logAuditEvent({
+            action: 'auth.logout.failed',
+            userId: 'unknown',
+            status: 'error',
+            reason: 'Unexpected error',
+        })
+        return { success: false, error: 'Unexpected error' }
     }
-
-    revalidatePath('/', 'layout')
-    return { success: true }
 }
 
 export async function loginAction(prevState: any, formData: FormData) {
@@ -124,29 +163,59 @@ export async function loginAction(prevState: any, formData: FormData) {
     // 1. Validation
     const validationResult = loginSchema.safeParse({ email, password })
     if (!validationResult.success) {
+        await logAuditEvent({
+            action: 'auth.login.failed',
+            userId: email,
+            status: 'error',
+            reason: 'Invalid input format',
+        })
         return {
             success: false,
             errors: validationResult.error.flatten().fieldErrors,
-            message: 'Invalid email or password format'
+            message: 'Invalid email or password'
+        }
+    }
+
+    // 2. Rate limiting - prevent brute force attacks
+    const isRateLimited = checkRateLimit(email, 'login')
+    if (isRateLimited) {
+        await logAuditEvent({
+            action: 'auth.login.rate_limited',
+            userId: email,
+            status: 'forbidden',
+            reason: 'Too many login attempts',
+        })
+        return {
+            success: false,
+            message: 'Too many login attempts. Please try again later.',
+            errors: {}
         }
     }
 
     const supabase = await createClient()
-    if (!supabase) return { success: false, message: 'Service Unavailable', errors: {} }
+    if (!supabase) {
+        await logAuditEvent({
+            action: 'auth.login.failed',
+            userId: email,
+            status: 'error',
+            reason: 'Service unavailable',
+        })
+        return { success: false, message: 'Service unavailable', errors: {} }
+    }
 
     const defaultAdminEmail = process.env.ADMIN_DEFAULT_EMAIL?.trim().toLowerCase()
     const defaultAdminPassword = process.env.ADMIN_DEFAULT_PASSWORD
     const isDefaultAdminLogin = !!defaultAdminEmail && !!defaultAdminPassword && email === defaultAdminEmail
 
-    // 2. Authentication Strategy
+    // 3. Authentication Strategy
     // Attempt standard login first (Fast Path)
     let { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
     })
 
-    // 3. Admin Recovery / Bootstrap (Slow Path)
-    // Only triggering if standard login fails OR it succeded but we need to verify it's the right admin
+    // 4. Admin Recovery / Bootstrap (Slow Path)
+    // Only triggering if standard login fails OR it succeeded but we need to verify it's the right admin
     if (isDefaultAdminLogin) {
         // If login failed (maybe password changed in env, or user doesn't exist)
         // OR login succeeded (we just want to ensure profile role text is correct)
@@ -182,17 +251,32 @@ export async function loginAction(prevState: any, formData: FormData) {
     }
 
     if (authError) {
+        await logAuditEvent({
+            action: 'auth.login.failed',
+            userId: email,
+            status: 'unauthorized',
+            reason: 'Invalid credentials',
+        })
+        // Generic error message to prevent email enumeration attacks
         return {
             success: false,
-            message: authError.message,
+            message: 'Invalid email or password',
             errors: {}
         }
     }
 
     try {
-        // 4. User Role & Approval Check
+        // 5. User Role & Approval Check
         const user = authData.user!
-        if (!user) return { success: false, message: 'User not found' }
+        if (!user) {
+            await logAuditEvent({
+                action: 'auth.login.failed',
+                userId: email,
+                status: 'error',
+                reason: 'User not found',
+            })
+            return { success: false, message: 'Invalid email or password', errors: {} }
+        }
 
         // Fetch or Create Profile if missing (Critical Resilience)
         let profile = await db.query.profiles.findFirst({
@@ -216,10 +300,24 @@ export async function loginAction(prevState: any, formData: FormData) {
             profile = await db.query.profiles.findFirst({ where: eq(profiles.id, user.id) })
         }
 
-        if (!profile) return { success: false, message: 'Profile could not be created' }
+        if (!profile) {
+            await logAuditEvent({
+                action: 'auth.login.failed',
+                userId: user.id,
+                status: 'error',
+                reason: 'Profile creation failed',
+            })
+            return { success: false, message: 'Invalid email or password', errors: {} }
+        }
 
         // ⚠️ CRITICAL SECURITY: Block suspended accounts from logging in
         if (profile.status === 'suspended') {
+            await logAuditEvent({
+                action: 'auth.login.failed',
+                userId: user.id,
+                status: 'forbidden',
+                reason: 'Account suspended',
+            })
             return {
                 success: false,
                 message: 'Account Suspended',
@@ -238,6 +336,12 @@ export async function loginAction(prevState: any, formData: FormData) {
                     .returning()
 
                 if (!updated || updated.role !== 'admin') {
+                    await logAuditEvent({
+                        action: 'auth.login.failed',
+                        userId: user.id,
+                        status: 'error',
+                        reason: 'Failed to enforce admin role',
+                    })
                     throw new Error('System-Critical Error: Failed to enforce Admin privileges.')
                 }
 
@@ -246,6 +350,17 @@ export async function loginAction(prevState: any, formData: FormData) {
                 profile.approvalStatus = 'approved'
             }
         }
+
+        // Log successful login
+        await logAuditEvent({
+            action: 'auth.login.success',
+            userId: user.id,
+            status: 'success',
+            metadata: { role: profile.role, email: user.email },
+        })
+
+        // Reset rate limit after successful login
+        resetRateLimit(email, 'login')
 
         revalidatePath('/', 'layout')
 
@@ -264,9 +379,15 @@ export async function loginAction(prevState: any, formData: FormData) {
         if (error.message === 'NEXT_REDIRECT') throw error;
 
         console.error('Login error:', error)
+        await logAuditEvent({
+            action: 'auth.login.failed',
+            userId: 'unknown',
+            status: 'error',
+            reason: 'Unexpected error during login',
+        })
         return {
             success: false,
-            message: 'Service Unavailable: Unable to retrieve user profile',
+            message: 'Invalid email or password',
             errors: {}
         }
     }
