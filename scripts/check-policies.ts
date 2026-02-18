@@ -16,9 +16,11 @@ const sql = postgres(connectionString);
 
 async function checkPolicies() {
     const policies = await sql`
-        SELECT * FROM pg_policies WHERE tablename = 'profiles';
+        SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check 
+        FROM pg_policies 
+        WHERE tablename = 'profiles';
     `;
-    console.log('Active Policies on profiles:', policies);
+    console.log(JSON.stringify(policies, null, 2));
     await sql.end();
 }
 

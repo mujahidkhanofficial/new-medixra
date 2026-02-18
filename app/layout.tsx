@@ -51,16 +51,10 @@ export default async function RootLayout({
 }>) {
   const supabase = await createClient()
 
-  let session = null
-  if (supabase) {
-    const { data } = await supabase.auth.getSession()
-    session = data.session
-  }
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${_geist.className} font-sans antialiased`} suppressHydrationWarning>
-        <AuthProvider initialSession={session}>
+        <AuthProvider>
           {children}
           <Analytics />
           <Toaster position="bottom-right" richColors />

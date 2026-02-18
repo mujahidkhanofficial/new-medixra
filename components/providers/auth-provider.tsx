@@ -39,6 +39,7 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
     const supabase = createClient()
 
     const fetchProfile = async (userId: string, signal?: AbortSignal) => {
+        console.log('[AuthProvider] Fetching profile for:', userId)
         try {
             // 1. Fetch basic profile first (fast)
             const { data: profileData, error } = await supabase
@@ -50,13 +51,15 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
                 .abortSignal(signal as AbortSignal)
 
             if (error) {
+                console.error('[AuthProvider] Fetch Error:', error)
                 // Ignore "No rows found" error (PGRST116) as it just means profile doesn't exist yet
                 if (error.code === 'PGRST116') {
                     return null
                 }
-                console.error('Error fetching profile:', error.message || error)
                 return null
             }
+
+            console.log('[AuthProvider] Profile Found:', profileData?.role)
 
             // 2. If vendor, fetch vendor details (lazy load)
             if (profileData.role === 'vendor') {
@@ -77,7 +80,7 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
             if (error.name === 'AbortError' || error.message?.includes('aborted')) {
                 return null
             }
-            console.error('Unexpected error fetching profile:', error)
+            console.error('[AuthProvider] Unexpected error:', error)
             return null
         }
     }

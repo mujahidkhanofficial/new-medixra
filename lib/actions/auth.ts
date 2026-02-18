@@ -13,7 +13,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database.types'
 import { getRoleDashboard } from '@/lib/auth/role-redirect'
 
-async function ensureDefaultAdminAccount(email: string, password: string) {
+async function ensureDefaultAdminAccount(email: string, password: string, userId?: string) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     const adminName = process.env.ADMIN_DEFAULT_NAME || 'Administrator'
@@ -26,19 +26,33 @@ async function ensureDefaultAdminAccount(email: string, password: string) {
         auth: { persistSession: false, autoRefreshToken: false }
     })
 
-    const { data: usersData, error: listError } = await adminSupabase.auth.admin.listUsers({
-        page: 1,
-        perPage: 1000,
-    })
+    let targetUserId = userId
 
-    if (listError) {
-        throw new Error(listError.message || 'Failed to validate admin account')
+    // If we don't have the ID, we need to find it
+    if (!targetUserId) {
+        // Optimization: Check local DB profiles first (fastest)
+        const localProfile = await db.query.profiles.findFirst({
+            where: eq(profiles.email, email)
+        })
+
+        if (localProfile) {
+            targetUserId = localProfile.id
+        } else {
+            // Fallback: Slow listing (only happens if user exists in Auth but NOT in profiles, rare)
+            const { data: usersData, error: listError } = await adminSupabase.auth.admin.listUsers({
+                page: 1,
+                perPage: 1000,
+            })
+
+            if (listError) throw new Error(listError.message || 'Failed to list users')
+
+            const existing = usersData.users.find((u) => (u.email || '').toLowerCase() === email.toLowerCase())
+            targetUserId = existing?.id
+        }
     }
 
-    const existing = usersData.users.find((u) => (u.email || '').toLowerCase() === email.toLowerCase())
-    let adminUserId = existing?.id
-
-    if (!adminUserId) {
+    if (!targetUserId) {
+        // Create new admin
         const { data: created, error: createError } = await adminSupabase.auth.admin.createUser({
             email,
             password,
@@ -52,10 +66,10 @@ async function ensureDefaultAdminAccount(email: string, password: string) {
         if (createError || !created.user) {
             throw new Error(createError?.message || 'Failed to create admin account')
         }
-
-        adminUserId = created.user.id
+        targetUserId = created.user.id
     } else {
-        const { error: updateError } = await adminSupabase.auth.admin.updateUserById(adminUserId, {
+        // Update existing admin password/metadata
+        const { error: updateError } = await adminSupabase.auth.admin.updateUserById(targetUserId, {
             password,
             email,
             user_metadata: {
@@ -69,10 +83,11 @@ async function ensureDefaultAdminAccount(email: string, password: string) {
         }
     }
 
+    // Ensure profile exists and has admin role
     const { error: profileError } = await adminSupabase
         .from('profiles')
         .upsert({
-            id: adminUserId,
+            id: targetUserId,
             email,
             full_name: adminName,
             role: 'admin',
@@ -84,6 +99,8 @@ async function ensureDefaultAdminAccount(email: string, password: string) {
         throw new Error(profileError.message || 'Failed to sync admin profile')
     }
 }
+
+
 
 export async function logout() {
     const supabase = await createClient()
@@ -97,7 +114,7 @@ export async function logout() {
     }
 
     revalidatePath('/', 'layout')
-    redirect('/login')
+    return { success: true }
 }
 
 export async function loginAction(prevState: any, formData: FormData) {
@@ -119,44 +136,87 @@ export async function loginAction(prevState: any, formData: FormData) {
 
     const defaultAdminEmail = process.env.ADMIN_DEFAULT_EMAIL?.trim().toLowerCase()
     const defaultAdminPassword = process.env.ADMIN_DEFAULT_PASSWORD
-    const isDefaultAdminLogin = !!defaultAdminEmail && !!defaultAdminPassword && email === defaultAdminEmail && password === defaultAdminPassword
+    const isDefaultAdminLogin = !!defaultAdminEmail && !!defaultAdminPassword && email === defaultAdminEmail
 
-    if (isDefaultAdminLogin) {
-        try {
-            await ensureDefaultAdminAccount(defaultAdminEmail!, defaultAdminPassword!)
-        } catch (adminBootstrapError: any) {
-            return {
-                success: false,
-                message: adminBootstrapError?.message || 'Admin login is not configured correctly',
-                errors: {}
-            }
-        }
-    }
-
-    // 2. Authentication
-    const { error } = await supabase.auth.signInWithPassword({
+    // 2. Authentication Strategy
+    // Attempt standard login first (Fast Path)
+    let { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
     })
 
-    if (error) {
+    // 3. Admin Recovery / Bootstrap (Slow Path)
+    // Only triggering if standard login fails OR it succeded but we need to verify it's the right admin
+    if (isDefaultAdminLogin) {
+        // If login failed (maybe password changed in env, or user doesn't exist)
+        // OR login succeeded (we just want to ensure profile role text is correct)
+
+        if (authError || (authData.user && password === defaultAdminPassword)) {
+            // If auth failed, OR it matched the hardcoded password, we might need to bootstrap/sync.
+            // If auth failed: we definitely need to bootstrap.
+            // If auth succeeded: we already have the user.id. We just need to ensure profile is 'admin'.
+
+            if (authError) {
+                // Optimization: Try to bootstrap only if password matches .env
+                if (password === defaultAdminPassword) {
+                    try {
+                        console.log('Admin login failed, attempting bootstrap...')
+                        await ensureDefaultAdminAccount(defaultAdminEmail!, defaultAdminPassword!)
+                        // Retry login
+                        const retry = await supabase.auth.signInWithPassword({ email, password })
+                        authData = retry.data
+                        authError = retry.error
+                    } catch (err: any) {
+                        console.error('Admin bootstrap failed:', err)
+                        // Fall out to standard error handling
+                    }
+                }
+            } else if (authData.user) {
+                // Optimization: Login succeeded, just perform a lightweight check ensuring role is admin
+                // We do this via the DB update below, no need to call ensureDefaultAdminAccount (which calls Admin API) 
+                // UNLESS useDefaultAdminAccount does something critical? 
+                // It updates password (already correct) and upserts profile.
+                // We can skip the API call and just do the DB update.
+            }
+        }
+    }
+
+    if (authError) {
         return {
             success: false,
-            message: error.message,
+            message: authError.message,
             errors: {}
         }
     }
 
     try {
-        // 3. User Role & Approval Check
-        const { data: { user } } = await supabase.auth.getUser()
+        // 4. User Role & Approval Check
+        const user = authData.user!
         if (!user) return { success: false, message: 'User not found' }
 
-        const profile = await db.query.profiles.findFirst({
+        // Fetch or Create Profile if missing (Critical Resilience)
+        let profile = await db.query.profiles.findFirst({
             where: eq(profiles.id, user.id)
         })
 
-        if (!profile) return { success: false, message: 'Profile not found' }
+        if (!profile) {
+            // Self-healing: If auth exists but profile doesn't, create it now
+            console.log('Profile missing for authenticated user, creating...')
+            const newProfile = {
+                id: user.id,
+                email: user.email!,
+                fullName: user.user_metadata.full_name || 'User',
+                role: isDefaultAdminLogin ? 'admin' : ('user' as const),
+                approvalStatus: isDefaultAdminLogin ? 'approved' : ('approved' as const),
+                status: 'active' as const
+            }
+            await db.insert(profiles).values(newProfile)
+
+            // Fetch again
+            profile = await db.query.profiles.findFirst({ where: eq(profiles.id, user.id) })
+        }
+
+        if (!profile) return { success: false, message: 'Profile could not be created' }
 
         // ⚠️ CRITICAL SECURITY: Block suspended accounts from logging in
         if (profile.status === 'suspended') {
@@ -167,33 +227,37 @@ export async function loginAction(prevState: any, formData: FormData) {
             }
         }
 
-        if (isDefaultAdminLogin && profile.role !== 'admin') {
-            await db.update(profiles)
-                .set({ role: 'admin', approvalStatus: 'approved' })
-                .where(eq(profiles.id, user.id))
-        }
+        // ENTERPRISE SECURITY: Enforce Admin Role for System Account
+        // This ensures the system admin ALWAYS has the correct role, regardless of DB state history.
+        if (isDefaultAdminLogin) {
+            if (profile.role !== 'admin' || profile.approvalStatus !== 'approved') {
+                // Perform critical update with verification
+                const [updated] = await db.update(profiles)
+                    .set({ role: 'admin', approvalStatus: 'approved' })
+                    .where(eq(profiles.id, user.id))
+                    .returning()
 
-        const effectiveProfile = isDefaultAdminLogin
-            ? { ...profile, role: 'admin', approvalStatus: 'approved' }
-            : profile
+                if (!updated || updated.role !== 'admin') {
+                    throw new Error('System-Critical Error: Failed to enforce Admin privileges.')
+                }
 
-        if (effectiveProfile.role === 'user' && effectiveProfile.approvalStatus !== 'approved') {
-            await db.update(profiles)
-                .set({ approvalStatus: 'approved' })
-                .where(eq(profiles.id, user.id))
+                // Sync local variable for immediate redirection usage
+                profile.role = 'admin'
+                profile.approvalStatus = 'approved'
+            }
         }
 
         revalidatePath('/', 'layout')
 
         // Handle Pending/Rejected Status
-        if (effectiveProfile.role === 'vendor' || effectiveProfile.role === 'technician') {
-            if (effectiveProfile.approvalStatus !== 'approved') {
+        if (profile.role === 'vendor' || profile.role === 'technician') {
+            if (profile.approvalStatus !== 'approved') {
                 redirect('/pending-approval')
             }
         }
 
         // Redirect to role-specific dashboard using centralized utility
-        const dashboardPath = getRoleDashboard(effectiveProfile.role)
+        const dashboardPath = getRoleDashboard(profile.role)
         redirect(dashboardPath)
     } catch (error: any) {
         // Allow redirects to bubble up
