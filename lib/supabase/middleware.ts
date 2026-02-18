@@ -69,11 +69,20 @@ export async function updateSession(request: NextRequest) {
     // 3. Check role-based authorization for protected routes
     if (isProtectedPath && user) {
         // Fetch user's profile to check role, approval status, AND suspension status
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role, approval_status, status')
             .eq('id', user.id)
             .single()
+
+        console.log('[Middleware Debug]', {
+            path: request.nextUrl.pathname,
+            userId: user.id,
+            profileRole: profile?.role,
+            profileStatus: profile?.status,
+            profileError: profileError,
+            accessCheck: canAccessRoute(request.nextUrl.pathname, profile?.role)
+        })
 
         const userRole = profile?.role
         const approvalStatus = profile?.approval_status
@@ -82,11 +91,13 @@ export async function updateSession(request: NextRequest) {
         // ⚠️ CRITICAL SECURITY: Block suspended users from accessing ANY protected route
         // This check happens BEFORE all other checks to prevent any bypass
         if (userStatus === 'suspended') {
+            console.log('[Middleware] User suspended, redirecting')
             return NextResponse.redirect(new URL('/account-suspended', request.url))
         }
 
         // Check if user's role can access this route
         if (!canAccessRoute(request.nextUrl.pathname, userRole)) {
+            console.log('[Middleware] Access denied for role:', userRole, 'path:', request.nextUrl.pathname)
             return NextResponse.redirect(new URL('/unauthorized', request.url))
         }
 

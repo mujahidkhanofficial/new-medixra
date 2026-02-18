@@ -14,7 +14,11 @@ import { config } from 'dotenv';
 import path from 'path';
 
 // Load environment variables before any DB imports
+// Load environment variables before any DB imports
 config({ path: path.resolve(process.cwd(), '.env.local') });
+if (!process.env.DATABASE_URL) {
+    config({ path: path.resolve(process.cwd(), '.env') });
+}
 
 async function main() {
     const { db, endConnection } = await import('./drizzle');
