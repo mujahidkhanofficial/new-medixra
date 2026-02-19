@@ -220,74 +220,6 @@ export const adminDeleteProduct = adminAction(
     }
 )
 
-<<<<<<< HEAD
-export const getUserDetails = async (userId: string) => {
-    const supabase = await createClient()
-    if (!supabase) throw new Error('Service Unavailable')
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
-    await checkAdmin(user.id)
-
-    // Parallel fetch: Profile and their Products
-    const [profile, userProducts] = await Promise.all([
-        db.query.profiles.findFirst({
-            where: eq(profiles.id, userId)
-        }),
-        db.select({
-            id: products.id,
-            name: products.name,
-            category: products.category,
-            price: products.price,
-            status: products.status,
-            createdAt: products.createdAt,
-            imageUrl: products.imageUrl
-        }).from(products)
-            .where(eq(products.vendorId, userId))
-            .orderBy(desc(products.createdAt))
-            .limit(20)
-    ])
-
-    if (!profile) throw new Error('User not found')
-
-    // Construct Activity Log
-    const activities = [
-        {
-            type: 'joined',
-            date: profile.createdAt,
-            title: 'Account Created',
-            description: `Joined as ${profile.role}`
-        },
-        // Add product listings to activity
-        ...userProducts.map(p => ({
-            type: 'product_listing',
-            date: p.createdAt,
-            title: 'Listed Product',
-            description: `Listed ${p.name} in ${p.category}`
-        }))
-    ]
-
-    // If profile was updated significantly after creation (arbitrary 1 hour buffer), add update log
-    const createdTime = new Date(profile.createdAt).getTime()
-    const updatedTime = new Date(profile.updatedAt).getTime()
-    if (updatedTime - createdTime > 3600000) {
-        activities.push({
-            type: 'profile_update',
-            date: profile.updatedAt,
-            title: 'Profile Updated',
-            description: 'User updated profile details'
-        })
-    }
-
-    // Sort by date desc
-    const sortedActivity = activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-
-    return {
-        profile,
-        products: userProducts,
-        activity: sortedActivity
-    }
-}
-=======
 export const getUserActivityAndProducts = async (userId: string) => {
     const supabase = await createClient()
     if (!supabase) throw new Error('Service Unavailable')
@@ -356,4 +288,3 @@ export const getUserActivityAndProducts = async (userId: string) => {
     }
 }
 
->>>>>>> a4b0799

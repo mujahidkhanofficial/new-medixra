@@ -44,9 +44,9 @@ export async function updateSession(request: NextRequest) {
     // Public routes that should be accessible to unauthenticated users
     const publicPaths = ['/', '/login', '/signup', '/about-us', '/how-it-works', '/products', '/technicians', '/shop', '/privacy', '/terms', '/safety-compliance']
     const isPublicPath = publicPaths.some(path =>
-        path === '/' ? 
-        request.nextUrl.pathname === '/' : 
-        request.nextUrl.pathname.startsWith(path)
+        path === '/' ?
+            request.nextUrl.pathname === '/' :
+            request.nextUrl.pathname.startsWith(path)
     )
 
     // Protected routes configuration
@@ -71,34 +71,13 @@ export async function updateSession(request: NextRequest) {
     // 3. Check role-based authorization for protected routes
     // 3. Check role-based authorization for protected routes
     if (isProtectedPath && user) {
-<<<<<<< HEAD
-        // Fetch user's profile to check role, approval status, AND suspension status
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role, approval_status, status')
-            .eq('id', user.id)
-            .single()
-
-        console.log('[Middleware Debug]', {
-            path: request.nextUrl.pathname,
-            userId: user.id,
-            profileRole: profile?.role,
-            profileStatus: profile?.status,
-            profileError: profileError,
-            accessCheck: canAccessRoute(request.nextUrl.pathname, profile?.role)
-        })
-
-        const userRole = profile?.role
-        const approvalStatus = profile?.approval_status
-        const userStatus = profile?.status
-=======
         // Optimization: Read role and status from JWT metadata (custom claims)
         // This avoids a database query on every request
         // The metadata is synced via database triggers
         const userRole = user.app_metadata?.role || user.user_metadata?.role
         const approvalStatus = user.app_metadata?.approval_status || user.user_metadata?.approval_status
         const userStatus = user.app_metadata?.status || user.user_metadata?.status
->>>>>>> a4b0799
+
 
         // ⚠️ CRITICAL SECURITY: Block suspended users from accessing ANY protected route
         // This check happens BEFORE all other checks to prevent any bypass

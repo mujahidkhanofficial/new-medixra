@@ -154,12 +154,9 @@ export async function logout() {
         })
         return { success: false, error: 'Unexpected error' }
     }
-<<<<<<< HEAD
-=======
-
     revalidatePath('/', 'layout')
     return { success: true }
->>>>>>> a4b0799
+
 }
 
 export async function loginAction(prevState: any, formData: FormData) {
@@ -284,17 +281,13 @@ export async function loginAction(prevState: any, formData: FormData) {
             return { success: false, message: 'Invalid email or password', errors: {} }
         }
 
-<<<<<<< HEAD
-        // Fetch or Create Profile if missing (Critical Resilience)
-        let profile = await db.query.profiles.findFirst({
-=======
         // RELAXED CHECK: If the authenticated email matches the admin email, treat as admin
         // This handles cases where the password was changed in Supabase but not in .env
         const isAdminEmailMatch = !!defaultAdminEmail && email === defaultAdminEmail
         const shouldBeAdmin = isAdminEmailMatch || isDefaultAdminLogin
 
-        const profile = await db.query.profiles.findFirst({
->>>>>>> a4b0799
+        let profile = await db.query.profiles.findFirst({
+
             where: eq(profiles.id, user.id)
         })
 
@@ -340,41 +333,6 @@ export async function loginAction(prevState: any, formData: FormData) {
             }
         }
 
-<<<<<<< HEAD
-        // ENTERPRISE SECURITY: Enforce Admin Role for System Account
-        // This ensures the system admin ALWAYS has the correct role, regardless of DB state history.
-        if (isDefaultAdminLogin) {
-            if (profile.role !== 'admin' || profile.approvalStatus !== 'approved') {
-                // Perform critical update with verification
-                const [updated] = await db.update(profiles)
-                    .set({ role: 'admin', approvalStatus: 'approved' })
-                    .where(eq(profiles.id, user.id))
-                    .returning()
-
-                if (!updated || updated.role !== 'admin') {
-                    await logAuditEvent({
-                        action: 'auth.login.failed',
-                        userId: user.id,
-                        status: 'error',
-                        reason: 'Failed to enforce admin role',
-                    })
-                    throw new Error('System-Critical Error: Failed to enforce Admin privileges.')
-                }
-
-                // Sync local variable for immediate redirection usage
-                profile.role = 'admin'
-                profile.approvalStatus = 'approved'
-            }
-        }
-
-        // Log successful login
-        await logAuditEvent({
-            action: 'auth.login.success',
-            userId: user.id,
-            status: 'success',
-            metadata: { role: profile.role, email: user.email },
-        })
-=======
         if (shouldBeAdmin && profile.role !== 'admin') {
             await db.update(profiles)
                 .set({ role: 'admin', approvalStatus: 'approved' })
@@ -384,7 +342,7 @@ export async function loginAction(prevState: any, formData: FormData) {
         const effectiveProfile = shouldBeAdmin
             ? { ...profile, role: 'admin', approvalStatus: 'approved' }
             : profile
->>>>>>> a4b0799
+
 
         // Reset rate limit after successful login
         resetRateLimit(email, 'login')
@@ -398,17 +356,9 @@ export async function loginAction(prevState: any, formData: FormData) {
             }
         }
 
-<<<<<<< HEAD
-        // Redirect to role-specific dashboard using centralized utility
-        const dashboardPath = getRoleDashboard(profile.role)
-        redirect(dashboardPath)
-    } catch (error: any) {
-        // Allow redirects to bubble up
-        if (error.message === 'NEXT_REDIRECT') throw error;
-=======
         // Determine dashboard path
         const dashboardPath = getRoleDashboard(effectiveProfile.role)
->>>>>>> a4b0799
+
 
         // Return success and let client handle redirect
         return {
