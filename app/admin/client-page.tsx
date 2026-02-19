@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import {
     BarChart3,
     Users,
@@ -33,7 +33,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from '@/components/ui/button'
-import { approveUser, rejectUser, banUser, activateUser } from '@/lib/actions/admin'
+import { approveUser, rejectUser, banUser, activateUser, getAllUsers, getPendingApprovals, getReportedListings } from '@/lib/actions/admin'
 import { logout } from '@/lib/actions/auth'
 import { resolveReport, dismissReport, deleteReport } from '@/lib/actions/reports'
 import { useRouter } from 'next/navigation'
@@ -55,9 +55,7 @@ interface AdminDashboardClientProps {
         listedProducts: number
         totalInquiries: number
     }
-    initialPendingApprovals: any[]
-    initialAllUsers: any[]
-    initialReportedListings: any[]
+    // Removed initial heavy data props
     currentAdminId: string
     analyticsData: {
         growthData: any[]
@@ -68,9 +66,6 @@ interface AdminDashboardClientProps {
 
 export default function AdminDashboardClient({
     initialStats,
-    initialPendingApprovals,
-    initialAllUsers,
-    initialReportedListings,
     currentAdminId,
     analyticsData,
     activityFeed
@@ -84,10 +79,98 @@ export default function AdminDashboardClient({
     const [isUserSheetOpen, setIsUserSheetOpen] = useState(false)
     const router = useRouter()
 
-    // Local state to reflect optimistic updates
-    const [pendingApprovals, setPendingApprovals] = useState(initialPendingApprovals)
-    const [allUsers, setAllUsers] = useState(initialAllUsers)
-    const [reportedListings, setReportedListings] = useState(initialReportedListings)
+    // Local state for lazy loaded data
+    const [pendingApprovals, setPendingApprovals] = useState<any[]>([])
+    const [isApprovalsLoaded, setIsApprovalsLoaded] = useState(false)
+    const [loadingApprovals, setLoadingApprovals] = useState(false)
+
+    const [allUsers, setAllUsers] = useState<any[]>([])
+    const [isUsersLoaded, setIsUsersLoaded] = useState(false)
+    const [loadingUsers, setLoadingUsers] = useState(false)
+
+    const [reportedListings, setReportedListings] = useState<any[]>([])
+    const [isReportsLoaded, setIsReportsLoaded] = useState(false)
+    const [loadingReports, setLoadingReports] = useState(false)
+
+    // Data Fetching Effects
+    useEffect(() => {
+        if (activeSection === 'approvals' && !isApprovalsLoaded) {
+            const loadApprovals = async () => {
+                setLoadingApprovals(true)
+                try {
+                    const data = await getPendingApprovals()
+                    // Transform
+                    const formatted = data.map(u => ({
+                        id: u.id,
+                        name: u.fullName || u.email,
+                        role: u.role,
+                        location: u.city || 'Pakistan',
+                        appliedDate: new Date(u.createdAt).toLocaleDateString(),
+                        equipment: u.role === 'vendor' ? 'Vendor Application' : 'Technician Application',
+                        status: 'pending'
+                    }))
+                    setPendingApprovals(formatted)
+                    setIsApprovalsLoaded(true)
+                } catch (error) {
+                    console.error('Failed to load approvals:', error)
+                    toast.error('Failed to load pending approvals')
+                } finally {
+                    setLoadingApprovals(false)
+                }
+            }
+            loadApprovals()
+        }
+    }, [activeSection, isApprovalsLoaded])
+
+    useEffect(() => {
+        if (activeSection === 'users' && !isUsersLoaded) {
+            const loadUsers = async () => {
+                setLoadingUsers(true)
+                try {
+                    const data = await getAllUsers()
+                    // Transform
+                    const formatted = data.map(u => ({
+                        id: u.id,
+                        name: u.fullName || 'Unknown',
+                        email: u.email,
+                        role: u.role || 'user',
+                        status: u.status || 'active',
+                        joined: new Date(u.createdAt).toLocaleDateString(),
+                        phone: u.phone,
+                        location: u.city,
+                        avatarUrl: u.avatarUrl
+                    }))
+                    setAllUsers(formatted)
+                    setIsUsersLoaded(true)
+                } catch (error) {
+                    console.error('Failed to load users:', error)
+                    toast.error('Failed to load users')
+                } finally {
+                    setLoadingUsers(false)
+                }
+            }
+            loadUsers()
+        }
+    }, [activeSection, isUsersLoaded])
+
+    useEffect(() => {
+        if (activeSection === 'reports' && !isReportsLoaded) {
+            const loadReports = async () => {
+                setLoadingReports(true)
+                try {
+                    const data = await getReportedListings()
+                    setReportedListings(data)
+                    setIsReportsLoaded(true)
+                } catch (error) {
+                    console.error('Failed to load reports:', error)
+                    toast.error('Failed to load reported listings')
+                } finally {
+                    setLoadingReports(false)
+                }
+            }
+            loadReports()
+        }
+    }, [activeSection, isReportsLoaded])
 
     // Handlers
     const handleApproveUser = (userId: string) => {

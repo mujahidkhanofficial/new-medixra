@@ -1,8 +1,8 @@
 'use server'
 
 import { db } from '@/lib/db/drizzle'
-import { profiles, vendors, products, technicians } from '@/lib/db/schema'
-import { eq, and, ne, sql, desc } from 'drizzle-orm'
+import { profiles, vendors, products, technicians, productReports } from '@/lib/db/schema'
+import { eq, and, ne, sql, desc, inArray } from 'drizzle-orm'
 import { authenticatedAction, adminAction } from '@/lib/safe-action'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
@@ -190,6 +190,7 @@ export const getAllUsers = async () => {
         .select()
         .from(profiles)
         .orderBy(desc(profiles.createdAt))
+        .limit(50)
 }
 
 export const getPendingApprovals = async () => {
@@ -288,3 +289,55 @@ export const getUserActivityAndProducts = async (userId: string) => {
     }
 }
 
+export const getReportedListings = async () => {
+    const supabase = await createClient()
+    if (!supabase) throw new Error('Service Unavailable')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Unauthorized')
+    await checkAdmin(user.id)
+
+    // Fetch reports
+    const reports = await db
+        .select()
+        .from(productReports)
+        .where(eq(productReports.status, 'open'))
+        .orderBy(desc(productReports.createdAt))
+        .limit(50)
+
+    if (reports.length === 0) return []
+
+    // Batch fetch related products
+    const productIds = Array.from(new Set(reports.map(r => r.productId).filter(Boolean)))
+    const productsData = productIds.length > 0
+        ? await db.select().from(products).where(inArray(products.id, productIds))
+        : []
+    const productsMap = new Map(productsData.map(p => [p.id, p]))
+
+    // Batch fetch vendors
+    const vendorIds = Array.from(new Set(productsData.map(p => p.vendorId).filter(Boolean)))
+    const vendorsData = vendorIds.length > 0
+        ? await db.select().from(profiles).where(inArray(profiles.id, vendorIds))
+        : []
+    const vendorsMap = new Map(vendorsData.map(v => [v.id, v]))
+
+    // Enrich
+    return reports.map(report => {
+        const product = productsMap.get(report.productId)
+        const vendor = product ? vendorsMap.get(product.vendorId) : null
+
+        return {
+            id: report.id,
+            productId: product?.id,
+            productName: product?.name || 'Unknown',
+            productPrice: product?.price || '0',
+            vendorName: vendor?.fullName || 'Unknown Vendor',
+            vendorEmail: vendor?.email || 'N/A',
+            reason: report.reason,
+            description: report.description,
+            reportedBy: 'User Report',
+            status: report.status,
+            createdAt: new Date(report.createdAt).toLocaleDateString(),
+            reportCount: 1,
+        }
+    })
+}

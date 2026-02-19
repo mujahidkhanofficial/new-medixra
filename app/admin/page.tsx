@@ -46,8 +46,6 @@ export default async function AdminDashboardPage() {
             activeVendorsResult,
             activeTechniciansResult,
             listedProductsResult,
-            pendingApprovalsData,
-            allUsersData,
             totalInquiriesResult,
             analyticsData, // New analytics data
             recentProfiles, // Recent users for feed
@@ -57,26 +55,6 @@ export default async function AdminDashboardPage() {
             db.select({ count: count() }).from(vendors).where(eq(vendors.isVerified, true)),
             db.select({ count: count() }).from(technicians).where(eq(technicians.isVerified, true)),
             db.select({ count: count() }).from(products).where(eq(products.status, 'active')),
-            db.select({
-                id: profiles.id,
-                fullName: profiles.fullName,
-                email: profiles.email,
-                role: profiles.role,
-                city: profiles.city,
-                approvalStatus: profiles.approvalStatus,
-                createdAt: profiles.createdAt
-            }).from(profiles).where(eq(profiles.approvalStatus, 'pending')).orderBy(desc(profiles.createdAt)),
-            db.select({
-                id: profiles.id,
-                fullName: profiles.fullName,
-                email: profiles.email,
-                role: profiles.role,
-                status: profiles.status,
-                createdAt: profiles.createdAt,
-                phone: profiles.phone,
-                city: profiles.city,
-                avatarUrl: profiles.avatarUrl,
-            }).from(profiles).orderBy(desc(profiles.createdAt)),
             db.select({ sum: sql<number>`sum(${products.whatsappClicks})` }).from(products),
             getAnalyticsData(),
             db.select().from(profiles).orderBy(desc(profiles.createdAt)).limit(5),
@@ -109,19 +87,6 @@ export default async function AdminDashboardPage() {
             }))
         ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10)
 
-        // Fetch reported listings separately with error handling
-        let reportedListingsData: any[] = []
-        try {
-            reportedListingsData = await db
-                .select()
-                .from(productReports)
-                .where(eq(productReports.status, 'open'))
-                .orderBy(desc(productReports.createdAt))
-                .limit(50)
-        } catch (error) {
-            console.error('Failed to fetch reported listings:', error)
-        }
-
         const stats = {
             totalUsers: totalUsersResult[0].count,
             activeVendors: activeVendorsResult[0].count,
@@ -130,80 +95,9 @@ export default async function AdminDashboardPage() {
             totalInquiries: Number(totalInquiriesResult[0].sum || 0)
         }
 
-        // Transform Pending Approvals
-        const pendingApprovals = pendingApprovalsData.map(u => ({
-            id: u.id,
-            name: u.fullName || u.email,
-            role: u.role,
-            location: u.city || 'Pakistan',
-            appliedDate: new Date(u.createdAt).toLocaleDateString(),
-            equipment: u.role === 'vendor' ? 'Vendor Application' : 'Technician Application',
-            status: 'pending'
-        }))
-
-        // Transform Users
-        const allUsers = allUsersData.map(u => ({
-            id: u.id,
-            name: u.fullName || 'Unknown',
-            email: u.email,
-            role: u.role || 'user',
-            status: u.status || 'active', // Now directly from database
-            joined: new Date(u.createdAt).toLocaleDateString(),
-            phone: u.phone,
-            location: u.city,
-            avatarUrl: u.avatarUrl
-        }))
-
-        // Transform Reported Listings - enrich with product and vendor details
-        const reportedListings = await Promise.all(
-            reportedListingsData.map(async (report) => {
-                try {
-                    const productData = await db.select().from(products).where(eq(products.id, report.productId)).limit(1)
-                    const product = productData[0]
-
-                    const vendorData = await db.select({ fullName: profiles.fullName, email: profiles.email }).from(profiles).where(eq(profiles.id, product?.vendorId || '')).limit(1)
-                    const vendor = vendorData[0]
-
-                    return {
-                        id: report.id,
-                        productId: product?.id,
-                        productName: product?.name || 'Unknown',
-                        productPrice: product?.price || '0',
-                        vendorName: vendor?.fullName || 'Unknown Vendor',
-                        vendorEmail: vendor?.email || 'N/A',
-                        reason: report.reason,
-                        description: report.description,
-                        reportedBy: 'User Report',
-                        status: report.status,
-                        createdAt: new Date(report.createdAt).toLocaleDateString(),
-                        reportCount: 1,
-                    }
-                } catch (error) {
-                    console.error('Failed to enrich report:', error)
-                    return {
-                        id: report.id,
-                        productId: report.productId,
-                        productName: 'Unknown',
-                        productPrice: '0',
-                        vendorName: 'Unknown Vendor',
-                        vendorEmail: 'N/A',
-                        reason: report.reason,
-                        description: report.description,
-                        reportedBy: 'User Report',
-                        status: report.status,
-                        createdAt: new Date(report.createdAt).toLocaleDateString(),
-                        reportCount: 1,
-                    }
-                }
-            })
-        )
-
         return (
             <AdminDashboardClient
                 initialStats={stats}
-                initialPendingApprovals={pendingApprovals}
-                initialAllUsers={allUsers}
-                initialReportedListings={reportedListings}
                 currentAdminId={user.id}
                 analyticsData={analyticsData}
                 activityFeed={activityFeed}
