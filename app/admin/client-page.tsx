@@ -183,7 +183,14 @@ export default function AdminDashboardClient({
     const handleLogout = async () => {
         setIsLoggingOut(true)
         try {
-            await logout()
+            const result = await logout()
+            if (result?.error) {
+                toast.error(result.error)
+                setIsLoggingOut(false)
+            } else {
+                // Successful logout
+                router.replace('/login')
+            }
         } catch (error) {
             console.error('Logout failed:', error)
             toast.error('Logout failed')

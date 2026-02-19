@@ -71,7 +71,9 @@ export default async function AdminDashboardPage() {
             email: profiles.email,
             role: profiles.role,
             status: profiles.status,
-            createdAt: profiles.createdAt
+            createdAt: profiles.createdAt,
+            phone: profiles.phone,
+            city: profiles.city // Add city for location
         }).from(profiles).orderBy(desc(profiles.createdAt)),
         db.select({ sum: sql<number>`sum(${products.whatsappClicks})` }).from(products),
         getAnalyticsData(),
@@ -142,6 +144,8 @@ export default async function AdminDashboardPage() {
         id: u.id,
         name: u.fullName || 'Unknown',
         email: u.email,
+        phone: u.phone,
+        location: u.city,
         role: u.role || 'user',
         status: u.status || 'active', // Now directly from database
         joined: new Date(u.createdAt).toLocaleDateString()

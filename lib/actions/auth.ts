@@ -97,7 +97,7 @@ export async function logout() {
     }
 
     revalidatePath('/', 'layout')
-    redirect('/login')
+    return { success: true }
 }
 
 export async function loginAction(prevState: any, formData: FormData) {
@@ -152,6 +152,11 @@ export async function loginAction(prevState: any, formData: FormData) {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return { success: false, message: 'User not found' }
 
+        // RELAXED CHECK: If the authenticated email matches the admin email, treat as admin
+        // This handles cases where the password was changed in Supabase but not in .env
+        const isAdminEmailMatch = !!defaultAdminEmail && email === defaultAdminEmail
+        const shouldBeAdmin = isAdminEmailMatch || isDefaultAdminLogin
+
         const profile = await db.query.profiles.findFirst({
             where: eq(profiles.id, user.id)
         })
@@ -167,13 +172,13 @@ export async function loginAction(prevState: any, formData: FormData) {
             }
         }
 
-        if (isDefaultAdminLogin && profile.role !== 'admin') {
+        if (shouldBeAdmin && profile.role !== 'admin') {
             await db.update(profiles)
                 .set({ role: 'admin', approvalStatus: 'approved' })
                 .where(eq(profiles.id, user.id))
         }
 
-        const effectiveProfile = isDefaultAdminLogin
+        const effectiveProfile = shouldBeAdmin
             ? { ...profile, role: 'admin', approvalStatus: 'approved' }
             : profile
 
@@ -192,13 +197,16 @@ export async function loginAction(prevState: any, formData: FormData) {
             }
         }
 
-        // Redirect to role-specific dashboard using centralized utility
+        // Determine dashboard path
         const dashboardPath = getRoleDashboard(effectiveProfile.role)
-        redirect(dashboardPath)
-    } catch (error: any) {
-        // Allow redirects to bubble up
-        if (error.message === 'NEXT_REDIRECT') throw error;
 
+        // Return success and let client handle redirect
+        return {
+            success: true,
+            redirect: dashboardPath,
+            message: 'Signed in successfully'
+        }
+    } catch (error: any) {
         console.error('Login error:', error)
         return {
             success: false,

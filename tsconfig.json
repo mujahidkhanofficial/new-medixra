@@ -42,6 +42,7 @@
   ],
   "exclude": [
     "node_modules",
+    "drizzle.config.ts",
     "debug-db.ts",
     "lib/db/add-product-fk.ts",
     "inspect-fk.ts",

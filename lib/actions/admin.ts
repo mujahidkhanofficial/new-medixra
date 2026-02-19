@@ -219,3 +219,72 @@ export const adminDeleteProduct = authenticatedAction(
         return { success: true }
     }
 )
+
+export const getUserActivityAndProducts = async (userId: string) => {
+    const supabase = await createClient()
+    if (!supabase) throw new Error('Service Unavailable')
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Unauthorized')
+
+    // Check if the requester is an admin
+    await checkAdmin(user.id)
+
+    // Fetch user's products
+    const userProducts = await db
+        .select()
+        .from(products)
+        .where(eq(products.vendorId, userId))
+        .orderBy(desc(products.createdAt))
+
+    // Fetch user profile creation and update date for activity
+    const userProfile = await db.query.profiles.findFirst({
+        where: eq(profiles.id, userId),
+        columns: { createdAt: true, updatedAt: true }
+    })
+
+    // Construct activity feed
+    const activities = []
+
+    if (userProfile) {
+        activities.push({
+            id: 'joined',
+            type: 'account_created',
+            title: 'Account Created',
+            timestamp: userProfile.createdAt, // It's a string from db query usually, check type
+            description: 'User joined the platform'
+        })
+
+        // Add Profile Updated activity if it's different from creation ( > 1 minute difference)
+        const createdTime = new Date(userProfile.createdAt).getTime()
+        const updatedTime = new Date(userProfile.updatedAt).getTime()
+        if (updatedTime - createdTime > 60000) {
+            activities.push({
+                id: 'profile_updated',
+                type: 'profile_updated',
+                title: 'Profile Updated',
+                timestamp: userProfile.updatedAt,
+                description: 'User updated their profile details'
+            })
+        }
+    }
+
+    userProducts.forEach(p => {
+        activities.push({
+            id: `product-${p.id}`,
+            type: 'product_listed',
+            title: 'Product Listed',
+            timestamp: p.createdAt,
+            description: `Listed ${p.name} in ${p.category}`
+        })
+    })
+
+    // Sort by newest first
+    activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+
+    return {
+        products: userProducts,
+        activities
+    }
+}
+
