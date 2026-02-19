@@ -34,14 +34,24 @@ export default function Navigation() {
     const handleLogout = async () => {
         setIsLoggingOut(true)
         try {
+<<<<<<< HEAD
             const result = await logout()
             if (result?.success) {
                 router.replace('/login')
+=======
+            const result = await logout() // Call server action
+            if (result && !result.success) {
+                console.error('Logout failed:', result.error)
+                setIsLoggingOut(false)
+            } else {
+                // Successful logout
+                router.replace('/login')
+                router.refresh()
+>>>>>>> a4b0799
             }
         } catch (error) {
             console.error('Logout failed', error)
-        } finally {
-            // isLoggingOut(false) 
+            setIsLoggingOut(false)
         }
     }
 

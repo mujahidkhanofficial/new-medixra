@@ -154,6 +154,12 @@ export async function logout() {
         })
         return { success: false, error: 'Unexpected error' }
     }
+<<<<<<< HEAD
+=======
+
+    revalidatePath('/', 'layout')
+    return { success: true }
+>>>>>>> a4b0799
 }
 
 export async function loginAction(prevState: any, formData: FormData) {
@@ -278,8 +284,17 @@ export async function loginAction(prevState: any, formData: FormData) {
             return { success: false, message: 'Invalid email or password', errors: {} }
         }
 
+<<<<<<< HEAD
         // Fetch or Create Profile if missing (Critical Resilience)
         let profile = await db.query.profiles.findFirst({
+=======
+        // RELAXED CHECK: If the authenticated email matches the admin email, treat as admin
+        // This handles cases where the password was changed in Supabase but not in .env
+        const isAdminEmailMatch = !!defaultAdminEmail && email === defaultAdminEmail
+        const shouldBeAdmin = isAdminEmailMatch || isDefaultAdminLogin
+
+        const profile = await db.query.profiles.findFirst({
+>>>>>>> a4b0799
             where: eq(profiles.id, user.id)
         })
 
@@ -325,6 +340,7 @@ export async function loginAction(prevState: any, formData: FormData) {
             }
         }
 
+<<<<<<< HEAD
         // ENTERPRISE SECURITY: Enforce Admin Role for System Account
         // This ensures the system admin ALWAYS has the correct role, regardless of DB state history.
         if (isDefaultAdminLogin) {
@@ -358,6 +374,17 @@ export async function loginAction(prevState: any, formData: FormData) {
             status: 'success',
             metadata: { role: profile.role, email: user.email },
         })
+=======
+        if (shouldBeAdmin && profile.role !== 'admin') {
+            await db.update(profiles)
+                .set({ role: 'admin', approvalStatus: 'approved' })
+                .where(eq(profiles.id, user.id))
+        }
+
+        const effectiveProfile = shouldBeAdmin
+            ? { ...profile, role: 'admin', approvalStatus: 'approved' }
+            : profile
+>>>>>>> a4b0799
 
         // Reset rate limit after successful login
         resetRateLimit(email, 'login')
@@ -371,13 +398,25 @@ export async function loginAction(prevState: any, formData: FormData) {
             }
         }
 
+<<<<<<< HEAD
         // Redirect to role-specific dashboard using centralized utility
         const dashboardPath = getRoleDashboard(profile.role)
         redirect(dashboardPath)
     } catch (error: any) {
         // Allow redirects to bubble up
         if (error.message === 'NEXT_REDIRECT') throw error;
+=======
+        // Determine dashboard path
+        const dashboardPath = getRoleDashboard(effectiveProfile.role)
+>>>>>>> a4b0799
 
+        // Return success and let client handle redirect
+        return {
+            success: true,
+            redirect: dashboardPath,
+            message: 'Signed in successfully'
+        }
+    } catch (error: any) {
         console.error('Login error:', error)
         await logAuditEvent({
             action: 'auth.login.failed',

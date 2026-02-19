@@ -39,7 +39,80 @@ export default async function AdminDashboardPage() {
         redirect('/login')
     }
 
+<<<<<<< HEAD
     // Fetch Data with Error Handling
+=======
+    // Fetch Stats
+    const [
+        totalUsersResult,
+        activeVendorsResult,
+        activeTechniciansResult,
+        listedProductsResult,
+        pendingApprovalsData,
+        allUsersData,
+        totalInquiriesResult,
+        analyticsData, // New analytics data
+        recentProfiles, // Recent users for feed
+        recentProductsData // Recent products for feed
+    ] = await Promise.all([
+        db.select({ count: count() }).from(profiles),
+        db.select({ count: count() }).from(vendors).where(eq(vendors.isVerified, true)),
+        db.select({ count: count() }).from(technicians).where(eq(technicians.isVerified, true)),
+        db.select({ count: count() }).from(products).where(eq(products.status, 'active')),
+        db.select({
+            id: profiles.id,
+            fullName: profiles.fullName,
+            email: profiles.email,
+            role: profiles.role,
+            city: profiles.city,
+            approvalStatus: profiles.approvalStatus,
+            createdAt: profiles.createdAt
+        }).from(profiles).where(eq(profiles.approvalStatus, 'pending')).orderBy(desc(profiles.createdAt)),
+        db.select({
+            id: profiles.id,
+            fullName: profiles.fullName,
+            email: profiles.email,
+            role: profiles.role,
+            status: profiles.status,
+            createdAt: profiles.createdAt,
+            phone: profiles.phone,
+            city: profiles.city // Add city for location
+        }).from(profiles).orderBy(desc(profiles.createdAt)),
+        db.select({ sum: sql<number>`sum(${products.whatsappClicks})` }).from(products),
+        getAnalyticsData(),
+        db.select().from(profiles).orderBy(desc(profiles.createdAt)).limit(5),
+        db.select({
+            id: products.id,
+            name: products.name,
+            category: products.category,
+            createdAt: products.createdAt,
+            vendorId: products.vendorId
+        }).from(products).orderBy(desc(products.createdAt)).limit(5)
+    ])
+
+    // Generate Activity Feed
+    const activityFeed = [
+        ...recentProfiles.map(p => ({
+            id: `user-${p.id}`,
+            type: 'user_join',
+            title: 'New User Joined',
+            description: `${p.fullName || p.email} created an account.`,
+            timestamp: new Date(p.createdAt),
+            user: { name: p.fullName || 'User', image: p.avatarUrl }
+        })),
+        ...recentProductsData.map(p => ({
+            id: `product-${p.id}`,
+            type: 'product_list',
+            title: 'New Product Listed',
+            description: `${p.name} added to ${p.category}`,
+            timestamp: new Date(p.createdAt),
+            // We could fetch vendor name here but for performance, skipping for now or can use "Vendor"
+        }))
+    ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10)
+
+    // Fetch reported listings separately with error handling
+    let reportedListingsData: any[] = []
+>>>>>>> a4b0799
     try {
         const [
             totalUsersResult,
@@ -122,6 +195,7 @@ export default async function AdminDashboardPage() {
             console.error('Failed to fetch reported listings:', error)
         }
 
+<<<<<<< HEAD
         const stats = {
             totalUsers: totalUsersResult[0].count,
             activeVendors: activeVendorsResult[0].count,
@@ -129,6 +203,19 @@ export default async function AdminDashboardPage() {
             listedProducts: listedProductsResult[0].count,
             totalInquiries: Number(totalInquiriesResult[0].sum || 0)
         }
+=======
+    // Transform Users
+    const allUsers = allUsersData.map(u => ({
+        id: u.id,
+        name: u.fullName || 'Unknown',
+        email: u.email,
+        phone: u.phone,
+        location: u.city,
+        role: u.role || 'user',
+        status: u.status || 'active', // Now directly from database
+        joined: new Date(u.createdAt).toLocaleDateString()
+    }))
+>>>>>>> a4b0799
 
         // Transform Pending Approvals
         const pendingApprovals = pendingApprovalsData.map(u => ({
