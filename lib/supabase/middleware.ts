@@ -1,4 +1,3 @@
-
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { canAccessRoute } from '@/lib/auth/role-redirect'
@@ -69,15 +68,35 @@ export async function updateSession(request: NextRequest) {
     }
 
     // 3. Check role-based authorization for protected routes
-    // 3. Check role-based authorization for protected routes
     if (isProtectedPath && user) {
-        // Optimization: Read role and status from JWT metadata (custom claims)
-        // This avoids a database query on every request
-        // The metadata is synced via database triggers
-        const userRole = user.app_metadata?.role || user.user_metadata?.role
-        const approvalStatus = user.app_metadata?.approval_status || user.user_metadata?.approval_status
-        const userStatus = user.app_metadata?.status || user.user_metadata?.status
+        // Optimization: Try to read role and status from JWT metadata (custom claims) first
+        // This avoids a database query on every request if triggers are perfectly in sync
+        let userRole = user.app_metadata?.role || user.user_metadata?.role
+        let approvalStatus = user.app_metadata?.approval_status || user.user_metadata?.approval_status
+        let userStatus = user.app_metadata?.status || user.user_metadata?.status
 
+        // FALLBACK: If JWT metadata is missing or out-of-sync, perform a targeted, fast DB lookup.
+        // This ensures legitimate users aren't locked out of '/post-ad' etc. due to trigger lag.
+        if (!userRole || !approvalStatus || !userStatus) {
+            console.log('[Middleware] JWT claims missing, falling back to DB lookup for user:', user.id)
+            try {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role, approval_status, status')
+                    .eq('id', user.id)
+                    .single()
+
+                if (profile) {
+                    // Strictly use DB values as the source of truth if a fallback was required
+                    userRole = profile.role
+                    approvalStatus = profile.approval_status
+                    userStatus = profile.status
+                }
+            } catch (error) {
+                console.error('[Middleware] DB fallback failed:', error)
+                // Continue with whatever we have, restrictive defaults will apply below
+            }
+        }
 
         // ⚠️ CRITICAL SECURITY: Block suspended users from accessing ANY protected route
         // This check happens BEFORE all other checks to prevent any bypass

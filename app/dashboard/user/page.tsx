@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { Plus, Search, Heart, User, LayoutDashboard, FileText, Eye, MessageCircle, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { StatCard } from '@/components/dashboard/stat-card'
+import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
 import { createClient } from '@/lib/supabase/server'
@@ -46,57 +48,39 @@ export default async function UserDashboard() {
       <main className="flex-1">
         <div className="mx-auto max-w-screen-2xl px-4 py-12">
           {/* Welcome Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                Welcome back, {userName}!
-              </h1>
-              <p className="text-muted-foreground">
-                Manage your ads and activity from here.
-              </p>
-            </div>
-            <Button asChild size="lg" className="rounded-full">
-              <Link href="/post-ad">
-                <Plus className="mr-2 h-4 w-4" /> Post New Ad
-              </Link>
-            </Button>
-          </div>
+          <DashboardHeader
+            title={`Welcome back, ${userName}!`}
+            subtitle="Manage your ads and activity from here."
+            actions={
+              <Button asChild size="lg" className="rounded-full">
+                <Link href="/post-ad">
+                  <Plus className="mr-2 h-4 w-4" /> Post New Ad
+                </Link>
+              </Button>
+            }
+          />
 
           {/* Quick Stats / Activity Overview */}
           <div className="grid gap-4 md:grid-cols-3 mb-8">
-            <div className="rounded-lg border bg-card p-6 shadow-xs">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-full">
-                  <FileText className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Ads</p>
-                  <h3 className="text-2xl font-bold">{ads?.length || 0}</h3>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-lg border bg-card p-6 shadow-xs">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
-                  <Eye className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Views</p>
-                  <h3 className="text-2xl font-bold">{totalViews}</h3>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-lg border bg-card p-6 shadow-xs">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
-                  <MessageCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">WhatsApp Clicks</p>
-                  <h3 className="text-2xl font-bold">{totalClicks}</h3>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              label="Total Ads"
+              value={ads?.length || 0}
+              icon={FileText}
+            />
+            <StatCard
+              label="Total Views"
+              value={totalViews}
+              icon={Eye}
+              iconColorClass="text-blue-600 dark:text-blue-400"
+              iconBgClass="bg-blue-100 dark:bg-blue-900/20"
+            />
+            <StatCard
+              label="WhatsApp Clicks"
+              value={totalClicks}
+              icon={MessageCircle}
+              iconColorClass="text-green-600 dark:text-green-400"
+              iconBgClass="bg-green-100 dark:bg-green-900/20"
+            />
           </div>
 
           <div className="grid gap-8 lg:grid-cols-3">

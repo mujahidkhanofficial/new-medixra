@@ -5,6 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Package, Eye, TrendingUp, Plus, Edit2, Trash2, Star, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { StatCard } from '@/components/dashboard/stat-card'
+import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { ViewsChart, ProductPerformanceChart } from '@/components/dashboard/analytics-charts'
 import { getVendorAnalytics, generateViewsChartData } from '@/lib/actions/analytics'
 import { getVendorProfile } from '@/lib/actions/vendor'
@@ -121,38 +123,23 @@ export default function VendorDashboard() {
       <Navigation />
 
       <div className="mx-auto max-w-screen-2xl px-4 py-12">
-        {/* Profile Card */}
-        <div className="mb-8 rounded-lg border border-border bg-card p-6 md:p-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">{info.name}</h1>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-4 w-4 ${i < 4 ? 'fill-accent text-accent' : 'text-muted'}`}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-muted-foreground">({0} reviews)</span>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                {info.location} • Member since {info.joinDate}
-              </p>
-
-              {/* Contact Information */}
-              <div className="space-y-2 mb-4">
-                <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Contact Information</p>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MessageSquare className="h-4 w-4" />
-                  <a href={`https://wa.me/${info.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                    {info.whatsapp}
-                  </a>
-                </div>
-              </div>
+        {/* Profile Header */}
+        <DashboardHeader
+          title={info.name}
+          rating={0} // Placeholder rating
+          reviewsCount={0}
+          location={info.location}
+          joinDate={info.joinDate}
+          contactChildren={
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MessageSquare className="h-4 w-4" />
+              <a href={`https://wa.me/${info.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                {info.whatsapp}
+              </a>
             </div>
-            <div className="flex flex-col gap-3">
+          }
+          actions={
+            <>
               <WhatsAppContact
                 phoneNumber={info.whatsapp}
                 name="Contact on WhatsApp"
@@ -164,25 +151,20 @@ export default function VendorDashboard() {
                   Edit Profile
                 </Link>
               </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         {/* Analytics Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
           {analytics.map((item, idx) => (
-            <div key={idx} className="rounded-lg border border-border bg-card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-muted-foreground">{item.label}</span>
-                <item.icon className="h-4 w-4 text-primary" />
-              </div>
-              <div className="flex items-end justify-between">
-                <span className="text-2xl font-bold text-foreground">{item.value}</span>
-                {item.change && (
-                  <span className="text-xs text-primary font-medium">{item.change}</span>
-                )}
-              </div>
-            </div>
+            <StatCard
+              key={idx}
+              label={item.label}
+              value={item.value}
+              icon={item.icon}
+              change={item.change}
+            />
           ))}
         </div>
 
@@ -223,8 +205,8 @@ export default function VendorDashboard() {
                         <h3 className="font-semibold text-foreground">{product.name}</h3>
                         {product.status !== 'active' && (
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${product.status === 'suspended'
-                              ? 'bg-destructive/10 text-destructive border-destructive/20'
-                              : 'bg-muted text-muted-foreground border-border'
+                            ? 'bg-destructive/10 text-destructive border-destructive/20'
+                            : 'bg-muted text-muted-foreground border-border'
                             }`}>
                             {product.status}
                           </span>

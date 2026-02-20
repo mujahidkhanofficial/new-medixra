@@ -29,17 +29,11 @@ export default function LoginPage() {
     // Handle server action success
     useEffect(() => {
         if (state?.success && state.redirect) {
-            router.replace(state.redirect)
+            // Force a full browser navigation to ensure RootLayout fetches the 
+            // new session cookie and passes it down to AuthProvider, bypassing the Next.js cache.
+            window.location.href = state.redirect
         }
-    }, [state, router])
-
-    // Handle server action success (Just logged in)
-    useEffect(() => {
-        if (state?.success && state.redirect) {
-            // Force a hard navigation if router.replace doesn't work effectively
-            router.replace(state.redirect)
-        }
-    }, [state, router])
+    }, [state])
 
     // If login was successful (via form action), show loading spinner immediately
     // This takes precedence over the form

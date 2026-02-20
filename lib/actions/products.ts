@@ -157,6 +157,7 @@ export async function getProducts(options: ProductFilterOptions = {}) {
     return getCachedProducts();
 }
 
+
 export async function getProductById(id: string) {
     const getCachedProduct = unstable_cache(
         async () => {

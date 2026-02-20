@@ -117,8 +117,9 @@ export async function logout() {
             return { success: false, error: 'Service Unavailable' }
         }
 
-        // Get current user for audit logging
-        const { data: { user } } = await supabase.auth.getUser()
+        // Get current user session for fast audit logging without DB roundtrip
+        const { data: { session } } = await supabase.auth.getSession()
+        const user = session?.user
 
         const { error } = await supabase.auth.signOut()
 
@@ -344,14 +345,9 @@ export async function loginAction(prevState: any, formData: FormData) {
             : profile
 
 
-        // Reset rate limit after successful login
-        resetRateLimit(email, 'login')
-
-        revalidatePath('/', 'layout')
-
         // Handle Pending/Rejected Status
-        if (profile.role === 'vendor' || profile.role === 'technician') {
-            if (profile.approvalStatus !== 'approved') {
+        if (effectiveProfile.role === 'vendor' || effectiveProfile.role === 'technician') {
+            if (effectiveProfile.approvalStatus !== 'approved') {
                 redirect('/pending-approval')
             }
         }
@@ -359,8 +355,20 @@ export async function loginAction(prevState: any, formData: FormData) {
         // Determine dashboard path
         const dashboardPath = getRoleDashboard(effectiveProfile.role)
 
+        // Reset rate limit after successful login
+        resetRateLimit(email, 'login')
+
+        // NON-BLOCKING Audit Log
+        void logAuditEvent({
+            action: 'auth.login.success',
+            userId: user.id,
+            status: 'success',
+        }).catch(err => console.error('Failed to log sync:', err))
+
+        revalidatePath('/', 'layout')
 
         // Return success and let client handle redirect
+
         return {
             success: true,
             redirect: dashboardPath,

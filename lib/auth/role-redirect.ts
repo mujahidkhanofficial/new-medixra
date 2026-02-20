@@ -73,7 +73,7 @@ export function canAccessRoute(route: string, role?: string | null): boolean {
  */
 export function getUnauthorizedRedirect(role?: string | null, currentPath?: string): string {
     const dashboard = getRoleDashboard(role)
-    
+
     // Log attempted unauthorized access if we're not already in a safe zone
     if (currentPath && !currentPath.startsWith(dashboard)) {
         console.warn(`Unauthorized access attempt: role=${role} tried to access ${currentPath}, redirecting to ${dashboard}`)

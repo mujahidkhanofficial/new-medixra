@@ -34,18 +34,23 @@ export default function Navigation() {
     const handleLogout = async () => {
         setIsLoggingOut(true)
         try {
-            const result = await logout() // Call server action
+            // Fix: Immediately clear client-side session so AuthProvider updates before redirect
+            const { createClient } = await import('@/lib/supabase/client')
+            const supabase = createClient()
+            await supabase.auth.signOut()
+
+            // Call server action to clear HttpOnly cookies
+            const result = await logout()
             if (result && !result.success) {
                 console.error('Logout failed:', result.error)
-                setIsLoggingOut(false)
-            } else {
-                // Successful logout
-                router.replace('/login')
-                router.refresh()
-
             }
+
+            // Redirect smoothly since client state is already null
+            router.replace('/login')
+            router.refresh()
         } catch (error) {
             console.error('Logout failed', error)
+        } finally {
             setIsLoggingOut(false)
         }
     }
@@ -121,8 +126,8 @@ export default function Navigation() {
                         </Link>
 
                         {profile?.role !== 'vendor' && (
-                            <Link href="/signup?role=vendor" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                                For Vendors
+                            <Link href="/vendors" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                                Vendors Directory
                             </Link>
                         )}
                     </div>
@@ -267,8 +272,8 @@ export default function Navigation() {
                             </Link>
 
                             {profile?.role !== 'vendor' && (
-                                <Link href="/signup?role=vendor" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
-                                    For Vendors
+                                <Link href="/vendors" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
+                                    Vendors Directory
                                 </Link>
                             )}
 
