@@ -18,17 +18,23 @@ export default async function SettingsPage() {
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, vendors(*)')
         .eq('id', user.id)
         .single()
 
     if (!profile) redirect('/login')
+
+    const isVendor = profile.role === 'vendor'
+    const vendorData = Array.isArray(profile.vendors) ? profile.vendors[0] : profile.vendors
 
     const initialData = {
         fullName: profile.full_name || '',
         phone: profile.phone || '',
         city: profile.city || '',
         email: profile.email || '',
+        isVendor: isVendor,
+        businessType: isVendor && vendorData?.business_type ? vendorData.business_type : '',
+        yearsInBusiness: isVendor && vendorData?.years_in_business ? vendorData.years_in_business : '',
     }
 
     return (

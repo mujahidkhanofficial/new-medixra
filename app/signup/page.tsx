@@ -6,115 +6,114 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FormField } from '@/components/ui/form-field'
 import { FormError } from '@/components/ui/form-error'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
 import { useAuth } from '@/components/providers/auth-provider'
-import { signupSchema, vendorSignupSchema, technicianSignupSchema } from '@/lib/validation'
 import { getErrorMessage } from '@/lib/error-handler'
-import { CITIES, SPECIALTIES } from '@/lib/constants'
+import { CITIES, SPECIALTIES, BUSINESS_TYPES } from '@/lib/constants'
 import { MultiSelectSpecialities } from '@/components/ui/multi-select-specialities'
-import { Toaster, toast } from 'sonner'
+import { toast } from 'sonner'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+
+const signupWizardSchema = z.object({
+    role: z.enum(['user', 'vendor', 'technician']),
+    email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    fullName: z.string().min(2, 'Name must be at least 2 characters'),
+    phoneNumber: z.string().min(1, 'Phone number is required'),
+    city: z.string().min(1, 'City is required'),
+    companyName: z.string().optional(),
+    businessType: z.string().optional(),
+    customBusinessType: z.string().optional(),
+    yearsExperience: z.string().optional(),
+    description: z.string().optional(),
+    specialities: z.array(z.string()).optional().default([]),
+}).superRefine((data, ctx) => {
+    // Vendor specific rules
+    if (data.role === 'vendor') {
+        if (!data.companyName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Company Name is required', path: ['companyName'] })
+        if (!data.businessType) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Business Type is required', path: ['businessType'] })
+        if (data.businessType === 'Other' && !data.customBusinessType) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Please specify your business type', path: ['customBusinessType'] })
+        }
+    }
+})
+
+type SignupWizardData = z.infer<typeof signupWizardSchema>
+
+const DRAFT_KEY = 'signup-draft-v2'
 
 export default function SignupPage() {
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [fullName, setFullName] = useState('')
-    const [phoneNumber, setPhoneNumber] = useState('')
-    const [role, setRole] = useState<'user' | 'vendor' | 'technician'>((typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('role') === 'vendor') ? 'vendor' : 'user')
-
-    // User city (for all roles)
-    const [userCity, setUserCity] = useState('')
-
-    // Vendor fields
-    const [companyName, setCompanyName] = useState('')
-    const [businessType, setBusinessType] = useState('')
-    const [vendorCity, setVendorCity] = useState('')
-    const [yearsInBusiness, setYearsInBusiness] = useState('')
-
-    // Technician fields
-    const [techPhone, setTechPhone] = useState('')
-    const [techCity, setTechCity] = useState('')
-    const [specialities, setSpecialities] = useState<string[]>([])
-    const [experienceYears, setExperienceYears] = useState('')
-
-    const [errors, setErrors] = useState<Record<string, string | string[]>>({})
-    const [error, setError] = useState<string | null>(null)
-    const [isLoading, setIsLoading] = useState(false)
-    const [success, setSuccess] = useState(false)
-    const [step, setStep] = useState<number>(1) // 1: role, 2: account, 3: details, 4: review
-    const [checkingConfirmation, setCheckingConfirmation] = useState(false)
-
-    const totalSteps = role === 'user' ? 3 : 4
-    const displayStep = (step === 4 && role === 'user') ? 3 : step
-
-    const DRAFT_KEY = 'signup-draft-v1'
-
     const router = useRouter()
     const supabase = createClient()
     const { user, loading } = useAuth()
 
-    // Load draft from localStorage on mount
-    useEffect(() => {
-        try {
-            const raw = typeof window !== 'undefined' ? localStorage.getItem(DRAFT_KEY) : null
-            if (raw) {
-                const d = JSON.parse(raw)
-                if (d.email) setEmail(d.email)
-                if (d.fullName) setFullName(d.fullName)
-                if (d.role) setRole(d.role)
-                if (d.userCity) setUserCity(d.userCity)
-                if (d.companyName) setCompanyName(d.companyName)
-                if (d.businessType) setBusinessType(d.businessType)
-                if (d.vendorCity) setVendorCity(d.vendorCity)
-                if (d.yearsInBusiness) setYearsInBusiness(d.yearsInBusiness)
-                if (d.techPhone) setTechPhone(d.techPhone)
-                if (d.techCity) setTechCity(d.techCity)
-                if (d.specialities) setSpecialities(d.specialities)
-                if (d.experienceYears) setExperienceYears(d.experienceYears)
-                if (d.phoneNumber) setPhoneNumber(d.phoneNumber)
-                if (d.step) setStep(d.step)
-            }
-        } catch (err) {
-            console.warn('Failed to load signup draft', err)
-        }
-    }, [])
+    const [step, setStep] = useState<number>(1)
+    const [error, setError] = useState<string | null>(null)
+    const [isLoading, setIsLoading] = useState(false)
+    const [success, setSuccess] = useState(false)
+    const [checkingConfirmation, setCheckingConfirmation] = useState(false)
 
-    // Persist draft on change
+    // Form setup
+    const { register, control, handleSubmit, watch, trigger, reset, setValue, formState: { errors } } = useForm<SignupWizardData>({
+        resolver: zodResolver(signupWizardSchema),
+        defaultValues: {
+            role: (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('role') === 'vendor') ? 'vendor' : 'user',
+            email: '',
+            password: '',
+            fullName: '',
+            phoneNumber: '',
+            city: '',
+            companyName: '',
+            businessType: '',
+            customBusinessType: '',
+            yearsExperience: '',
+            description: '',
+            specialities: [],
+        },
+        mode: 'onChange'
+    })
+
+    const role = watch('role')
+    const totalSteps = role === 'user' ? 3 : 4
+    const displayStep = (step === 4 && role === 'user') ? 3 : step
+
+    // Local Storage Data persistence
+    const currentData = watch()
     useEffect(() => {
         try {
-            const payload = JSON.stringify({
-                email,
-                fullName,
-                phoneNumber,
-                userCity,
-                role,
-                companyName,
-                businessType,
-                vendorCity,
-                yearsInBusiness,
-                techPhone,
-                techCity,
-                specialities,
-                experienceYears,
-                step,
-            })
-            localStorage.setItem(DRAFT_KEY, payload)
-        } catch (err) {
-            /* ignore */
-        }
-    }, [email, fullName, phoneNumber, userCity, role, companyName, businessType, vendorCity, yearsInBusiness, techPhone, techCity, specialities, experienceYears, step])
+            const raw = localStorage.getItem(DRAFT_KEY)
+            if (raw) {
+                const parsed = JSON.parse(raw)
+                reset(parsed.data)
+                if (parsed.step) setStep(parsed.step)
+            }
+        } catch (err) { /* ignore */ }
+    }, [reset])
+
+    useEffect(() => {
+        try {
+            // Give RHF time to populate default empty values first
+            if (currentData.email !== undefined) {
+                localStorage.setItem(DRAFT_KEY, JSON.stringify({ data: currentData, step }))
+            }
+        } catch (err) { /* ignore */ }
+    }, [currentData, step])
 
     const clearDraft = () => {
         try { localStorage.removeItem(DRAFT_KEY) } catch { }
+        reset({ role: 'user', email: '', password: '', fullName: '', phoneNumber: '', city: '', companyName: '', businessType: '', customBusinessType: '', yearsExperience: '', description: '', specialities: [] })
+        setStep(1)
     }
 
     useEffect(() => {
-        if (!loading && user) {
-            router.replace('/dashboard')
-        }
+        if (!loading && user) router.replace('/dashboard')
     }, [user, loading, router])
 
     if (loading) {
@@ -127,7 +126,6 @@ export default function SignupPage() {
 
     const nextStep = async () => {
         setError(null)
-        setErrors({})
 
         if (step === 1) {
             setStep(2)
@@ -135,121 +133,68 @@ export default function SignupPage() {
         }
 
         if (step === 2) {
-            // validate account info before proceeding
-            try {
-                await signupSchema.parseAsync({ email, password, fullName, phoneNumber, role })
-                if (role === 'user') {
-                    setStep(4) // Skip details
-                } else {
-                    setStep(3)
-                }
-            } catch (e: any) {
-                if (e?.flatten) {
-                    setErrors(e.flatten().fieldErrors as any)
-                    setError('Please fix the errors')
-                } else {
-                    setError(getErrorMessage(e))
-                }
+            // Trigger RHF validations for specific fields in Step 2
+            const fieldsToValidate: any[] = ['email', 'password', 'fullName', 'phoneNumber', 'city']
+
+            const isValid = await trigger(fieldsToValidate)
+            if (!isValid) {
+                setError('Please fix the errors highlighted below.')
+                return
             }
+            setStep(role === 'user' ? 4 : 3)
             return
         }
 
         if (step === 3) {
-            // validate role-specific details before review
-            if (role === 'vendor') {
-                const vendorResult = vendorSignupSchema.safeParse({ companyName, businessType, city: vendorCity })
-                if (!vendorResult.success) {
-                    setErrors(vendorResult.error.flatten().fieldErrors as any)
-                    setError('Please fix vendor details')
-                    return
-                }
-            }
-            if (role === 'technician') {
-                const techResult = technicianSignupSchema.safeParse({ city: techCity })
-                if (!techResult.success) {
-                    setErrors(techResult.error.flatten().fieldErrors as any)
-                    setError('Please fix technician details')
-                    return
-                }
+            // Trigger role specific fields
+            let isValid = false
+            if (role === 'vendor') isValid = await trigger(['companyName', 'businessType', 'customBusinessType', 'yearsExperience', 'description'])
+            if (role === 'technician') isValid = await trigger(['specialities', 'yearsExperience'])
+
+            if (!isValid) {
+                setError(`Please fix ${role} details highlighted below.`)
+                return
             }
             setStep(4)
-            return
         }
     }
 
     const prevStep = () => {
         setError(null)
-        setErrors({})
-        if (step === 4 && role === 'user') {
-            setStep(2)
-        } else {
-            setStep((s) => Math.max(1, s - 1))
-        }
+        if (step === 4 && role === 'user') setStep(2)
+        else setStep((s) => Math.max(1, s - 1))
     }
 
-    const handleSignup = async () => {
+    const onSubmit = async (data: SignupWizardData) => {
+        if (step < 4) return
+
         setIsLoading(true)
         setError(null)
-        setErrors({})
 
         try {
-            // Re-validate everything before submit
-            await signupSchema.parseAsync({ email, password, fullName, phoneNumber, role })
-
-            if (role === 'vendor') {
-                const vendorResult = vendorSignupSchema.safeParse({
-                    companyName,
-                    businessType,
-                    phone: techPhone || undefined,
-                    city: vendorCity,
-                    yearsInBusiness,
-                    description: undefined,
-                })
-                if (!vendorResult.success) {
-                    setErrors(vendorResult.error.flatten().fieldErrors as any)
-                    setError('Please fix vendor details')
-                    setIsLoading(false)
-                    return
-                }
-            }
-
-            if (role === 'technician') {
-                const techResult = technicianSignupSchema.safeParse({
-                    phone: techPhone || undefined,
-                    city: techCity,
-                    specialities,
-                    experienceYears,
-                })
-                if (!techResult.success) {
-                    setErrors(techResult.error.flatten().fieldErrors as any)
-                    setError('Please fix technician details')
-                    setIsLoading(false)
-                    return
-                }
-            }
-
-            // Create account with user_metadata including role-specific details
-            const { data, error: authError } = await supabase.auth.signUp({
-                email,
-                password,
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email: data.email,
+                password: data.password,
                 options: {
                     data: {
-                        full_name: fullName,
-                        role,
-                        phone: phoneNumber,
-                        city: userCity,
-                        vendor: role === 'vendor' ? {
-                            company_name: companyName,
-                            business_type: businessType,
-                            city: vendorCity,
-                            years_in_business: yearsInBusiness,
-                            phone: phoneNumber || null,
+                        full_name: data.fullName,
+                        role: data.role,
+                        phone: data.phoneNumber,
+                        city: data.city,
+                        vendor: data.role === 'vendor' ? {
+                            company_name: data.companyName,
+                            business_type: data.businessType === 'Other' ? data.customBusinessType : data.businessType,
+                            city: data.city,
+                            years_in_business: data.yearsExperience,
+                            phone: data.phoneNumber || null,
+                            whatsapp_number: data.phoneNumber || null,
+                            description: data.description || null,
                         } : undefined,
-                        technician: role === 'technician' ? {
-                            phone: phoneNumber || null,
-                            city: techCity || null,
-                            speciality: specialities.length > 0 ? JSON.stringify(specialities) : null,
-                            experience_years: experienceYears || null,
+                        technician: data.role === 'technician' ? {
+                            phone: data.phoneNumber || null,
+                            city: data.city || null,
+                            speciality: data.specialities && data.specialities.length > 0 ? JSON.stringify(data.specialities) : null,
+                            experience_years: data.yearsExperience || null,
                         } : undefined,
                     },
                 },
@@ -260,7 +205,7 @@ export default function SignupPage() {
                 return
             }
 
-            if (data.user) {
+            if (authData.user) {
                 clearDraft()
                 setSuccess(true)
             }
@@ -274,24 +219,22 @@ export default function SignupPage() {
     const handleCheckConfirmation = async () => {
         setCheckingConfirmation(true)
         try {
-            // Attempt to sign in to check if email is confirmed
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                email: currentData.email,
+                password: currentData.password,
             })
 
-            if (error) {
-                if (error.message.includes('Email not confirmed')) {
+            if (signInError) {
+                if (signInError.message.includes('Email not confirmed')) {
                     toast.info('Email not confirmed yet. Please check your inbox.', { id: 'signup-confirm-pending' })
                 } else {
-                    toast.error(getErrorMessage(error))
+                    toast.error(getErrorMessage(signInError))
                 }
                 return
             }
 
-            if (data.user) {
+            if (signInData.user) {
                 toast.success('Email confirmed! Logging you in...', { id: 'signup-confirm-success' })
-                // Clear draft before redirecting
                 clearDraft()
                 setTimeout(() => router.push('/dashboard'), 1000)
             }
@@ -302,21 +245,10 @@ export default function SignupPage() {
         }
     }
 
-    const handleFormSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        if (step < 4) {
-            nextStep()
-        } else {
-            handleSignup()
-        }
-    }
-
-    // Handle Enter key for navigation
+    // Intercept Enter key for multi-step navigation instead of form submission
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
-            // Check if user is typing in a textarea, if so allow new line
             if ((e.target as HTMLElement).tagName === 'TEXTAREA') return
-
             if (step < 4) {
                 e.preventDefault()
                 nextStep()
@@ -340,9 +272,9 @@ export default function SignupPage() {
                         </h1>
                         <p className="text-muted-foreground">
                             {role === 'user' ? (
-                                <>We've sent a confirmation link to <strong>{email}</strong>. Please verify your email to continue.</>
+                                <>We've sent a confirmation link to <strong>{currentData.email}</strong>. Please verify your email to continue.</>
                             ) : (
-                                <>Welcome to Medixra! Since you signed up as a <strong>{role}</strong>, our admin team will review your application. Please check your email <strong>{email}</strong> to verify your account first.</>
+                                <>Welcome to Medixra! Since you signed up as a <strong>{role}</strong>, our admin team will review your application. Please check your email <strong>{currentData.email}</strong> to verify your account first.</>
                             )}
                         </p>
 
@@ -358,8 +290,6 @@ export default function SignupPage() {
                     </div>
                 </main>
                 <Footer />
-
-                {/* Local Toaster removed - using global toaster in layout */}
             </div>
         )
     }
@@ -387,7 +317,7 @@ export default function SignupPage() {
                         </div>
                     </div>
 
-                    <form onSubmit={handleFormSubmit} onKeyDown={handleKeyDown} className="space-y-6 bg-card p-8 rounded-xl border border-border shadow-sm">
+                    <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-6 bg-card p-8 rounded-xl border border-border shadow-sm">
                         {error && <FormError message={error} />}
 
                         {/* STEP 1 - CHOOSE ROLE */}
@@ -395,26 +325,17 @@ export default function SignupPage() {
                             <div>
                                 <p className="text-sm font-medium text-foreground mb-2">Choose your role</p>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setRole('user')}
-                                        className={`p-4 rounded-lg border text-center transition-all ${role === 'user' ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}>
+                                    <button type="button" onClick={() => setValue('role', 'user')} className={`p-4 rounded-lg border text-center transition-all ${role === 'user' ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}>
                                         <span className="font-medium block">Individual</span>
                                         <span className="text-xs text-muted-foreground">Buy & Sell</span>
                                     </button>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => setRole('technician')}
-                                        className={`p-4 rounded-lg border text-center transition-all ${role === 'technician' ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}>
+                                    <button type="button" onClick={() => setValue('role', 'technician')} className={`p-4 rounded-lg border text-center transition-all ${role === 'technician' ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}>
                                         <span className="font-medium block">Technician</span>
                                         <span className="text-xs text-muted-foreground">Offer Services</span>
                                     </button>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => setRole('vendor')}
-                                        className={`p-4 rounded-lg border text-center transition-all ${role === 'vendor' ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}>
+                                    <button type="button" onClick={() => setValue('role', 'vendor')} className={`p-4 rounded-lg border text-center transition-all ${role === 'vendor' ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}>
                                         <span className="font-medium block">Business</span>
                                         <span className="text-xs text-muted-foreground">Vendor Store</span>
                                     </button>
@@ -426,115 +347,100 @@ export default function SignupPage() {
                         {step === 2 && (
                             <>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <FormField label="Full Name" required error={errors.fullName}>
-                                        <Input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="John Doe" disabled={isLoading} />
+                                    <FormField label="Full Name" required error={errors.fullName?.message}>
+                                        <Input type="text" {...register('fullName')} placeholder="John Doe" disabled={isLoading} />
                                     </FormField>
 
-                                    {/* Only ask for phone number in Step 2 for users and vendors (not technicians) */}
-                                    {role !== 'technician' && (
-                                        <FormField label="Phone Number" required error={errors.phoneNumber}>
-                                            <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="+92 300 1234567" disabled={isLoading} />
-                                        </FormField>
-                                    )}
+                                    <FormField label="Phone Number" required error={errors.phoneNumber?.message}>
+                                        <Input type="tel" {...register('phoneNumber')} placeholder="+92 300 1234567" disabled={isLoading} />
+                                    </FormField>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <FormField label="Email Address" required error={errors.email}>
-                                        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" disabled={isLoading} />
+                                    <FormField label="Email Address" required error={errors.email?.message}>
+                                        <Input type="email" {...register('email')} placeholder="you@example.com" disabled={isLoading} />
                                     </FormField>
 
-                                    <FormField label="City" required error={errors.city}>
-                                        <Select value={userCity} onValueChange={setUserCity} disabled={isLoading}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a city" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {CITIES.map((city) => (
-                                                    <SelectItem key={city} value={city}>{city}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                    <FormField label="City" required error={errors.city?.message}>
+                                        <Controller
+                                            control={control}
+                                            name="city"
+                                            render={({ field }) => (
+                                                <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                                                    <SelectTrigger><SelectValue placeholder="Select a city" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {CITIES.map((city) => <SelectItem key={city} value={city}>{city}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
                                     </FormField>
                                 </div>
 
-                                <FormField label="Password" required error={errors.password} helpText="Minimum 8 characters with uppercase, lowercase, and number">
-                                    <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" disabled={isLoading} />
+                                <FormField label="Password" required error={errors.password?.message} helpText="Minimum 8 characters with uppercase, lowercase, and number">
+                                    <Input type="password" {...register('password')} placeholder="••••••••" disabled={isLoading} />
                                 </FormField>
                             </>
                         )}
 
-                        {/* STEP 3 - ROLE-SPECIFIC DETAILS */}
+                        {/* STEP 3 - VENDOR DETAILS */}
                         {step === 3 && role === 'vendor' && (
                             <div className="space-y-4 pt-2">
                                 <h4 className="text-sm font-semibold text-foreground">Business Details</h4>
-                                <FormField label="Company Name" required error={errors.companyName}>
-                                    <Input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Company or business name" disabled={isLoading} />
-                                </FormField>
 
-                                <FormField label="Business Type" required error={errors.businessType}>
-                                    <Input type="text" value={businessType} onChange={(e) => setBusinessType(e.target.value)} placeholder="Manufacturer, Distributor, Dealer..." disabled={isLoading} />
+                                <FormField label="Company Name" required error={errors.companyName?.message}>
+                                    <Input type="text" {...register('companyName')} placeholder="Company or business name" disabled={isLoading} />
                                 </FormField>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <FormField label="City" required error={errors.city}>
-                                        <Select value={vendorCity} onValueChange={setVendorCity} disabled={isLoading}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a city" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {CITIES.map((city) => (
-                                                    <SelectItem key={city} value={city}>{city}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                    <FormField label="Business Type" required error={errors.businessType?.message}>
+                                        <Controller
+                                            control={control}
+                                            name="businessType"
+                                            render={({ field }) => (
+                                                <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                                                    <SelectTrigger><SelectValue placeholder="Select business type" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {BUSINESS_TYPES.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
                                     </FormField>
 
-                                    <FormField label="Phone / WhatsApp" error={errors.phone}>
-                                        <Input type="tel" value={techPhone} onChange={(e) => setTechPhone(e.target.value)} placeholder="Optional - +92 300 1234567" disabled={isLoading} />
-                                    </FormField>
+                                    {watch('businessType') === 'Other' && (
+                                        <FormField label="Specify Business Type" required error={errors.customBusinessType?.message}>
+                                            <Input type="text" {...register('customBusinessType')} placeholder="Explain your business..." disabled={isLoading} />
+                                        </FormField>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <FormField label="Years in Business" error={errors.yearsInBusiness}>
-                                        <Input type="text" value={yearsInBusiness} onChange={(e) => setYearsInBusiness(e.target.value)} placeholder="e.g. 3-5" disabled={isLoading} />
+                                    <FormField label="Years in Business" error={errors.yearsExperience?.message}>
+                                        <Input type="text" {...register('yearsExperience')} placeholder="e.g. 5" disabled={isLoading} />
                                     </FormField>
                                 </div>
+
+                                <FormField label="Business Description" error={errors.description?.message}>
+                                    <Textarea {...register('description')} placeholder="Tell customers about your business..." rows={3} disabled={isLoading} />
+                                </FormField>
                             </div>
                         )}
 
+                        {/* STEP 3 - TECHNICIAN DETAILS */}
                         {step === 3 && role === 'technician' && (
                             <div className="space-y-4 pt-2">
                                 <h4 className="text-sm font-semibold text-foreground">Technician Details</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <FormField label="Phone / WhatsApp" error={errors.phone}>
-                                        <Input type="tel" value={techPhone} onChange={(e) => setTechPhone(e.target.value)} placeholder="+92 300 1234567" disabled={isLoading} />
-                                    </FormField>
-
-                                    <FormField label="Years Experience" error={errors.experienceYears}>
-                                        <Input type="text" value={experienceYears} onChange={(e) => setExperienceYears(e.target.value)} placeholder="e.g. 5" disabled={isLoading} />
+                                <div className="grid grid-cols-1 gap-3">
+                                    <FormField label="Years Experience" error={errors.yearsExperience?.message}>
+                                        <Input type="text" {...register('yearsExperience')} placeholder="e.g. 5" disabled={isLoading} />
                                     </FormField>
                                 </div>
 
-                                <FormField label="City" required error={errors.city}>
-                                    <Select value={techCity} onValueChange={setTechCity} disabled={isLoading}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a city" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {CITIES.map((city) => (
-                                                <SelectItem key={city} value={city}>{city}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </FormField>
-
-                                <FormField label="Specialities" error={errors.specialities}>
-                                    <MultiSelectSpecialities
-                                        specialities={SPECIALTIES as any}
-                                        selected={specialities}
-                                        onChange={setSpecialities}
-                                        disabled={isLoading}
-                                    />
+                                <FormField label="Specialities" error={errors.specialities?.message as string}>
+                                    <Controller control={control} name="specialities" render={({ field }) => (
+                                        <MultiSelectSpecialities specialities={SPECIALTIES as any} selected={field.value || []} onChange={field.onChange} disabled={isLoading} />
+                                    )} />
                                 </FormField>
                             </div>
                         )}
@@ -544,42 +450,45 @@ export default function SignupPage() {
                             <div className="space-y-4">
                                 <h4 className="text-sm font-semibold text-foreground">Review your information</h4>
                                 <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                                    <div><strong>Name:</strong> {fullName}</div>
-                                    <div><strong>Email:</strong> {email}</div>
-                                    <div><strong>Phone:</strong> {role === 'technician' ? techPhone : phoneNumber}</div>
-                                    <div><strong>City:</strong> {role === 'vendor' ? vendorCity : role === 'technician' ? techCity : userCity}</div>
+                                    <div><strong>Name:</strong> {currentData.fullName}</div>
+                                    <div><strong>Email:</strong> {currentData.email}</div>
+                                    <div><strong>Phone:</strong> {currentData.phoneNumber}</div>
+                                    <div><strong>City:</strong> {currentData.city}</div>
                                     <div><strong>Role:</strong> {role}</div>
                                     {role === 'vendor' && (
                                         <>
-                                            <div><strong>Company:</strong> {companyName}</div>
-                                            <div><strong>Business Type:</strong> {businessType}</div>
-                                            <div><strong>City:</strong> {vendorCity}</div>
+                                            <div><strong>Company:</strong> {currentData.companyName}</div>
+                                            <div><strong>Business Type:</strong> {currentData.businessType === 'Other' ? currentData.customBusinessType : currentData.businessType}</div>
+                                            <div><strong>Experience:</strong> {currentData.yearsExperience} Years</div>
                                         </>
                                     )}
                                     {role === 'technician' && (
                                         <>
-                                            <div><strong>Specialities:</strong> {specialities.length > 0 ? specialities.join(', ') : 'Not specified'}</div>
-                                            <div><strong>City:</strong> {techCity}</div>
+                                            <div><strong>Experience:</strong> {currentData.yearsExperience} Years</div>
+                                            <div><strong>Specialities:</strong> {currentData.specialities?.length ? currentData.specialities.join(', ') : 'Not specified'}</div>
                                         </>
                                     )}
                                 </div>
 
                                 <div className="flex justify-between">
-                                    <Button type="button" variant="outline" size="sm" onClick={() => { setStep(1); }}>Edit Role</Button>
-                                    <Button type="button" variant="outline" size="sm" onClick={() => { setStep(2); }}>Edit Account</Button>
+                                    <Button type="button" variant="outline" size="sm" onClick={() => setStep(1)}>Edit Role</Button>
+                                    <Button type="button" variant="outline" size="sm" onClick={() => setStep(2)}>Edit Account</Button>
                                     {role !== 'user' && (
-                                        <Button type="button" variant="outline" size="sm" onClick={() => { setStep(3); }}>Edit Details</Button>
+                                        <Button type="button" variant="outline" size="sm" onClick={() => setStep(3)}>Edit Details</Button>
                                     )}
                                 </div>
                             </div>
                         )}
+
+                        {/* RHF forces inputs to be mounted before triggering validation during onSubmit. 
+                            Since we use multipage forms, hidden inputs render but are virtually maintained by RHF. */}
 
                         <div className="flex gap-3 justify-between pt-6">
                             <div className="flex gap-2">
                                 {step > 1 ? (
                                     <Button type="button" variant="outline" onClick={prevStep} disabled={isLoading}>Back</Button>
                                 ) : (
-                                    <Button type="button" variant="outline" onClick={() => { clearDraft(); setEmail(''); setFullName(''); setUserCity(''); setRole('user'); setCompanyName(''); setBusinessType(''); setVendorCity(''); setTechPhone(''); setTechCity(''); setSpecialities([]); setExperienceYears(''); }}>Clear Draft</Button>
+                                    <Button type="button" variant="outline" onClick={clearDraft}>Clear Draft</Button>
                                 )}
                             </div>
 

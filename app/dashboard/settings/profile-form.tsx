@@ -16,6 +16,9 @@ interface ProfileFormProps {
         phone: string
         city: string
         email: string
+        isVendor?: boolean
+        businessType?: string
+        yearsInBusiness?: string
     }
 }
 
@@ -43,7 +46,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                 router.refresh()
             } else {
                 toast.error(result.message || 'Failed to update profile')
-                if (result.errors) {
+                if (result.errors && Object.keys(result.errors).length > 0) {
                     // Could show field specific errors here
                     console.error('Validation errors:', result.errors)
                 }
@@ -104,7 +107,34 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                 </Select>
             </div>
 
-            <Button type="submit" disabled={loading}>
+            {initialData.isVendor && (
+                <>
+                    <div className="space-y-2 pt-4 border-t border-border mt-6">
+                        <Label htmlFor="businessType" className="font-semibold text-primary">Vendor Business Type</Label>
+                        <Input
+                            id="businessType"
+                            name="businessType"
+                            defaultValue={initialData.businessType}
+                            placeholder="e.g. Manufacturer, Retailer, Importer"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="yearsInBusiness" className="font-semibold text-primary">Years of Experience</Label>
+                        <Input
+                            id="yearsInBusiness"
+                            name="yearsInBusiness"
+                            type="number"
+                            min="0"
+                            max="100"
+                            defaultValue={initialData.yearsInBusiness}
+                            placeholder="e.g. 5"
+                        />
+                    </div>
+                </>
+            )}
+
+            <Button type="submit" disabled={loading} className="w-full mt-6">
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
             </Button>

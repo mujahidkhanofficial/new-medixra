@@ -75,7 +75,7 @@ export const signupSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
-  phoneNumber: phoneSchema,
+  phoneNumber: phoneSchema.optional().or(z.literal('')),
   role: z.enum(['user', 'vendor', 'technician']),
 })
 
@@ -91,7 +91,7 @@ export const vendorSignupSchema = z.object({
 
 // Technician-specific signup fields
 export const technicianSignupSchema = z.object({
-  phone: phoneSchema.optional(),
+  phone: phoneSchema,
   city: z.string().min(2, 'City is required'),
   specialities: z.array(z.string()).optional(),
   experienceYears: z.string().optional(),

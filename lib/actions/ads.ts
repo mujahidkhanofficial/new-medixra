@@ -178,8 +178,11 @@ export async function createAd(prevState: any, formData: FormData): Promise<Crea
         }
 
         revalidatePath('/products', 'page')
-        revalidatePath('/', 'page') // Homepage featured items
-        // revalidateTag('products')
+        revalidatePath('/', 'layout')
+        revalidatePath('/dashboard/vendor', 'layout')
+        revalidatePath('/dashboard/user', 'layout')
+        // @ts-expect-error Next 15 type mismatch
+        revalidateTag('products')
 
         return { success: true, productId: product.id }
 
@@ -232,11 +235,15 @@ export async function saveAdImages(productId: string, imageUrls: string[]) {
             // We don't fail the whole request if just the thumbnail update fails, but good to know
         }
 
-        revalidatePath('/products')
-        revalidatePath(`/product/${productId}`)
-        revalidatePath('/') // Homepage featured items
-        // revalidateTag('products')
-        // revalidateTag(`product-${productId}`)
+        revalidatePath('/products', 'page')
+        revalidatePath(`/product/${productId}`, 'page')
+        revalidatePath('/', 'layout')
+        revalidatePath('/dashboard/vendor', 'layout')
+        revalidatePath('/dashboard/user', 'layout')
+        // @ts-expect-error Next 15 type mismatch
+        revalidateTag('products')
+        // @ts-expect-error Next 15 type mismatch
+        revalidateTag(`product-${productId}`)
 
         return { success: true }
     } catch (e: any) {
@@ -278,11 +285,14 @@ export async function deleteAd(productId: string) {
         }
 
 
-        revalidatePath('/dashboard/user')
-        revalidatePath('/products')
-        revalidatePath('/') // Homepage featured items
-        // revalidateTag('products') // Invalidate product list cache
-        // revalidateTag(`product-${productId}`) // Invalidate specific product cache
+        revalidatePath('/dashboard/vendor', 'layout')
+        revalidatePath('/dashboard/user', 'layout')
+        revalidatePath('/products', 'page')
+        revalidatePath('/', 'layout') // Homepage featured items
+        // @ts-expect-error Next 15 type mismatch
+        revalidateTag('products') // Invalidate product list cache
+        // @ts-expect-error Next 15 type mismatch
+        revalidateTag(`product-${productId}`) // Invalidate specific product cache
 
         return { success: true, message: 'Ad deleted successfully' }
     } catch (error) {
@@ -417,9 +427,14 @@ export async function updateAd(
             }
         }
 
-        revalidatePath('/products')
-        revalidatePath(`/product/${productId}`)
-        revalidatePath('/dashboard/user')
+        revalidatePath('/products', 'page')
+        revalidatePath(`/product/${productId}`, 'page')
+        revalidatePath('/dashboard/user', 'layout')
+        revalidatePath('/dashboard/vendor', 'layout')
+        // @ts-expect-error Next 15 type mismatch
+        revalidateTag('products')
+        // @ts-expect-error Next 15 type mismatch
+        revalidateTag(`product-${productId}`)
 
         return { success: true, productId: productId }
 

@@ -29,6 +29,7 @@ export default function Navigation() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const { user, profile, loading } = useAuth()
+    const [isEquipmentOpen, setIsEquipmentOpen] = useState(false)
     const router = useRouter()
 
     const handleLogout = async () => {
@@ -92,31 +93,51 @@ export default function Navigation() {
                             Home
                         </Link>
 
-                        <DropdownMenu>
-                            <DropdownMenuTrigger className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors outline-none cursor-pointer">
-                                Equipment <ChevronDown className="h-4 w-4" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-64 max-h-[80vh] overflow-y-auto" align="start">
-                                {EQUIPMENT_HIERARCHY.map((category) => (
-                                    <DropdownMenuSub key={category.name}>
-                                        <DropdownMenuSubTrigger className="cursor-pointer">
-                                            {category.name}
-                                        </DropdownMenuSubTrigger>
-                                        <DropdownMenuPortal>
-                                            <DropdownMenuSubContent className="max-h-[80vh] overflow-y-auto">
-                                                {category.subcategories.map((sub) => (
-                                                    <DropdownMenuItem key={sub} asChild>
-                                                        <Link href={`/products?category=${encodeURIComponent(category.name)}&query=${encodeURIComponent(sub)}`} className="cursor-pointer w-full">
-                                                            {sub}
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                ))}
-                                            </DropdownMenuSubContent>
-                                        </DropdownMenuPortal>
-                                    </DropdownMenuSub>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div
+                            onMouseEnter={() => setIsEquipmentOpen(true)}
+                            onMouseLeave={() => setIsEquipmentOpen(false)}
+                            className="relative"
+                        >
+                            <DropdownMenu open={isEquipmentOpen} onOpenChange={setIsEquipmentOpen}>
+                                <DropdownMenuTrigger asChild>
+                                    <Link
+                                        href="/products"
+                                        className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors outline-none cursor-pointer"
+                                        onClick={() => setIsEquipmentOpen(false)}
+                                    >
+                                        Equipment <ChevronDown className="h-4 w-4" />
+                                    </Link>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    className="w-64 max-h-[80vh] overflow-y-auto"
+                                    align="start"
+                                    onMouseEnter={() => setIsEquipmentOpen(true)}
+                                >
+                                    {EQUIPMENT_HIERARCHY.map((category) => (
+                                        <DropdownMenuSub key={category.name}>
+                                            <DropdownMenuSubTrigger className="cursor-pointer">
+                                                {category.name}
+                                            </DropdownMenuSubTrigger>
+                                            <DropdownMenuPortal>
+                                                <DropdownMenuSubContent className="max-h-[80vh] overflow-y-auto">
+                                                    {category.subcategories.map((sub) => (
+                                                        <DropdownMenuItem key={sub} asChild>
+                                                            <Link
+                                                                href={`/products?category=${encodeURIComponent(category.name)}&query=${encodeURIComponent(sub)}`}
+                                                                className="cursor-pointer w-full"
+                                                                onClick={() => setIsEquipmentOpen(false)}
+                                                            >
+                                                                {sub}
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                    ))}
+                                                </DropdownMenuSubContent>
+                                            </DropdownMenuPortal>
+                                        </DropdownMenuSub>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
 
                         <Link href="/technicians" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                             Technicians
@@ -127,7 +148,7 @@ export default function Navigation() {
 
                         {profile?.role !== 'vendor' && (
                             <Link href="/vendors" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                                Vendors Directory
+                                Vendors
                             </Link>
                         )}
                     </div>
@@ -273,7 +294,7 @@ export default function Navigation() {
 
                             {profile?.role !== 'vendor' && (
                                 <Link href="/vendors" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
-                                    Vendors Directory
+                                    Vendors
                                 </Link>
                             )}
 

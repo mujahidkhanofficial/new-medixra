@@ -28,20 +28,7 @@ export function DashboardHeader({
                 <div>
                     <h1 className="text-3xl font-bold text-foreground mb-2">{title}</h1>
 
-                    {/* Optional Rating section for Vendors */}
-                    {rating !== undefined && (
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="flex items-center gap-1">
-                                {[...Array(5)].map((_, i) => (
-                                    <Star
-                                        key={i}
-                                        className={`h-4 w-4 ${i < rating ? 'fill-accent text-accent' : 'text-muted'}`}
-                                    />
-                                ))}
-                            </div>
-                            <span className="text-sm text-muted-foreground">({reviewsCount || 0} reviews)</span>
-                        </div>
-                    )}
+
 
                     {/* Subtitle / User meta */}
                     {subtitle && (

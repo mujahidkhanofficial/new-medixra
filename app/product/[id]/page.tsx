@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/server'
 import { checkSavedStatus } from '@/lib/actions/saved-items'
 import { SaveButton } from '@/components/product/save-button'
 import { ViewTracker } from '@/components/product/view-tracker'
+import { ShowPhoneNumber } from '@/components/product/show-phone-number'
 
 interface PageProps {
     params: Promise<{ id: string }>
@@ -223,9 +224,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
                                 </div>
 
                                 <div className="flex flex-col gap-3">
-                                    {product.vendor_whatsapp ? (
+                                    {(product.vendor_whatsapp || product.vendor_phone) ? (
                                         <WhatsAppContact
-                                            phoneNumber={product.vendor_whatsapp}
+                                            phoneNumber={(product.vendor_whatsapp || product.vendor_phone) as string}
                                             message={`Hi, I'm interested in ${product.name}...`}
                                             name="Chat on WhatsApp"
                                             size="lg"
@@ -239,9 +240,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                                             WhatsApp Unavailable
                                         </Button>
                                     )}
-                                    <Button variant="outline" className="w-full h-12 text-base font-medium border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
-                                        Show Phone Number
-                                    </Button>
+                                    <ShowPhoneNumber phoneNumber={product.vendor_phone ?? undefined} />
                                 </div>
 
                                 <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">

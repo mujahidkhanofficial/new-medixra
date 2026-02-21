@@ -15,6 +15,8 @@ export type VendorProfile = {
     showroom_slug?: string | null
     banner_url?: string | null
     whatsapp_number?: string | null
+    business_type?: string | null
+    years_in_business?: string | null
 }
 
 export async function getVendorBySlug(slug: string) {
@@ -61,4 +63,36 @@ export async function getVendorBySlug(slug: string) {
         // Prefer business name if set, else full name
         business_name: vendorDetails?.business_name || profile.full_name || 'Medixra Member'
     } as VendorProfile
+}
+
+export async function getApprovedVendors(): Promise<VendorProfile[]> {
+    const supabase = await createClient()
+    if (!supabase) return []
+
+    // Fetch all profiles that are approved vendors
+    const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select(`
+            id, full_name, email, phone, city, avatar_url, created_at,
+            vendors (business_name, business_type, years_in_business, description, is_verified, showroom_slug, banner_url, whatsapp_number)
+        `)
+        .eq('role', 'vendor')
+        .eq('approval_status', 'approved')
+        .order('created_at', { ascending: false })
+
+    if (error || !profiles) {
+        console.error('Error fetching approved vendors:', error)
+        return []
+    }
+
+    // Map the returned relational data into a flat VendorProfile array
+    return profiles.map((profile) => {
+        const vendorDetails = Array.isArray(profile.vendors) ? profile.vendors[0] : profile.vendors
+        return {
+            ...profile,
+            ...vendorDetails,
+            business_name: vendorDetails?.business_name || profile.full_name || 'Medixra Vendor',
+            city: vendorDetails?.city || profile.city
+        } as VendorProfile
+    })
 }

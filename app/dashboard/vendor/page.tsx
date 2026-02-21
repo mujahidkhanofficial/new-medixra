@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Package, Eye, TrendingUp, Plus, Edit2, Trash2, Star, MessageSquare } from 'lucide-react'
+import { Package, Eye, TrendingUp, Plus, Edit2, Trash2, Star, MessageSquare, LayoutDashboard, Heart, ArrowRight, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { StatCard } from '@/components/dashboard/stat-card'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
@@ -11,6 +11,8 @@ import { ViewsChart, ProductPerformanceChart } from '@/components/dashboard/anal
 import { getVendorAnalytics, generateViewsChartData } from '@/lib/actions/analytics'
 import { getVendorProfile } from '@/lib/actions/vendor'
 import { getVendorProducts, deleteProduct } from '@/lib/actions/products'
+import { getSavedItems } from '@/lib/actions/saved-items'
+import { AdsTable } from '@/components/dashboard/ads-table'
 import { useAuth } from '@/components/providers/auth-provider'
 import {
   AlertDialog,
@@ -35,6 +37,7 @@ export default function VendorDashboard() {
 
   const [vendorProfile, setVendorProfile] = useState<any>(null)
   const [products, setProducts] = useState<any[]>([])
+  const [savedItems, setSavedItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -42,12 +45,14 @@ export default function VendorDashboard() {
       if (!user?.id) return
       setLoading(true)
       try {
-        const [profile, prods] = await Promise.all([
+        const [profile, prods, saved] = await Promise.all([
           getVendorProfile(user.id),
-          getVendorProducts(user.id)
+          getVendorProducts(user.id),
+          getSavedItems(user.id)
         ])
         setVendorProfile(profile)
         setProducts(prods || [])
+        setSavedItems(saved || [])
 
         // Allow analytics to load independently
         loadAnalytics()
@@ -107,11 +112,13 @@ export default function VendorDashboard() {
 
   const info = getDisplayInfo()
 
+  const totalViews = products.reduce((acc, p) => acc + (p.views || 0), 0)
+  const totalClicks = products.reduce((acc, p) => acc + (p.whatsapp_clicks || 0), 0)
+
   const analytics = [
-    { label: 'Total Views', value: analyticsData?.metrics?.[1]?.value || 0, change: analyticsData?.metrics?.[1]?.change || '', icon: Eye },
-    { label: 'Active Listings', value: analyticsData?.metrics?.[0]?.value || 0, change: analyticsData?.metrics?.[0]?.change || '', icon: Package },
-    { label: 'Avg Rating', value: '4.8★', change: '+0.0', icon: Star }, // Placeholder rating
-    { label: 'Products Listed', value: products.length, change: '', icon: TrendingUp },
+    { label: 'Total Ads', value: products.length, icon: FileText, change: '' },
+    { label: 'Total Views', value: totalViews, icon: Eye, change: '', iconColorClass: "text-blue-600 dark:text-blue-400", iconBgClass: "bg-blue-100 dark:bg-blue-900/20" },
+    { label: 'WhatsApp Clicks', value: totalClicks, icon: MessageSquare, change: '', iconColorClass: "text-green-600 dark:text-green-400", iconBgClass: "bg-green-100 dark:bg-green-900/20" },
   ]
 
   if (loading) {
@@ -126,9 +133,8 @@ export default function VendorDashboard() {
         {/* Profile Header */}
         <DashboardHeader
           title={info.name}
-          rating={0} // Placeholder rating
-          reviewsCount={0}
-          location={info.location}
+          subtitle={vendorProfile?.business_type || 'Retailer'}
+          location={`Experience: ${vendorProfile?.years_in_business || 'New'} Years • ${info.location}`}
           joinDate={info.joinDate}
           contactChildren={
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -139,7 +145,13 @@ export default function VendorDashboard() {
             </div>
           }
           actions={
-            <>
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <Button variant="outline" className="hidden sm:flex bg-background hover:bg-muted" asChild>
+                <Link href={`/shop/${user?.id || ''}`}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Webstore
+                </Link>
+              </Button>
               <WhatsAppContact
                 phoneNumber={info.whatsapp}
                 name="Contact on WhatsApp"
@@ -151,123 +163,110 @@ export default function VendorDashboard() {
                   Edit Profile
                 </Link>
               </Button>
-            </>
+            </div>
           }
         />
 
         {/* Analytics Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="grid gap-4 md:grid-cols-3 mb-8">
           {analytics.map((item, idx) => (
             <StatCard
               key={idx}
               label={item.label}
               value={item.value}
               icon={item.icon}
-              change={item.change}
+              iconBgClass={item.iconBgClass}
+              iconColorClass={item.iconColorClass}
             />
           ))}
         </div>
 
-        {/* Products Tab */}
-        <div>
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-foreground">Active Listings</h2>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2" asChild>
-              <Link href="/post-ad">
-                <Plus className="h-4 w-4" />
-                Add New Equipment
-              </Link>
-            </Button>
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Products Tab */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                <LayoutDashboard className="h-5 w-5" />
+                Active Listings
+              </h2>
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 h-9 px-4" asChild>
+                <Link href="/post-ad">
+                  <Plus className="h-4 w-4" />
+                  Post New Ad
+                </Link>
+              </Button>
+            </div>
+
+            <AdsTable
+              ads={products.map((p) => ({
+                id: p.id,
+                name: p.name,
+                price: p.price,
+                currency: 'PKR',
+                views: p.views || 0,
+                whatsappClicks: p.whatsapp_clicks || 0,
+                status: p.status,
+                createdAt: p.created_at,
+                imageUrl: p.image_url,
+              }))}
+            />
           </div>
 
-          <div className="space-y-4">
-            {products.length > 0 ? (products.map((product) => (
-              <div key={product.id} className="rounded-lg border border-border bg-card p-4 md:p-6">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="flex gap-4">
-                    <div className={`w-24 h-24 rounded-lg shrink-0 bg-muted overflow-hidden relative`}>
-                      {product.image_url ? (
-                        <Image
-                          src={product.image_url}
-                          alt={product.name}
-                          fill
-                          sizes="96px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                          <Package className="h-8 w-8" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-foreground">{product.name}</h3>
-                        {product.status !== 'active' && (
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${product.status === 'suspended'
-                            ? 'bg-destructive/10 text-destructive border-destructive/20'
-                            : 'bg-muted text-muted-foreground border-border'
-                            }`}>
-                            {product.status}
-                          </span>
+          {/* Saved Ads Section */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                <Heart className="h-5 w-5" />
+                Saved Ads
+              </h2>
+              <Link href="/dashboard/saved-items" className="text-sm text-primary hover:underline flex items-center gap-1">
+                View All <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+
+            <div className="space-y-4">
+              {savedItems && savedItems.length > 0 ? (
+                savedItems.slice(0, 3).map((item) => (
+                  <Link key={item.id} href={`/product/${item.productId}`} className="group block">
+                    <div className="flex gap-3 p-3 rounded-lg border bg-card hover:border-primary/50 transition-colors">
+                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-muted">
+                        {item.image ? (
+                          <Image
+                            src={item.image}
+                            alt={item.productName}
+                            fill
+                            className="object-cover transition-transform group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-secondary">
+                            <Heart className="h-6 w-6 text-muted-foreground/50" />
+                          </div>
                         )}
                       </div>
-                      <p className="text-primary font-bold text-lg mb-2">₨ {product.price?.toLocaleString()}</p>
-                      {/* WhatsApp Contact Button for each product */}
-                      <WhatsAppContact
-                        phoneNumber={info.whatsapp}
-                        name="Contact Vendor"
-                        message={`Hi, I'm interested in ${product.name}. Please provide more details.`}
-                        size="sm"
-                      />
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-medium text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                          {item.productName}
+                        </h4>
+                        <p className="text-sm font-bold text-primary mt-1">
+                          {item.price}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {item.vendor}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="flex gap-2 md:flex-col">
-                    <Button variant="outline" size="sm" className="gap-2 bg-transparent" asChild>
-                      <Link href={`/product/${product.id}/edit`}>
-                        <Edit2 className="h-4 w-4" />
-                        Edit
-                      </Link>
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-2 bg-transparent text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                          Delete
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Product?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete <span className="font-semibold text-foreground">"{product.name}"</span>? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <div className="flex gap-3 justify-end">
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            className="bg-destructive hover:bg-destructive/90"
-                            onClick={() => handleDeleteProduct(product.id)}
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </div>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="rounded-lg border border-dashed p-6 text-center">
+                  <Heart className="mx-auto h-8 w-8 text-muted-foreground/30 mb-2" />
+                  <p className="text-sm text-muted-foreground font-medium">No saved ads yet</p>
+                  <Button variant="link" size="sm" asChild className="mt-1">
+                    <Link href="/products">Browse Equipment</Link>
+                  </Button>
                 </div>
-              </div>
-            ))) : (
-              <div className="text-center py-12 bg-muted/20 rounded-xl border border-dashed border-border">
-                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-foreground">No equipment listed yet</h3>
-                <p className="text-muted-foreground mb-4">Start selling by adding your first product.</p>
-                <Button asChild>
-                  <Link href="/post-ad">Post Ad</Link>
-                </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 

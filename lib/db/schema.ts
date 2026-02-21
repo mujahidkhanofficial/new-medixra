@@ -30,6 +30,8 @@ export const profiles = pgTable("profiles", {
 export const vendors = pgTable("vendors", {
     id: uuid().primaryKey().notNull(),
     businessName: text("business_name").notNull(),
+    businessType: text("business_type").default('Retailer'),
+    yearsInBusiness: text("years_in_business").default('1'),
     description: text(),
     isVerified: boolean("is_verified").default(false),
     contactPhone: text("contact_phone"),
@@ -236,6 +238,35 @@ export const auditLogs = pgTable("audit_logs", {
     pgPolicy("Admins can view audit logs", { as: "permissive", for: "select", to: ["public"], using: sql`true` }),
 ]);
 
+export const productAnalytics = pgTable("product_analytics", {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    productId: uuid("product_id").notNull(),
+    vendorId: uuid("vendor_id").notNull(),
+    date: text().notNull(), // ISO Date string e.g., '2026-02-20'
+    views: integer().default(0).notNull(),
+    inquiries: integer().default(0).notNull(), // maps to WhatsApp clicks
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+    index("product_analytics_product_idx").on(table.productId),
+    index("product_analytics_vendor_idx").on(table.vendorId),
+    index("product_analytics_date_idx").on(table.date),
+    unique("product_analytics_product_date_unique").on(table.productId, table.date),
+    foreignKey({
+        columns: [table.productId],
+        foreignColumns: [products.id],
+        name: "product_analytics_product_id_fkey"
+    }).onDelete("cascade"),
+    foreignKey({
+        columns: [table.vendorId],
+        foreignColumns: [profiles.id],
+        name: "product_analytics_vendor_id_fkey"
+    }).onDelete("cascade"),
+    pgPolicy("Vendors can view own analytics", { as: "permissive", for: "select", to: ["public"], using: sql`auth.uid() = vendor_id` }),
+    pgPolicy("Public can insert analytics", { as: "permissive", for: "insert", to: ["public"] }),
+    pgPolicy("Public can update analytics", { as: "permissive", for: "update", to: ["public"] }),
+]);
+
 // --- Relations ---
 
 export const vendorsRelations = relations(vendors, ({ one }) => ({
@@ -250,6 +281,7 @@ export const profilesRelations = relations(profiles, ({ many }) => ({
     technicians: many(technicians),
     savedItems: many(savedItems),
     products: many(products),
+    productAnalytics: many(productAnalytics, { relationName: "vendorProfile" }),
     reportsCreated: many(productReports, { relationName: "reportedBy" }),
     reportsResolved: many(productReports, { relationName: "resolvedBy" }),
 }));
@@ -272,6 +304,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     productImages: many(productImages),
     savedItems: many(savedItems),
     reports: many(productReports),
+    analytics: many(productAnalytics),
     vendor: one(profiles, {
         fields: [products.vendorId],
         references: [profiles.id],
@@ -304,4 +337,16 @@ export const productReportsRelations = relations(productReports, ({ one }) => ({
         references: [profiles.id],
         relationName: "resolvedBy"
     }),
+}));
+
+export const productAnalyticsRelations = relations(productAnalytics, ({ one }) => ({
+    product: one(products, {
+        fields: [productAnalytics.productId],
+        references: [products.id]
+    }),
+    vendor: one(profiles, {
+        fields: [productAnalytics.vendorId],
+        references: [profiles.id],
+        relationName: "vendorProfile"
+    })
 }));

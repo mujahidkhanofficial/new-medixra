@@ -26,8 +26,34 @@ async function main() {
 
     console.log('🔧 Running consolidated database setup...\n');
 
-    // ─── 1. Enable RLS on all tables ─────────────────────────────
-    console.log('🔒 Step 1/4: Enabling RLS on all tables...');
+    // ─── 1. Create product_analytics table manually to bypass Drizzle bug
+    console.log('📊 Step 1/5: Creating product_analytics table...');
+    await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS public.product_analytics (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+            product_id uuid NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+            vendor_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+            date text NOT NULL,
+            views integer NOT NULL DEFAULT 0,
+            inquiries integer NOT NULL DEFAULT 0,
+            created_at timestamp with time zone NOT NULL DEFAULT now(),
+            updated_at timestamp with time zone NOT NULL DEFAULT now(),
+            CONSTRAINT product_analytics_product_date_unique UNIQUE (product_id, date)
+        );
+
+        CREATE INDEX IF NOT EXISTS product_analytics_product_idx ON public.product_analytics (product_id);
+        CREATE INDEX IF NOT EXISTS product_analytics_vendor_idx ON public.product_analytics (vendor_id);
+        CREATE INDEX IF NOT EXISTS product_analytics_date_idx ON public.product_analytics (date);
+
+        -- Add missing columns to vendors table
+        ALTER TABLE public.vendors ADD COLUMN IF NOT EXISTS business_type text DEFAULT 'Retailer';
+        ALTER TABLE public.vendors ADD COLUMN IF NOT EXISTS years_in_business text DEFAULT '1';
+    `);
+    console.log('   ✅ product_analytics and vendor table columns active.\n');
+
+
+    // ─── 2. Enable RLS on all tables ─────────────────────────────
+    console.log('🔒 Step 2/5: Enabling RLS on all tables...');
     await db.execute(sql`
         ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
         ALTER TABLE public.vendors ENABLE ROW LEVEL SECURITY;
@@ -36,11 +62,25 @@ async function main() {
         ALTER TABLE public.product_images ENABLE ROW LEVEL SECURITY;
         ALTER TABLE public.saved_items ENABLE ROW LEVEL SECURITY;
         ALTER TABLE public.product_reports ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE public.product_analytics ENABLE ROW LEVEL SECURITY;
+
+        -- RLS Policies for product_analytics
+        DROP POLICY IF EXISTS "Vendors can view own analytics" ON public.product_analytics;
+        CREATE POLICY "Vendors can view own analytics" ON public.product_analytics
+            FOR SELECT USING (auth.uid() = vendor_id);
+
+        DROP POLICY IF EXISTS "Public can insert analytics" ON public.product_analytics;
+        CREATE POLICY "Public can insert analytics" ON public.product_analytics
+            FOR INSERT WITH CHECK (true);
+
+        DROP POLICY IF EXISTS "Public can update analytics" ON public.product_analytics;
+        CREATE POLICY "Public can update analytics" ON public.product_analytics
+            FOR UPDATE USING (true);
     `);
     console.log('   ✅ RLS enabled on all tables.\n');
 
-    // ─── 2. Database Triggers ────────────────────────────────────
-    console.log('⚡ Step 2/4: Creating database triggers...');
+    // ─── 3. Database Triggers ────────────────────────────────────
+    console.log('⚡ Step 3/5: Creating database triggers...');
 
     // 2a. Auto-update `updated_at` timestamp
     await db.execute(sql`
@@ -71,16 +111,21 @@ async function main() {
         CREATE TRIGGER set_products_updated_at
             BEFORE UPDATE ON public.products
             FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
+
+        DROP TRIGGER IF EXISTS set_product_analytics_updated_at ON public.product_analytics;
+        CREATE TRIGGER set_product_analytics_updated_at
+            BEFORE UPDATE ON public.product_analytics
+            FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
     `);
     console.log('   ✅ updated_at triggers created.\n');
 
-    // 2b. Auto-create profile on signup
-    console.log('👤 Step 3/4: Creating auth triggers & security functions...');
+    // 3b. Auto-create profile on signup
+    console.log('👤 Step 4/5: Creating auth triggers & security functions...');
     await db.execute(sql`
         CREATE OR REPLACE FUNCTION public.handle_new_user()
         RETURNS trigger AS $$
         BEGIN
-            INSERT INTO public.profiles (id, email, full_name, avatar_url, role, phone, approval_status)
+            INSERT INTO public.profiles (id, email, full_name, avatar_url, role, phone, city, approval_status)
             VALUES (
                 new.id,
                 new.email,
@@ -92,12 +137,34 @@ async function main() {
                     ELSE 'user'
                 END,
                 new.raw_user_meta_data->>'phone',
+                new.raw_user_meta_data->>'city',
                 CASE
                     WHEN (new.raw_user_meta_data->>'role') IN ('vendor', 'technician')
                     THEN 'pending'
                     ELSE 'approved'
                 END
             );
+
+            -- Automatically create standard rows for special roles
+            IF (new.raw_user_meta_data->>'role') = 'vendor' THEN
+                INSERT INTO public.vendors (id, business_name, business_type, years_in_business, city)
+                VALUES (
+                    new.id,
+                    new.raw_user_meta_data->'vendor'->>'company_name',
+                    new.raw_user_meta_data->'vendor'->>'business_type',
+                    new.raw_user_meta_data->'vendor'->>'years_in_business',
+                    new.raw_user_meta_data->'vendor'->>'city'
+                );
+            ELSIF (new.raw_user_meta_data->>'role') = 'technician' THEN
+                INSERT INTO public.technicians (id, speciality, experience_years, city)
+                VALUES (
+                    new.id,
+                    new.raw_user_meta_data->'technician'->>'speciality',
+                    new.raw_user_meta_data->'technician'->>'experience_years',
+                    new.raw_user_meta_data->'technician'->>'city'
+                );
+            END IF;
+
             RETURN new;
         END;
         $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -115,7 +182,8 @@ async function main() {
         RETURNS trigger AS $$
         BEGIN
             -- Allow service_role full access (admin actions)
-            IF (auth.jwt() ->> 'role') = 'service_role' THEN
+            -- Also allow postgres role since Drizzle connects natively
+            IF (auth.jwt() ->> 'role') = 'service_role' OR current_user IN ('postgres', 'service_role', 'supabase_admin') THEN
                 RETURN new;
             END IF;
 
@@ -153,8 +221,8 @@ async function main() {
     `);
     console.log('   ✅ Auth trigger + sensitive column protection created.\n');
 
-    // ─── 3. Storage Setup ────────────────────────────────────────
-    console.log('📦 Step 4/4: Setting up storage bucket & policies...');
+    // ─── 4. Storage Setup ────────────────────────────────────────
+    console.log('📦 Step 5/5: Setting up storage bucket & policies...');
     try {
         // 3a. Create bucket
         await db.execute(sql`

@@ -38,7 +38,7 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
     const [loading, setLoading] = useState(!initialSession)
     const supabase = createClient()
 
-    const fetchProfile = async (userId: string, signal?: AbortSignal) => {
+    const fetchProfile = async (userId: string) => {
         console.log('[AuthProvider] Fetching profile for:', userId)
         try {
             // 1. Fetch basic profile first (fast)
@@ -47,15 +47,24 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
                 .select('*')
                 .eq('id', userId)
                 .single()
-                // @ts-ignore
-                .abortSignal(signal as AbortSignal)
 
             if (error) {
-                console.error('[AuthProvider] Fetch Error:', error)
                 // Ignore "No rows found" error (PGRST116) as it just means profile doesn't exist yet
                 if (error.code === 'PGRST116') {
                     return null
                 }
+
+                // Ignore completely empty error objects often caused by aborted signals in React Strict Mode
+                if (typeof error === 'object' && error !== null && Object.keys(error).length === 0) {
+                    return null
+                }
+
+                // Also ignore AbortError type if it somehow gets wrapped
+                if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+                    return null
+                }
+
+                console.error('[AuthProvider] Fetch Error:', error)
                 return null
             }
 
@@ -68,8 +77,6 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
                     .select('showroom_slug')
                     .eq('id', userId)
                     .single()
-                    // @ts-ignore
-                    .abortSignal(signal as AbortSignal)
 
                 return { ...profileData, vendors: vendorData }
             }
@@ -106,13 +113,12 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
 
     useEffect(() => {
         let mounted = true
-        const controller = new AbortController()
 
         const initializeAuth = async () => {
             try {
                 // If we already have a session from props, we might just want to fetch the profile if missing
                 if (initialSession?.user && !profile) {
-                    const profileData = await fetchProfile(initialSession.user.id, controller.signal)
+                    const profileData = await fetchProfile(initialSession.user.id)
                     if (mounted) {
                         setProfile(profileData)
                         setLoading(false)
@@ -130,7 +136,7 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
                     setUser(session?.user ?? null)
 
                     if (session?.user) {
-                        const profileData = await fetchProfile(session.user.id, controller.signal)
+                        const profileData = await fetchProfile(session.user.id)
                         if (mounted) setProfile(profileData)
                     } else {
                         if (mounted) setProfile(null)
@@ -156,11 +162,10 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
             setUser(session?.user ?? null)
 
             if (session?.user) {
-                // Only refetch profile if it's a SIGN_IN event or we don't have it yet
-                if (event === 'SIGNED_IN' || !profile) {
-                    const profileData = await fetchProfile(session.user.id)
-                    if (mounted) setProfile(profileData)
-                }
+                // ALWAYS refetch profile on state change to prevent new-tab race conditions
+                // where the initial Session is valid but the profile object is null
+                const profileData = await fetchProfile(session.user.id)
+                if (mounted) setProfile(profileData)
             } else {
                 if (mounted) setProfile(null)
             }
@@ -170,7 +175,6 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
 
         return () => {
             mounted = false
-            controller.abort()
             subscription.unsubscribe()
         }
     }, []) // Empty dependency array is correct here

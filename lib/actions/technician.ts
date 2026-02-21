@@ -75,3 +75,65 @@ export const updateTechnicianProfile = authenticatedAction(
         }
     }
 )
+
+export async function getApprovedTechnicians() {
+    const supabase = await createClient()
+    if (!supabase) return []
+
+    const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select(`
+            id,
+            full_name,
+            avatar_url,
+            city,
+            phone,
+            created_at,
+            technicians(
+                speciality,
+                experience_years,
+                is_verified
+            )
+        `)
+        .eq('role', 'technician')
+        .eq('approval_status', 'approved')
+
+    if (error) {
+        console.error('Error fetching approved technicians:', error)
+        return []
+    }
+
+    return profiles.map(profile => {
+        const technicianData = profile.technicians ? (Array.isArray(profile.technicians) ? profile.technicians[0] : profile.technicians) : {}
+
+        let parsedSpecialities: string[] = []
+        try {
+            if (technicianData?.speciality) {
+                // Specialities might be saved as JSON array from the MultiSelect or comma-separated
+                if (technicianData.speciality.startsWith('[')) {
+                    parsedSpecialities = JSON.parse(technicianData.speciality)
+                } else {
+                    parsedSpecialities = technicianData.speciality.split(',').map((s: string) => s.trim())
+                }
+            }
+        } catch (e) { /* ignore parse error */ }
+
+        return {
+            id: profile.id,
+            name: profile.full_name || 'Technician',
+            city: profile.city || technicianData?.city || 'Not specified',
+            phone: profile.phone || '',
+            speciality: technicianData?.speciality ? parsedSpecialities.join(', ') : 'General Maintenance',
+            specialitiesList: parsedSpecialities,
+            experience: technicianData?.experience_years ? `${technicianData.experience_years} years` : 'Not specified',
+            verified: technicianData?.is_verified || false,
+            // Fallbacks for UI that were in mock data
+            rating: 5.0,
+            reviews: 0,
+            responseTime: 'Will contact ASAP',
+            certifications: technicianData?.is_verified ? ['Platform Verified'] : [],
+            image: `bg-gradient-to-br from-teal-100 to-teal-50`, // Randomize later if needed
+            whatsapp: profile.phone ? profile.phone.replace(/\D/g, '') : '',
+        }
+    })
+}

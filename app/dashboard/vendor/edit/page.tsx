@@ -34,7 +34,6 @@ export default function VendorEditPage() {
         businessName: '',
         description: '',
         contactPhone: '',
-        whatsappNumber: '',
     })
 
     useEffect(() => {
@@ -60,7 +59,6 @@ export default function VendorEditPage() {
                     businessName: data.business_name || '',
                     description: data.description || '',
                     contactPhone: data.contact_phone || '',
-                    whatsappNumber: data.whatsapp_number || '',
                 })
                 setError(null)
             } catch (err: any) {
@@ -102,7 +100,7 @@ export default function VendorEditPage() {
                 businessName: formData.businessName,
                 description: formData.description,
                 contactPhone: formData.contactPhone,
-                whatsappNumber: formData.whatsappNumber,
+                whatsappNumber: formData.phone, // Sync WhatsApp with Primary Phone
             })
 
             if (result.success) {
@@ -255,17 +253,6 @@ export default function VendorEditPage() {
                                         value={formData.contactPhone}
                                         onChange={handleInputChange}
                                         placeholder="Business phone (optional)"
-                                        disabled={isSubmitting}
-                                    />
-                                </FormField>
-
-                                <FormField label="WhatsApp Number" error={errors.whatsappNumber}>
-                                    <Input
-                                        type="tel"
-                                        name="whatsappNumber"
-                                        value={formData.whatsappNumber}
-                                        onChange={handleInputChange}
-                                        placeholder="WhatsApp for customer contact"
                                         disabled={isSubmitting}
                                     />
                                 </FormField>

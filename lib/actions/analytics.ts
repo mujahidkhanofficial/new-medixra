@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db/drizzle'
-import { profiles, products } from '@/lib/db/schema'
+import { profiles, products, productAnalytics } from '@/lib/db/schema'
 import { sql, gt, desc, eq } from 'drizzle-orm'
 import { authenticatedAction } from '@/lib/safe-action'
 import { z } from 'zod'
@@ -129,7 +129,8 @@ export const getVendorAnalytics = async (userId: string) => {
       productPerformance: vendorProducts.map(p => ({
         name: p.name,
         views: p.views || 0,
-        inquiries: 0 // Placeholder
+        inquiries: 0, // Placeholder
+        conversion: 0 // Placeholder
       })).slice(0, 5)
     }
   } catch (error) {
@@ -138,20 +139,70 @@ export const getVendorAnalytics = async (userId: string) => {
   }
 }
 
-export const generateViewsChartData = async () => {
-  // Generate dummy data for the chart as we don't have historical view tracking yet
-  const data = []
-  const now = new Date()
-  for (let i = 29; i >= 0; i--) {
-    const date = new Date(now)
-    date.setDate(date.getDate() - i)
-    data.push({
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      views: Math.floor(Math.random() * 50) + 10,
-      inquiries: Math.floor(Math.random() * 10)
+export const generateViewsChartData = async (vendorId?: string | undefined) => {
+  try {
+    const supabase = await createClient()
+    let currentVendorId = vendorId
+
+    if (!currentVendorId) {
+      if (!supabase) return []
+      const { data } = await supabase.auth.getUser()
+      currentVendorId = data?.user?.id
+    }
+
+    if (!currentVendorId) return []
+
+    // Get dates for the last 30 days
+    const now = new Date()
+    const thirtyDaysAgo = new Date(now)
+    thirtyDaysAgo.setDate(now.getDate() - 30)
+    const thirtyDaysAgoIsoStr = thirtyDaysAgo.toISOString().split('T')[0]
+
+    // Fetch data for the vendor from the last 30 days
+    const analytics = await db.query.productAnalytics.findMany({
+      where: (analytics, { eq, and, gte }) => and(
+        eq(analytics.vendorId, currentVendorId!),
+        gte(analytics.date, thirtyDaysAgoIsoStr)
+      )
     })
+
+    // Create a map to aggregate by date
+    const dateMap = new Map<string, { views: number, inquiries: number }>()
+
+    // Initialize map with zeroes for all 30 days to ensure continuous chart
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now)
+      d.setDate(d.getDate() - i)
+      const isoDate = d.toISOString().split('T')[0]
+      dateMap.set(isoDate, { views: 0, inquiries: 0 })
+    }
+
+    // Populate existing data
+    analytics.forEach(record => {
+      const existing = dateMap.get(record.date) || { views: 0, inquiries: 0 }
+      existing.views += record.views
+      existing.inquiries += record.inquiries
+      dateMap.set(record.date, existing)
+    })
+
+    // Convert to chart format
+    // Map entries maintain insertion order (from oldest to newest)
+    const data = Array.from(dateMap.entries()).map(([isoDate, metrics]) => {
+      // Parse ISO date and format it nicely, e.g. 'Feb 20'
+      const dateObj = new Date(isoDate)
+      const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      return {
+        date: formattedDate,
+        views: metrics.views,
+        inquiries: metrics.inquiries
+      }
+    })
+
+    return data
+  } catch (error) {
+    console.error('Error fetching views chart data:', error)
+    return []
   }
-  return data
 }
 
 export const trackWhatsAppClick = async ({ productId }: { productId?: string }) => {
@@ -191,15 +242,52 @@ export const trackWhatsAppClick = async ({ productId }: { productId?: string }) 
     await db.update(products)
       .set({ whatsappClicks: sql`${products.whatsappClicks} + 1` })
       .where(sql`${products.id} = ${productId}`)
+
+    if (product && product.vendorId) {
+      const today = new Date().toISOString().split('T')[0]
+      await db.insert(productAnalytics).values({
+        productId,
+        vendorId: product.vendorId,
+        date: today,
+        inquiries: 1
+      }).onConflictDoUpdate({
+        target: [productAnalytics.productId, productAnalytics.date],
+        set: {
+          inquiries: sql`${productAnalytics.inquiries} + 1`,
+          updatedAt: new Date().toISOString()
+        }
+      })
+    }
   }
   return { success: true }
 }
 
 export const incrementProductView = async (productId: string) => {
   try {
+    const product = await db.query.products.findFirst({
+      where: eq(products.id, productId),
+      columns: { vendorId: true }
+    })
+
     await db.update(products)
       .set({ views: sql`${products.views} + 1` })
       .where(eq(products.id, productId))
+
+    if (product?.vendorId) {
+      const today = new Date().toISOString().split('T')[0]
+      await db.insert(productAnalytics).values({
+        productId,
+        vendorId: product.vendorId,
+        date: today,
+        views: 1
+      }).onConflictDoUpdate({
+        target: [productAnalytics.productId, productAnalytics.date],
+        set: {
+          views: sql`${productAnalytics.views} + 1`,
+          updatedAt: new Date().toISOString()
+        }
+      })
+    }
     return { success: true }
   } catch (error) {
     console.error('Failed to increment view:', error)

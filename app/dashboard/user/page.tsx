@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus, Search, Heart, User, LayoutDashboard, FileText, Eye, MessageCircle, ArrowRight } from 'lucide-react'
+import { Plus, Search, Heart, User, LayoutDashboard, FileText, Eye, MessageCircle, ArrowRight, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { StatCard } from '@/components/dashboard/stat-card'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
@@ -8,6 +8,8 @@ import Footer from '@/components/footer'
 import { createClient } from '@/lib/supabase/server'
 import { AdsTable } from '@/components/dashboard/ads-table'
 import { getSavedItems } from '@/lib/actions/saved-items'
+import { ViewsChart, ProductPerformanceChart } from '@/components/dashboard/analytics-charts'
+import { getVendorAnalytics, generateViewsChartData } from '@/lib/actions/analytics'
 import Image from 'next/image'
 
 import { db } from '@/lib/db/drizzle'
@@ -38,6 +40,10 @@ export default async function UserDashboard() {
   // Fetch saved items
   const savedItems = await getSavedItems(user.id)
 
+  // Fetch Analytics
+  const analyticsData = await getVendorAnalytics(user.id)
+  const viewsData = await generateViewsChartData()
+
   // Calculate total views for "Activity"
   const totalViews = ads?.reduce((acc, ad) => acc + (ad.views || 0), 0) || 0
   const totalClicks = ads?.reduce((acc, ad) => acc + (ad.whatsappClicks || 0), 0) || 0
@@ -52,11 +58,18 @@ export default async function UserDashboard() {
             title={`Welcome back, ${userName}!`}
             subtitle="Manage your ads and activity from here."
             actions={
-              <Button asChild size="lg" className="rounded-full">
-                <Link href="/post-ad">
-                  <Plus className="mr-2 h-4 w-4" /> Post New Ad
-                </Link>
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button asChild variant="outline" size="lg" className="rounded-full hidden sm:flex bg-background hover:bg-muted">
+                  <Link href={`/shop/${user.id}`}>
+                    <Eye className="mr-2 h-4 w-4" /> View My Webstore
+                  </Link>
+                </Button>
+                <Button asChild size="lg" className="rounded-full">
+                  <Link href="/post-ad">
+                    <Plus className="mr-2 h-4 w-4" /> Post New Ad
+                  </Link>
+                </Button>
+              </div>
             }
           />
 
@@ -145,6 +158,39 @@ export default async function UserDashboard() {
                     <Button variant="link" size="sm" asChild className="mt-1">
                       <Link href="/products">Browse Equipment</Link>
                     </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Charts Section */}
+          <div className="mt-12 space-y-6">
+            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Performance Analytics
+            </h2>
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Views Chart */}
+              <div className="rounded-lg border border-border bg-card p-6">
+                <h3 className="text-lg font-medium text-foreground mb-4">Views & Inquiries (Last 30 Days)</h3>
+                {viewsData.length > 0 ? (
+                  <ViewsChart data={viewsData} />
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground border border-dashed rounded-md">
+                    No data available
+                  </div>
+                )}
+              </div>
+
+              {/* Product Performance Chart */}
+              <div className="rounded-lg border border-border bg-card p-6">
+                <h3 className="text-lg font-medium text-foreground mb-4">Product Performance</h3>
+                {analyticsData?.productPerformance && analyticsData.productPerformance.length > 0 ? (
+                  <ProductPerformanceChart data={analyticsData.productPerformance} />
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground border border-dashed rounded-md">
+                    No products to display
                   </div>
                 )}
               </div>

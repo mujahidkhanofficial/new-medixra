@@ -175,6 +175,16 @@ export const CITIES = [
     'Mirpur Khas'
 ] as const
 
+export const BUSINESS_TYPES = [
+    'Manufacturer',
+    'Distributor',
+    'Dealer',
+    'Retailer',
+    'Service Provider',
+    'Importer',
+    'Other'
+] as const
+
 export const CONDITIONS = ['New', 'Used', 'Refurbished'] as const
 
 export const SPECIALTIES = [
