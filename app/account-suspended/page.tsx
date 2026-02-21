@@ -39,7 +39,7 @@ export default function AccountSuspendedPage() {
                     </div>
 
                     <div className="text-xs text-muted-foreground bg-secondary p-4 rounded-lg">
-                        <p>Please contact support@medixra.com for assistance</p>
+                        <p>Please contact medixra@gmail.com for assistance</p>
                     </div>
                 </div>
             </main>

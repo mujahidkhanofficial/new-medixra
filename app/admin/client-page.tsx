@@ -22,7 +22,15 @@ import {
     User,
     MoreHorizontal,
     Copy,
-    Ban
+    Ban,
+    Phone,
+    Mail,
+    X,
+    Building2,
+    Wrench,
+    MapPin,
+    Calendar,
+    Star
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -92,6 +100,10 @@ export default function AdminDashboardClient({
     const [isReportsLoaded, setIsReportsLoaded] = useState(false)
     const [loadingReports, setLoadingReports] = useState(false)
 
+    // Application Detail Modal
+    const [selectedApplicant, setSelectedApplicant] = useState<any | null>(null)
+    const [isApplicantModalOpen, setIsApplicantModalOpen] = useState(false)
+
     // Data Fetching Effects
     useEffect(() => {
         if (activeSection === 'approvals' && !isApprovalsLoaded) {
@@ -103,11 +115,15 @@ export default function AdminDashboardClient({
                     const formatted = data.map(u => ({
                         id: u.id,
                         name: u.fullName || u.email,
+                        email: u.email,
+                        phone: u.phone,
                         role: u.role,
                         location: u.city || 'Pakistan',
                         appliedDate: new Date(u.createdAt).toLocaleDateString(),
                         equipment: u.role === 'vendor' ? 'Vendor Application' : 'Technician Application',
-                        status: 'pending'
+                        status: 'pending',
+                        vendorDetails: u.vendorDetails,
+                        technicianDetails: u.technicianDetails,
                     }))
                     setPendingApprovals(formatted)
                     setIsApprovalsLoaded(true)
@@ -593,7 +609,7 @@ export default function AdminDashboardClient({
                                                 <span className="px-2 py-1 bg-amber-50 text-amber-600 text-[10px] font-bold rounded ring-1 ring-amber-100">PENDING ACTION</span>
                                             </div>
 
-                                            <div className="space-y-3 mb-6">
+                                            <div className="space-y-3 mb-4">
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-gray-500 font-medium">Application Segment:</span>
                                                     <span className="text-gray-900 font-bold">{item.equipment}</span>
@@ -603,10 +619,29 @@ export default function AdminDashboardClient({
                                                     <span className="text-gray-900 font-bold">{item.location}</span>
                                                 </div>
                                                 <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-500 font-medium">Email:</span>
+                                                    <span className="text-gray-900 font-bold truncate max-w-[160px]">{item.email}</span>
+                                                </div>
+                                                {item.phone && (
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-gray-500 font-medium">Phone:</span>
+                                                        <span className="text-gray-900 font-bold">{item.phone}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-between text-sm">
                                                     <span className="text-gray-500 font-medium">Submission Date:</span>
                                                     <span className="text-gray-900 font-bold">{item.appliedDate}</span>
                                                 </div>
                                             </div>
+
+                                            <button
+                                                type="button"
+                                                className="w-full text-teal-600 text-sm font-semibold underline underline-offset-2 mb-4 hover:text-teal-800 transition-colors text-left"
+                                                onClick={() => { setSelectedApplicant(item); setIsApplicantModalOpen(true) }}
+                                            >
+                                                <Eye className="inline h-4 w-4 mr-1 mb-0.5" />
+                                                View Full Application Details
+                                            </button>
 
                                             <div className="grid grid-cols-2 gap-3">
                                                 <Button
@@ -627,6 +662,161 @@ export default function AdminDashboardClient({
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+
+                            {/* Application Detail Modal */}
+                            {isApplicantModalOpen && selectedApplicant && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={() => setIsApplicantModalOpen(false)}>
+                                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                                        {/* Modal Header */}
+                                        <div className="flex items-start justify-between p-6 border-b border-gray-100">
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-14 w-14 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-2xl shrink-0">
+                                                    {selectedApplicant.name[0]?.toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-xl font-bold text-gray-900">{selectedApplicant.name}</h2>
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-50 text-teal-700 text-xs font-bold rounded-full uppercase mt-1">
+                                                        {selectedApplicant.role === 'vendor' ? <Building2 className="h-3 w-3" /> : <Wrench className="h-3 w-3" />}
+                                                        {selectedApplicant.role}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <button onClick={() => setIsApplicantModalOpen(false)} className="text-gray-400 hover:text-gray-700 transition-colors mt-1">
+                                                <X className="h-5 w-5" />
+                                            </button>
+                                        </div>
+
+                                        {/* Contact Buttons */}
+                                        <div className="flex gap-3 p-6 pb-0">
+                                            {selectedApplicant.email && (
+                                                <a href={`mailto:${selectedApplicant.email}`} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-xl text-sm transition-colors">
+                                                    <Mail className="h-4 w-4" /> Email
+                                                </a>
+                                            )}
+                                            {selectedApplicant.phone && (
+                                                <a href={`https://wa.me/${selectedApplicant.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 text-green-700 font-semibold rounded-xl text-sm transition-colors">
+                                                    <Phone className="h-4 w-4" /> WhatsApp
+                                                </a>
+                                            )}
+                                            {selectedApplicant.phone && (
+                                                <a href={`tel:${selectedApplicant.phone}`} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm transition-colors">
+                                                    <Phone className="h-4 w-4" /> Call
+                                                </a>
+                                            )}
+                                        </div>
+
+                                        {/* Base Info */}
+                                        <div className="p-6 space-y-4">
+                                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Account Information</h3>
+                                            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                                                <div className="flex items-center gap-3 text-sm">
+                                                    <Mail className="h-4 w-4 text-gray-400 shrink-0" />
+                                                    <span className="text-gray-500 w-24 shrink-0">Email</span>
+                                                    <span className="font-semibold text-gray-900 truncate">{selectedApplicant.email}</span>
+                                                </div>
+                                                {selectedApplicant.phone && (
+                                                    <div className="flex items-center gap-3 text-sm">
+                                                        <Phone className="h-4 w-4 text-gray-400 shrink-0" />
+                                                        <span className="text-gray-500 w-24 shrink-0">Phone</span>
+                                                        <span className="font-semibold text-gray-900">{selectedApplicant.phone}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center gap-3 text-sm">
+                                                    <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
+                                                    <span className="text-gray-500 w-24 shrink-0">City</span>
+                                                    <span className="font-semibold text-gray-900">{selectedApplicant.location}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3 text-sm">
+                                                    <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
+                                                    <span className="text-gray-500 w-24 shrink-0">Applied</span>
+                                                    <span className="font-semibold text-gray-900">{selectedApplicant.appliedDate}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Vendor-specific fields */}
+                                            {selectedApplicant.role === 'vendor' && selectedApplicant.vendorDetails && (
+                                                <>
+                                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-2">Business Details</h3>
+                                                    <div className="bg-teal-50 rounded-xl p-4 space-y-3">
+                                                        {selectedApplicant.vendorDetails.businessName && (
+                                                            <div className="flex items-start gap-3 text-sm">
+                                                                <Building2 className="h-4 w-4 text-teal-500 mt-0.5 shrink-0" />
+                                                                <span className="text-gray-500 w-24 shrink-0">Business</span>
+                                                                <span className="font-semibold text-gray-900">{selectedApplicant.vendorDetails.businessName}</span>
+                                                            </div>
+                                                        )}
+                                                        {selectedApplicant.vendorDetails.businessType && (
+                                                            <div className="flex items-start gap-3 text-sm">
+                                                                <Star className="h-4 w-4 text-teal-500 mt-0.5 shrink-0" />
+                                                                <span className="text-gray-500 w-24 shrink-0">Type</span>
+                                                                <span className="font-semibold text-gray-900">{selectedApplicant.vendorDetails.businessType}</span>
+                                                            </div>
+                                                        )}
+                                                        {selectedApplicant.vendorDetails.yearsInBusiness && (
+                                                            <div className="flex items-start gap-3 text-sm">
+                                                                <Calendar className="h-4 w-4 text-teal-500 mt-0.5 shrink-0" />
+                                                                <span className="text-gray-500 w-24 shrink-0">Experience</span>
+                                                                <span className="font-semibold text-gray-900">{selectedApplicant.vendorDetails.yearsInBusiness} years</span>
+                                                            </div>
+                                                        )}
+                                                        {selectedApplicant.vendorDetails.description && (
+                                                            <div className="flex items-start gap-3 text-sm">
+                                                                <MessageSquare className="h-4 w-4 text-teal-500 mt-0.5 shrink-0" />
+                                                                <span className="text-gray-500 w-24 shrink-0">Description</span>
+                                                                <span className="font-semibold text-gray-900">{selectedApplicant.vendorDetails.description}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {/* Technician-specific fields */}
+                                            {selectedApplicant.role === 'technician' && selectedApplicant.technicianDetails && (
+                                                <>
+                                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-2">Technician Details</h3>
+                                                    <div className="bg-blue-50 rounded-xl p-4 space-y-3">
+                                                        {selectedApplicant.technicianDetails.experienceYears && (
+                                                            <div className="flex items-start gap-3 text-sm">
+                                                                <Calendar className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
+                                                                <span className="text-gray-500 w-24 shrink-0">Experience</span>
+                                                                <span className="font-semibold text-gray-900">{selectedApplicant.technicianDetails.experienceYears} years</span>
+                                                            </div>
+                                                        )}
+                                                        {selectedApplicant.technicianDetails.speciality && (
+                                                            <div className="flex items-start gap-3 text-sm">
+                                                                <Wrench className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
+                                                                <span className="text-gray-500 w-24 shrink-0">Specialities</span>
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {(() => { try { const s = JSON.parse(selectedApplicant.technicianDetails.speciality); return Array.isArray(s) ? s.map((sp: string, i: number) => <span key={i} className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">{sp}</span>) : <span className="font-semibold text-gray-900">{selectedApplicant.technicianDetails.speciality}</span> } catch { return <span className="font-semibold text-gray-900">{selectedApplicant.technicianDetails.speciality}</span> } })()}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+
+                                        {/* Modal Actions */}
+                                        <div className="grid grid-cols-2 gap-3 p-6 pt-0">
+                                            <Button
+                                                className="bg-teal-600 hover:bg-teal-700 text-white font-bold"
+                                                onClick={() => { handleApproveUser(selectedApplicant.id); setIsApplicantModalOpen(false) }}
+                                                disabled={isPending}
+                                            >
+                                                Approve Access
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                className="border-red-200 text-red-600 hover:bg-red-50 font-bold"
+                                                onClick={() => { handleRejectUser(selectedApplicant.id); setIsApplicantModalOpen(false) }}
+                                                disabled={isPending}
+                                            >
+                                                Reject
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>

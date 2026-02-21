@@ -56,7 +56,6 @@ export const updateVendorProfile = authenticatedAction(
         city: z.string().optional(),
         businessName: z.string().min(2, 'Business name must be at least 2 characters').optional(),
         description: z.string().optional(),
-        contactPhone: z.string().optional(),
         whatsappNumber: z.string().optional(),
     }),
     async (data, userId) => {
@@ -72,11 +71,11 @@ export const updateVendorProfile = authenticatedAction(
             }
 
             // Update vendor details
-            if (data.businessName || data.description || data.contactPhone || data.whatsappNumber) {
+            if (data.businessName !== undefined || data.description !== undefined || data.whatsappNumber !== undefined) {
                 const vendorUpdate: any = {}
                 if (data.businessName) vendorUpdate.business_name = data.businessName
-                if (data.description) vendorUpdate.description = data.description
-                if (data.contactPhone) vendorUpdate.contact_phone = data.contactPhone
+                // Always write description so it can be cleared to empty string
+                if (data.description !== undefined) vendorUpdate.description = data.description
                 if (data.whatsappNumber) vendorUpdate.whatsapp_number = data.whatsappNumber
                 vendorUpdate.updated_at = new Date().toISOString()
 

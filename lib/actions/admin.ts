@@ -200,11 +200,31 @@ export const getPendingApprovals = async () => {
     if (!user) throw new Error('Unauthorized')
     await checkAdmin(user.id)
 
-    return await db
+    const pendingProfiles = await db
         .select()
         .from(profiles)
         .where(eq(profiles.approvalStatus, 'pending'))
         .orderBy(desc(profiles.createdAt))
+
+    // For each pending profile, fetch the role-specific details
+    const enriched = await Promise.all(
+        pendingProfiles.map(async (profile) => {
+            if (profile.role === 'vendor') {
+                const vendorData = await db.query.vendors.findFirst({
+                    where: eq(vendors.id, profile.id)
+                })
+                return { ...profile, vendorDetails: vendorData ?? null, technicianDetails: null }
+            } else if (profile.role === 'technician') {
+                const techData = await db.query.technicians.findFirst({
+                    where: eq(technicians.id, profile.id)
+                })
+                return { ...profile, vendorDetails: null, technicianDetails: techData ?? null }
+            }
+            return { ...profile, vendorDetails: null, technicianDetails: null }
+        })
+    )
+
+    return enriched
 }
 
 // --- Product Management ---

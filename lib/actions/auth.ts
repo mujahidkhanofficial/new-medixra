@@ -348,7 +348,11 @@ export async function loginAction(prevState: any, formData: FormData) {
         // Handle Pending/Rejected Status
         if (effectiveProfile.role === 'vendor' || effectiveProfile.role === 'technician') {
             if (effectiveProfile.approvalStatus !== 'approved') {
-                redirect('/pending-approval')
+                return {
+                    success: true,
+                    redirect: '/pending-approval',
+                    message: 'Account under review'
+                }
             }
         }
 

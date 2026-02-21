@@ -33,7 +33,6 @@ export default function VendorEditPage() {
         city: '',
         businessName: '',
         description: '',
-        contactPhone: '',
     })
 
     useEffect(() => {
@@ -58,7 +57,6 @@ export default function VendorEditPage() {
                     city: data.city || '',
                     businessName: data.business_name || '',
                     description: data.description || '',
-                    contactPhone: data.contact_phone || '',
                 })
                 setError(null)
             } catch (err: any) {
@@ -99,7 +97,6 @@ export default function VendorEditPage() {
                 city: formData.city,
                 businessName: formData.businessName,
                 description: formData.description,
-                contactPhone: formData.contactPhone,
                 whatsappNumber: formData.phone, // Sync WhatsApp with Primary Phone
             })
 
@@ -245,18 +242,6 @@ export default function VendorEditPage() {
                                 />
                             </FormField>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField label="Contact Phone" error={errors.contactPhone}>
-                                    <Input
-                                        type="tel"
-                                        name="contactPhone"
-                                        value={formData.contactPhone}
-                                        onChange={handleInputChange}
-                                        placeholder="Business phone (optional)"
-                                        disabled={isSubmitting}
-                                    />
-                                </FormField>
-                            </div>
                         </div>
 
                         {/* Action Buttons */}

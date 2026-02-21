@@ -59,6 +59,7 @@ export default function SignupPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [success, setSuccess] = useState(false)
     const [checkingConfirmation, setCheckingConfirmation] = useState(false)
+    const [isReviewReady, setIsReviewReady] = useState(false)
 
     // Form setup
     const { register, control, handleSubmit, watch, trigger, reset, setValue, formState: { errors } } = useForm<SignupWizardData>({
@@ -115,6 +116,15 @@ export default function SignupPage() {
     useEffect(() => {
         if (!loading && user) router.replace('/dashboard')
     }, [user, loading, router])
+
+    // Delay submit button activation to prevent mobile ghost clicks skipping the review stage
+    useEffect(() => {
+        if (step === 4) {
+            setIsReviewReady(false)
+            const timer = setTimeout(() => setIsReviewReady(true), 500)
+            return () => clearTimeout(timer)
+        }
+    }, [step])
 
     if (loading) {
         return (
@@ -496,7 +506,7 @@ export default function SignupPage() {
                                 {step < 4 ? (
                                     <Button type="button" onClick={nextStep} className="bg-primary">Next</Button>
                                 ) : (
-                                    <Button type="submit" className="w-full" disabled={isLoading}>
+                                    <Button type="submit" className="w-full" disabled={isLoading || !isReviewReady}>
                                         {isLoading ? 'Creating account...' : 'Create Account'}
                                     </Button>
                                 )}
