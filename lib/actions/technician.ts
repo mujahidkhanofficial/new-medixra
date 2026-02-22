@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { db } from '@/lib/db/drizzle'
 import { profiles, technicians } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { authenticatedAction } from '@/lib/safe-action'
 import { z } from 'zod'
@@ -34,6 +34,32 @@ export async function getTechnicianProfile(userId: string) {
         ...technicianData,
         speciality: technicianData?.speciality || '',
         experience_years: technicianData?.experience_years,
+        views: technicianData?.views || 0,
+        whatsapp_clicks: technicianData?.whatsapp_clicks || 0,
+    }
+}
+
+export async function incrementTechnicianViews(technicianId: string) {
+    try {
+        await db.update(technicians)
+            .set({ views: sql`${technicians.views} + 1` })
+            .where(eq(technicians.id, technicianId))
+        return { success: true }
+    } catch (error) {
+        console.error('Failed to increment technician views:', error)
+        return { success: false }
+    }
+}
+
+export async function incrementTechnicianWhatsappClicks(technicianId: string) {
+    try {
+        await db.update(technicians)
+            .set({ whatsappClicks: sql`${technicians.whatsappClicks} + 1` })
+            .where(eq(technicians.id, technicianId))
+        return { success: true }
+    } catch (error) {
+        console.error('Failed to increment technician whatsapp clicks:', error)
+        return { success: false }
     }
 }
 

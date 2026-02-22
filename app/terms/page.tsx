@@ -100,8 +100,8 @@ export default function TermsOfServicePage() {
                         </h2>
                         <p className="text-muted-foreground leading-relaxed">
                             For questions about these terms, contact us at:{' '}
-                            <a href="mailto:legal@medixra.com" className="text-primary hover:underline">
-                                legal@medixra.com
+                            <a href="mailto:zovetica@gmail.com" className="text-primary hover:underline">
+                                zovetica@gmail.com
                             </a>
                         </p>
                     </section>

@@ -23,8 +23,8 @@ export const profiles = pgTable("profiles", {
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
     pgPolicy("Public Profiles", { as: "permissive", for: "select", to: ["public"], using: sql`true` }),
-    pgPolicy("Users can insert own profile", { as: "permissive", for: "insert", to: ["public"] }),
-    pgPolicy("Users can update own profile", { as: "permissive", for: "update", to: ["public"] }),
+    pgPolicy("Users can insert own profile", { as: "permissive", for: "insert", to: ["public"], withCheck: sql`auth.uid() = id` }),
+    pgPolicy("Users can update own profile", { as: "permissive", for: "update", to: ["public"], using: sql`auth.uid() = id`, withCheck: sql`auth.uid() = id` }),
 ]);
 
 export const vendors = pgTable("vendors", {
@@ -50,8 +50,8 @@ export const vendors = pgTable("vendors", {
     }).onDelete("cascade"),
     unique("vendors_showroom_slug_unique").on(table.showroomSlug),
     pgPolicy("Public Vendors", { as: "permissive", for: "select", to: ["public"], using: sql`true` }),
-    pgPolicy("Vendors can insert own business", { as: "permissive", for: "insert", to: ["public"] }),
-    pgPolicy("Vendors can update own business", { as: "permissive", for: "update", to: ["public"] }),
+    pgPolicy("Vendors can insert own business", { as: "permissive", for: "insert", to: ["public"], withCheck: sql`auth.uid() = id` }),
+    pgPolicy("Vendors can update own business", { as: "permissive", for: "update", to: ["public"], using: sql`auth.uid() = id`, withCheck: sql`auth.uid() = id` }),
 ]);
 
 export const technicians = pgTable("technicians", {
@@ -60,6 +60,8 @@ export const technicians = pgTable("technicians", {
     experienceYears: text("experience_years"),
     isVerified: boolean("is_verified").default(false),
     city: text(),
+    views: integer().default(0),
+    whatsappClicks: integer("whatsapp_clicks").default(0),
     createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
@@ -69,8 +71,8 @@ export const technicians = pgTable("technicians", {
         name: "technicians_id_profiles_id_fk"
     }).onDelete("cascade"),
     pgPolicy("Public Technicians", { as: "permissive", for: "select", to: ["public"], using: sql`true` }),
-    pgPolicy("Technicians can insert own profile", { as: "permissive", for: "insert", to: ["public"] }),
-    pgPolicy("Technicians can update own profile", { as: "permissive", for: "update", to: ["public"] }),
+    pgPolicy("Technicians can insert own profile", { as: "permissive", for: "insert", to: ["public"], withCheck: sql`auth.uid() = id` }),
+    pgPolicy("Technicians can update own profile", { as: "permissive", for: "update", to: ["public"], using: sql`auth.uid() = id`, withCheck: sql`auth.uid() = id` }),
 ]);
 
 export const products = pgTable("products", {
@@ -116,9 +118,9 @@ export const products = pgTable("products", {
     index("products_city_idx").on(table.city),
     index("products_status_idx").on(table.status),
     pgPolicy("Public Active Products", { as: "permissive", for: "select", to: ["public"], using: sql`((status = 'active'::text) OR (auth.uid() = vendor_id))` }),
-    pgPolicy("Vendors can insert products", { as: "permissive", for: "insert", to: ["public"] }),
-    pgPolicy("Vendors can update own products", { as: "permissive", for: "update", to: ["public"] }),
-    pgPolicy("Vendors can delete own products", { as: "permissive", for: "delete", to: ["public"] }),
+    pgPolicy("Vendors can insert products", { as: "permissive", for: "insert", to: ["public"], withCheck: sql`auth.uid() = vendor_id` }),
+    pgPolicy("Vendors can update own products", { as: "permissive", for: "update", to: ["public"], using: sql`auth.uid() = vendor_id`, withCheck: sql`auth.uid() = vendor_id` }),
+    pgPolicy("Vendors can delete own products", { as: "permissive", for: "delete", to: ["public"], using: sql`auth.uid() = vendor_id` }),
     foreignKey({
         columns: [table.vendorId],
         foreignColumns: [profiles.id],
@@ -140,9 +142,9 @@ export const productImages = pgTable("product_images", {
         name: "product_images_product_id_products_id_fk"
     }).onDelete("cascade"),
     pgPolicy("Public Images", { as: "permissive", for: "select", to: ["public"], using: sql`true` }),
-    pgPolicy("Authenticated insert images", { as: "permissive", for: "insert", to: ["public"] }),
-    pgPolicy("Users can update own images", { as: "permissive", for: "update", to: ["public"] }),
-    pgPolicy("Users can delete own images", { as: "permissive", for: "delete", to: ["public"] }),
+    pgPolicy("Authenticated insert images", { as: "permissive", for: "insert", to: ["public"], withCheck: sql`auth.role() = 'authenticated'` }),
+    pgPolicy("Users can update own images", { as: "permissive", for: "update", to: ["public"], using: sql`auth.role() = 'authenticated'`, withCheck: sql`auth.role() = 'authenticated'` }),
+    pgPolicy("Users can delete own images", { as: "permissive", for: "delete", to: ["public"], using: sql`auth.role() = 'authenticated'` }),
 ]);
 
 export const savedItems = pgTable("saved_items", {
@@ -196,7 +198,7 @@ export const productReports = pgTable("product_reports", {
         foreignColumns: [profiles.id],
         name: "product_reports_resolved_by_fkey"
     }).onDelete("set null"),
-    pgPolicy("Public can report products", { as: "permissive", for: "insert", to: ["public"] }),
+    pgPolicy("Public can report products", { as: "permissive", for: "insert", to: ["public"], withCheck: sql`true` }),
     pgPolicy("Admins can view reports", { as: "permissive", for: "select", to: ["public"], using: sql`auth.jwt()->>'role' = 'admin'` }),
 ]);
 
@@ -263,8 +265,8 @@ export const productAnalytics = pgTable("product_analytics", {
         name: "product_analytics_vendor_id_fkey"
     }).onDelete("cascade"),
     pgPolicy("Vendors can view own analytics", { as: "permissive", for: "select", to: ["public"], using: sql`auth.uid() = vendor_id` }),
-    pgPolicy("Public can insert analytics", { as: "permissive", for: "insert", to: ["public"] }),
-    pgPolicy("Public can update analytics", { as: "permissive", for: "update", to: ["public"] }),
+    pgPolicy("Public can insert analytics", { as: "permissive", for: "insert", to: ["public"], withCheck: sql`true` }),
+    pgPolicy("Public can update analytics", { as: "permissive", for: "update", to: ["public"], using: sql`true`, withCheck: sql`true` }),
 ]);
 
 // --- Relations ---

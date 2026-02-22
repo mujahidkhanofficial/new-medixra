@@ -24,32 +24,33 @@ export default function Footer() {
                     </div>
 
                     <div>
-                        <h4 className="font-semibold text-foreground mb-4">Platform</h4>
+                        <h4 className="font-semibold text-foreground mb-4">Marketplace</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><Link href="/products" className="text-muted-foreground hover:text-primary transition-colors">Browse Equipment</Link></li>
-                            <li><Link href="/technicians" className="text-muted-foreground hover:text-primary transition-colors">Find Technicians</Link></li>
-                            <li><Link href="/how-it-works" className="text-muted-foreground hover:text-primary transition-colors">How it Works</Link></li>
-                            <li><Link href="/signup?role=vendor" className="text-muted-foreground hover:text-primary transition-colors">Become a Vendor</Link></li>
+                            <li><Link href="/products" className="text-muted-foreground hover:text-primary transition-colors">All Medical Equipment</Link></li>
+                            <li><Link href="/technicians" className="text-muted-foreground hover:text-primary transition-colors">Find Certified Technicians</Link></li>
+                            <li><Link href="/vendors" className="text-muted-foreground hover:text-primary transition-colors">Verified Vendors Directory</Link></li>
+                            <li><Link href="/buyer-protection" className="text-muted-foreground hover:text-primary transition-colors">Buyer Protection & Safety</Link></li>
                         </ul>
                     </div>
 
                     <div>
-                        <h4 className="font-semibold text-foreground mb-4">For Vendors</h4>
+                        <h4 className="font-semibold text-foreground mb-4">Business Resources</h4>
                         <ul className="space-y-2 text-sm">
+                            <li><Link href="/post-ad" className="text-muted-foreground hover:text-primary transition-colors">Post an Ad</Link></li>
                             <li><Link href="/signup?role=vendor" className="text-muted-foreground hover:text-primary transition-colors">Vendor Registration</Link></li>
-                            <li><Link href="/login" className="text-muted-foreground hover:text-primary transition-colors">Member Login</Link></li>
-                            <li><Link href="/signup?role=vendor" className="text-muted-foreground hover:text-primary transition-colors">Vendor Guide</Link></li>
-                            <li><Link href="/safety-compliance" className="text-muted-foreground hover:text-primary transition-colors">Safety & Standards</Link></li>
+                            <li><Link href="/signup?role=technician" className="text-muted-foreground hover:text-primary transition-colors">Technician Registration</Link></li>
+                            <li><Link href="/drap-guidelines" className="text-muted-foreground hover:text-primary transition-colors">DRAP Compliance Guidelines</Link></li>
                         </ul>
                     </div>
 
                     <div>
-                        <h4 className="font-semibold text-foreground mb-4">Company</h4>
+                        <h4 className="font-semibold text-foreground mb-4">Support & Legal</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><Link href="/about-us" className="text-muted-foreground hover:text-primary transition-colors">About Us</Link></li>
-                            <li><Link href="/safety-compliance" className="text-muted-foreground hover:text-primary transition-colors">Safety & Compliance</Link></li>
+                            <li><Link href="/about-us" className="text-muted-foreground hover:text-primary transition-colors">About Medixra</Link></li>
+                            <li><Link href="/trust-and-safety" className="text-muted-foreground hover:text-primary transition-colors">Trust & Safety Hub</Link></li>
+                            <li><Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">General Terms of Service</Link></li>
                             <li><Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link></li>
-                            <li><Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link></li>
+                            <li><a href="mailto:zovetica@gmail.com" className="text-muted-foreground hover:text-primary transition-colors">Report an Issue</a></li>
                         </ul>
                     </div>
                 </div>
@@ -65,19 +66,7 @@ export default function Footer() {
                         <a href="https://wa.me" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" aria-label="WhatsApp">
                             <MessageCircle className="h-5 w-5" />
                         </a>
-                        <a href="#" className="text-muted-foreground hover:text-primary transition-colors" aria-label="LinkedIn">
-                            <Linkedin className="h-5 w-5" />
-                        </a>
-                        <a href="#" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Twitter">
-                            <Twitter className="h-5 w-5" />
-                        </a>
                     </div>
-                </div>
-
-                <div className="mt-8 rounded-lg border border-border bg-muted/50 p-4">
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                        <strong>Important Disclaimer:</strong> Medixra is a listing platform only and is not the manufacturer or seller of equipment. Responsibility for regulatory compliance with Pakistani laws (including DRAP and other health authorities) lies with the vendor and user, not Medixra.
-                    </p>
                 </div>
             </div>
         </footer>

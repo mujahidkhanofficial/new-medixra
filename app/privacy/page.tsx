@@ -94,8 +94,8 @@ export default function PrivacyPolicyPage() {
                         </h2>
                         <p className="text-muted-foreground leading-relaxed">
                             For privacy inquiries, contact:{' '}
-                            <a href="mailto:privacy@medixra.com" className="text-primary hover:underline">
-                                privacy@medixra.com
+                            <a href="mailto:zovetica@gmail.com" className="text-primary hover:underline">
+                                zovetica@gmail.com
                             </a>
                         </p>
                     </section>

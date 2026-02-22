@@ -1,5 +1,10 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+    title: 'Technician Dashboard',
+}
 
 /**
  * Server-side layout guard for technician dashboard

@@ -4,6 +4,11 @@ import { createClient } from '@/lib/supabase/server'
 import { db } from '@/lib/db/drizzle'
 import { profiles } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Admin Dashboard',
+}
 
 export default async function AdminLayout({
   children,

@@ -14,9 +14,32 @@ import { checkSavedStatus } from '@/lib/actions/saved-items'
 import { SaveButton } from '@/components/product/save-button'
 import { ViewTracker } from '@/components/product/view-tracker'
 import { ShowPhoneNumber } from '@/components/product/show-phone-number'
+import type { Metadata } from 'next'
 
 interface PageProps {
     params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+    const { id } = await params
+    const product = await getProductById(id)
+
+    if (!product) {
+        return {
+            title: 'Product Not Found',
+        }
+    }
+
+    // Stripping formatting to use as raw text description
+    const rawDescription = product.description.replace(/<[^>]*>?/gm, '').substring(0, 160)
+
+    return {
+        title: product.name,
+        description: rawDescription || `Buy ${product.name} from Medixra.`,
+        openGraph: {
+            images: product.image_url ? [{ url: product.image_url }] : [],
+        },
+    }
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {
@@ -83,8 +106,41 @@ export default async function ProductDetailPage({ params }: PageProps) {
             ? [{ id: 'main', url: product.image_url }]
             : []
 
+    // Schema.org Structured Data
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: product.name,
+        image: product.image_url ? [product.image_url] : [],
+        description: product.description.replace(/<[^>]*>?/gm, '').substring(0, 160),
+        brand: {
+            '@type': 'Brand',
+            name: product.brand || 'Unspecified'
+        },
+        offers: {
+            '@type': 'Offer',
+            url: `https://medixra.com/product/${product.id}`,
+            priceCurrency: 'PKR',
+            price: product.price || 0,
+            itemCondition: product.condition === 'New'
+                ? 'https://schema.org/NewCondition'
+                : 'https://schema.org/UsedCondition',
+            availability: product.status === 'active'
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+            seller: {
+                '@type': 'Organization',
+                name: vendorData.name
+            }
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-50/50 flex flex-col font-sans">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             <Navigation />
 
             <main className="flex-1 py-6 px-4 sm:px-6 lg:px-8">

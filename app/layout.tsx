@@ -12,11 +12,11 @@ const _geistMono = Geist_Mono({ subsets: ["latin"], variable: '--font-geist-mono
 
 export const metadata: Metadata = {
   title: {
-    default: 'Medixra - Medical Equipment Marketplace Pakistan',
+    default: 'Medixra - Direct Medical Equipment Marketplace Pakistan',
     template: '%s | Medixra',
   },
-  description: 'Pakistan\'s trusted B2B marketplace for medical equipment. Connect with verified vendors, find new & refurbished equipment, and book technician services.',
-  keywords: ['medical equipment', 'Pakistan', 'B2B', 'healthcare', 'hospital equipment', 'diagnostic equipment', 'medical devices', 'DRAP'],
+  description: 'Pakistan\'s leading Direct Medical Equipment Marketplace. Connect directly with verified vendors, buyers, and certified technicians for zero-commission transactions.',
+  keywords: ['medical equipment', 'Pakistan', 'direct medical marketplace', 'healthcare', 'hospital equipment', 'diagnostic equipment', 'medical devices', 'certified technicians', 'DRAP'],
   authors: [{ name: 'Medixra' }],
   creator: 'Medixra',
   metadataBase: new URL('https://medixra.com'),
@@ -25,14 +25,14 @@ export const metadata: Metadata = {
     locale: 'en_PK',
     url: 'https://medixra.com',
     siteName: 'Medixra',
-    title: 'Medixra - Medical Equipment Marketplace Pakistan',
-    description: 'Pakistan\'s trusted B2B marketplace for medical equipment. Connect with verified vendors and technicians.',
+    title: 'Medixra - Direct Medical Equipment Marketplace Pakistan',
+    description: 'Pakistan\'s leading Direct Medical Equipment Marketplace. Connect directly with verified vendors and technicians.',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Medixra' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Medixra - Medical Equipment Marketplace',
-    description: 'Pakistan\'s trusted B2B marketplace for medical equipment.',
+    title: 'Medixra - Direct Medical Equipment Marketplace',
+    description: 'Pakistan\'s leading Direct Medical Equipment Marketplace.',
     images: ['/og-image.png'],
   },
   robots: {
@@ -52,8 +52,40 @@ export default async function RootLayout({
   const supabase = await createClient()
   const { data: { session } } = supabase ? await supabase.auth.getSession() : { data: { session: null } }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://medixra.com/#website",
+        "url": "https://medixra.com/",
+        "name": "Medixra",
+        "description": "Direct Medical Equipment Marketplace Pakistan",
+        "potentialAction": [{
+          "@type": "SearchAction",
+          "target": "https://medixra.com/products?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }]
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://medixra.com/#organization",
+        "name": "Medixra",
+        "url": "https://medixra.com/",
+        "logo": "https://medixra.com/icon.svg",
+        "sameAs": []
+      }
+    ]
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className={`${_geist.className} font-sans antialiased`} suppressHydrationWarning>
         <AuthProvider initialSession={session}>
           {children}

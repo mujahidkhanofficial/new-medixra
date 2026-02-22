@@ -48,6 +48,10 @@ async function main() {
         -- Add missing columns to vendors table
         ALTER TABLE public.vendors ADD COLUMN IF NOT EXISTS business_type text DEFAULT 'Retailer';
         ALTER TABLE public.vendors ADD COLUMN IF NOT EXISTS years_in_business text DEFAULT '1';
+        
+        -- Add missing analytics metrics to technicians 
+        ALTER TABLE public.technicians ADD COLUMN IF NOT EXISTS views integer DEFAULT 0;
+        ALTER TABLE public.technicians ADD COLUMN IF NOT EXISTS whatsapp_clicks integer DEFAULT 0;
     `);
     console.log('   ✅ product_analytics and vendor table columns active.\n');
 

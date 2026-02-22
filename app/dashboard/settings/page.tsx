@@ -4,9 +4,11 @@ import { ProfileForm } from './profile-form'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
 
-export const metadata = {
-    title: 'Settings - Medixra',
-    description: 'Manage your profile settings',
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+    title: 'Account Settings',
+    description: 'Manage your Medixra profile settings',
 }
 
 export default async function SettingsPage() {

@@ -9,12 +9,42 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { createClient } from '@/lib/supabase/server'
 import { getSavedProductIds } from '@/lib/actions/saved-items'
 import { ProductCard } from '@/components/product/product-card'
+import type { Metadata } from 'next'
 
 // Force dynamic rendering since we depend on searchParams
 export const dynamic = 'force-dynamic'
 
 type Props = {
-    searchParams: { [key: string]: string | string[] | undefined }
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+    const params = await searchParams;
+    const query = typeof params.q === 'string' ? params.q : undefined;
+    const category = typeof params.category === 'string' ? params.category : undefined;
+
+    let titleText = 'All Medical Equipment | Direct Medical Equipment Marketplace';
+    let descriptionText = 'Browse verified new, refurbished, and pre-owned medical equipment directly from trusted vendors across Pakistan. Zero commissions.';
+
+    if (query) {
+        titleText = `Buy ${query} in Pakistan | Medixra Marketplace`;
+        descriptionText = `Find the best prices for ${query} from verified medical equipment vendors. Connect directly on WhatsApp with zero markup.`;
+    } else if (category) {
+        titleText = `${category} Equipment | Direct Medical Equipment Network`;
+        descriptionText = `Explore our comprehensive catalog of ${category} equipment. Connect with certified vendors and technicians instantly.`;
+    }
+
+    return {
+        title: titleText,
+        description: descriptionText,
+        openGraph: {
+            title: titleText,
+            description: descriptionText,
+            type: 'website',
+            siteName: 'Medixra',
+            locale: 'en_PK'
+        }
+    }
 }
 
 export default async function ProductsPage({ searchParams }: Props) {

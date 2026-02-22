@@ -97,7 +97,7 @@ export default async function PendingApprovalPage() {
 
                             <div className="pt-4">
                                 <Button asChild variant="default" className="w-full">
-                                    <Link href="mailto:medixra@gmail.com">Contact Support</Link>
+                                    <Link href="mailto:zovetica@gmail.com">Contact Support</Link>
                                 </Button>
                                 <Button asChild variant="ghost" className="w-full mt-2">
                                     <Link href="/">Back to Homepage</Link>

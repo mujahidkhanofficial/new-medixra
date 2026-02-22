@@ -2,12 +2,16 @@ import { MetadataRoute } from 'next'
 import { db } from '@/lib/db/drizzle'
 import { products } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
+import { EQUIPMENT_HIERARCHY } from '@/lib/constants'
+import { getApprovedTechnicians } from '@/lib/actions/technician'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://medixra.com'
 
     // Get all active products with error handling for connection issues during build
     let allProducts: { id: string; updatedAt: string }[] = []
+    let allTechnicians: any[] = []
+
     try {
         allProducts = await db.query.products.findMany({
             where: eq(products.status, 'active'),
@@ -16,38 +20,50 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
                 updatedAt: true,
             }
         })
+        allTechnicians = await getApprovedTechnicians()
     } catch (error) {
-        // If database connection fails during build, skip product URLs
-        // This often happens in environments like Vercel build steps where DB access is restricted
-        // We suppress the warning to avoid build noise as this is expected behavior
+        // Suppress warning during build step (e.g. Vercel) if DB is not accessible
     }
 
     const productUrls = allProducts.map((product) => ({
         url: `${baseUrl}/product/${product.id}`,
-        lastModified: new Date(product.updatedAt),
-        changeFrequency: 'daily' as const,
+        lastModified: new Date(product.updatedAt || new Date()),
+        changeFrequency: 'weekly' as const,
         priority: 0.8,
     }))
 
-    return [
-        {
-            url: baseUrl,
-            lastModified: new Date(),
-            changeFrequency: 'daily',
-            priority: 1,
-        },
-        {
-            url: `${baseUrl}/products`,
-            lastModified: new Date(),
-            changeFrequency: 'daily',
-            priority: 0.9,
-        },
-        {
-            url: `${baseUrl}/about-us`,
-            lastModified: new Date(),
-            changeFrequency: 'monthly',
-            priority: 0.5,
-        },
-        ...productUrls,
-    ]
+    const technicianUrls = allTechnicians.map((tech) => ({
+        url: `${baseUrl}/technician/${tech.id}`,
+        lastModified: new Date(tech.createdAt || new Date()),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+    }))
+
+    const categoryUrls = EQUIPMENT_HIERARCHY.map((category) => ({
+        url: `${baseUrl}/products?category=${encodeURIComponent(category.name)}`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+    }))
+
+    const baseRoutes = [
+        '',
+        '/products',
+        '/technicians',
+        '/vendors',
+        '/post-ad',
+        '/drap-guidelines',
+        '/buyer-protection',
+        '/trust-and-safety',
+        '/about-us',
+        '/terms',
+        '/privacy',
+    ].map((route) => ({
+        url: `${baseUrl}${route}`,
+        lastModified: new Date(),
+        changeFrequency: 'daily' as const,
+        priority: route === '' ? 1 : 0.8,
+    }))
+
+    return [...baseRoutes, ...categoryUrls, ...technicianUrls, ...productUrls]
 }

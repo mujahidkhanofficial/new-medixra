@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Phone, MapPin, Edit2, Calendar, Check, AlertCircle } from 'lucide-react'
+import { Phone, MapPin, Edit2, Calendar, Check, AlertCircle, Eye, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
 import { useAuth } from '@/components/providers/auth-provider'
@@ -66,139 +68,161 @@ export default function TechnicianDashboard() {
         : 'Unknown'
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background flex flex-col">
             <Navigation />
 
-            <div className="mx-auto max-w-screen-2xl px-4 py-12">
-                {/* Profile Card */}
-                <div className="mb-8 rounded-lg border border-border bg-card p-6 md:p-8">
-                    <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+            <main className="flex-1 mx-auto max-w-5xl w-full px-4 py-8 md:py-12">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+                    <div className="flex items-center gap-5">
+                        <Avatar className="h-20 w-20 border-4 border-background shadow-sm">
+                            <AvatarImage src={profile.avatar_url || ''} alt={profile.full_name} />
+                            <AvatarFallback className="text-2xl font-semibold bg-primary/10 text-primary">
+                                {(profile.full_name || 'T').substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
                         <div>
-                            <h1 className="text-3xl font-bold text-foreground mb-2">{profile.full_name || 'Technician'}</h1>
-
-                            {profile.speciality && (
-                                <p className="text-primary font-semibold mb-3">
-                                    {profile.speciality}
-                                </p>
-                            )}
-
-                            <p className="text-sm text-muted-foreground mb-4">
-                                {profile.city || 'Location not set'} • Member since {joinDate}
+                            <h1 className="text-3xl font-bold tracking-tight text-foreground mb-1">
+                                {profile.full_name || 'Technician'}
+                            </h1>
+                            <p className="text-muted-foreground flex items-center gap-2">
+                                <MapPin className="h-4 w-4" />
+                                {profile.city || 'Location not set'}
+                                <span className="text-border">•</span>
+                                Member since {joinDate}
                             </p>
-
-                            {/* Contact Information */}
-                            <div className="space-y-2">
-                                <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Contact Information</p>
-                                {profile.phone && (
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <Phone className="h-4 w-4" />
-                                        <a href={`https://wa.me/${profile.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                                            {profile.phone}
-                                        </a>
-                                    </div>
-                                )}
-                                {profile.city && (
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <MapPin className="h-4 w-4" />
-                                        {profile.city}
-                                    </div>
-                                )}
-                            </div>
                         </div>
+                    </div>
 
-                        <div className="flex flex-col gap-3">
-                            {profile.phone && (
-                                <WhatsAppContact
-                                    phoneNumber={profile.phone || ''}
-                                    name="Contact me on WhatsApp"
-                                    message="Hi, I'm interested in your services."
-                                />
-                            )}
-                            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2" asChild>
-                                <Link href="/dashboard/technician/edit">
-                                    <Edit2 className="h-4 w-4" />
-                                    Edit Profile
-                                </Link>
-                            </Button>
-                        </div>
+                    <div className="flex items-center gap-3">
+                        <Button variant="outline" className="gap-2" asChild>
+                            <Link href="/dashboard/technician/edit">
+                                <Edit2 className="h-4 w-4" />
+                                Edit Profile
+                            </Link>
+                        </Button>
+                        <Button className="gap-2" asChild>
+                            <Link href="/technicians">View Directory</Link>
+                        </Button>
                     </div>
                 </div>
 
-                {/* Profile Details Card */}
-                <div className="mb-8 rounded-lg border border-border bg-card p-6">
-                    <h2 className="text-xl font-bold text-foreground mb-6">Professional Information</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Speciality */}
-                        <div className="rounded-lg bg-muted/50 p-4 border border-border">
-                            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Speciality</p>
-                            <p className="font-semibold text-foreground">
-                                {profile.speciality || 'Not specified'}
-                            </p>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Left Column: Info */}
+                    <div className="lg:col-span-1 space-y-6">
+                        {/* Status & Contact */}
+                        <div className="rounded-2xl border border-border/50 bg-card/50 px-5 py-6 backdrop-blur-sm">
+                            <h3 className="font-semibold mb-4 text-sm text-muted-foreground uppercase tracking-wider">Contact & Status</h3>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                                        <Check className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium">Status</p>
+                                        <p className="text-sm text-muted-foreground">Active & Available</p>
+                                    </div>
+                                </div>
+
+                                {profile.phone && (
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                            <Phone className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium">Phone</p>
+                                            <a href={`https://wa.me/${profile.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                                                {profile.phone}
+                                            </a>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {profile.phone && (
+                                <div className="mt-6">
+                                    <WhatsAppContact
+                                        phoneNumber={profile.phone || ''}
+                                        name="Contact me on WhatsApp"
+                                        message="Hi, I'm interested in your services."
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         {/* Experience */}
-                        <div className="rounded-lg bg-muted/50 p-4 border border-border">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Calendar className="h-3.5 w-3.5 text-primary" />
-                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Experience</p>
-                            </div>
-                            <p className="font-semibold text-foreground">
-                                {profile.experience_years ? `${profile.experience_years} years` : 'Not specified'}
-                            </p>
-                        </div>
-
-                        {/* Status */}
-                        <div className="rounded-lg bg-muted/50 p-4 border border-border">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Check className="h-3.5 w-3.5 text-green-600" />
-                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</p>
-                            </div>
-                            <p className="font-semibold text-green-600">
-                                Active
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Info Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Services Info */}
-                    <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900 p-6">
-                        <div className="flex gap-3">
-                            <Phone className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                            <div>
-                                <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">Service Inquiries</h3>
-                                <p className="text-sm text-blue-800 dark:text-blue-200">
-                                    Customers can contact you directly on WhatsApp to discuss services and schedule work.
-                                </p>
+                        <div className="rounded-2xl border border-border/50 bg-card/50 px-5 py-6 backdrop-blur-sm">
+                            <h3 className="font-semibold mb-4 text-sm text-muted-foreground uppercase tracking-wider">Experience</h3>
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10 text-blue-600">
+                                    <Calendar className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium">Years in Field</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {profile.experience_years ? `${profile.experience_years} years` : 'Not specified'}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Verification Info */}
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-6">
-                        <div className="flex gap-3">
-                            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                            <div>
-                                <h3 className="font-semibold text-amber-900 dark:text-amber-300 mb-1">Profile Visibility</h3>
-                                <p className="text-sm text-amber-800 dark:text-amber-200">
-                                    Your profile is visible to customers searching for technicians in your city and speciality.
-                                </p>
+                    {/* Right Column: Speciality & Analytics */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Specialities */}
+                        <div className="rounded-2xl border border-border/50 bg-card/50 px-6 py-6 backdrop-blur-sm">
+                            <h3 className="font-semibold mb-4 text-lg">Specialities</h3>
+                            {profile.speciality ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {(() => {
+                                        try {
+                                            const specialties = JSON.parse(profile.speciality)
+                                            return Array.isArray(specialties)
+                                                ? specialties.map((s, i) => <Badge key={i} variant="secondary" className="px-3 py-1 text-sm font-medium bg-secondary/50 hover:bg-secondary/80">{s}</Badge>)
+                                                : <Badge variant="secondary" className="px-3 py-1 text-sm font-medium bg-secondary/50 hover:bg-secondary/80">{profile.speciality}</Badge>
+                                        } catch {
+                                            return profile.speciality.split(',').map((s: string, i: number) => (
+                                                <Badge key={i} variant="secondary" className="px-3 py-1 text-sm font-medium bg-secondary/50 hover:bg-secondary/80">{s.trim()}</Badge>
+                                            ))
+                                        }
+                                    })()}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">No specialities listed</p>
+                            )}
+                        </div>
+
+                        {/* Analytics */}
+                        <h3 className="font-semibold text-lg mt-8 mb-4">Performance Analytics</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Profile Views */}
+                            <div className="group rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-sm hover:bg-accent/5 transition-colors">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+                                        <Eye className="h-6 w-6" />
+                                    </div>
+                                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600">+ Active</span>
+                                </div>
+                                <h4 className="text-muted-foreground text-sm font-medium">Total Profile Views</h4>
+                                <p className="text-4xl font-bold tracking-tight mt-1">{profile.views || 0}</p>
+                            </div>
+
+                            {/* WhatsApp Clicks */}
+                            <div className="group rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-sm hover:bg-accent/5 transition-colors">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#25D366]/10 text-[#25D366] group-hover:scale-110 transition-transform">
+                                        <MessageCircle className="h-6 w-6" />
+                                    </div>
+                                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600">+ Active</span>
+                                </div>
+                                <h4 className="text-muted-foreground text-sm font-medium">WhatsApp Inquiries</h4>
+                                <p className="text-4xl font-bold tracking-tight mt-1">{profile.whatsapp_clicks || 0}</p>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                {/* Quick Links */}
-                <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button variant="outline" className="h-12 text-base" asChild>
-                        <Link href="/technicians">View Technician Directory</Link>
-                    </Button>
-                    <Button variant="outline" className="h-12 text-base" asChild>
-                        <Link href="/dashboard">Back to Dashboard</Link>
-                    </Button>
-                </div>
-            </div>
+            </main>
 
             <Footer />
         </div>

@@ -8,9 +8,25 @@ import Footer from '@/components/footer'
 import { getVendorBySlug } from '@/lib/actions/vendors'
 import { getVendorProducts } from '@/lib/actions/products'
 import { format } from 'date-fns'
+import type { Metadata } from 'next'
 
 interface PageProps {
     params: Promise<{ slug: string }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+    const { slug } = await params
+    const vendor = await getVendorBySlug(slug)
+
+    if (!vendor) {
+        return { title: 'Store Not Found' }
+    }
+
+    const businessName = vendor.business_name || vendor.full_name
+    return {
+        title: `${businessName} Webstore`,
+        description: vendor.description || `Browse medical equipment from ${businessName} on Medixra.`,
+    }
 }
 
 export default async function VendorShowroomPage({ params }: PageProps) {

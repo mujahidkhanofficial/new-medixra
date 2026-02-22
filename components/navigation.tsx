@@ -153,97 +153,112 @@ export default function Navigation() {
                         )}
                     </div>
 
-                    <div className="hidden items-center gap-3 md:flex">
-                        <Link href="/post-ad" className="group relative inline-flex items-center justify-center rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition-all duration-300 hover:shadow-lg hover:shadow-amber-400/30">
-                            <span className="absolute inset-0 rounded-full bg-linear-to-br from-amber-400 via-orange-500 to-yellow-500 opacity-100 transition-opacity duration-300 group-hover:opacity-110"></span>
-                            <span className="relative flex h-full w-full items-center gap-2 rounded-full bg-background px-6 py-2 text-sm font-bold text-foreground transition-all group-hover:bg-transparent group-hover:text-white group-hover:scale-105">
-                                <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
-                                SELL NOW
-                            </span>
-                        </Link>
-                        <NotificationBell />
-                        {user ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 hover:bg-transparent transition-all duration-200 group border-2 border-primary/30 hover:border-primary/60">
-                                        <div className="relative h-full w-full rounded-full overflow-hidden">
-                                            {profile?.avatar_url ? (
-                                                <Avatar className="h-10 w-10">
-                                                    <AvatarImage src={profile.avatar_url} alt={profile?.full_name || ''} />
-                                                </Avatar>
-                                            ) : (
-                                                <Image
-                                                    src="/user-icon.svg"
-                                                    alt="User Profile"
-                                                    width={40}
-                                                    height={40}
-                                                    className="w-full h-full"
-                                                />
-                                            )}
-                                        </div>
-                                        <ChevronDown className="absolute -bottom-1 -right-1 h-4 w-4 bg-primary text-white rounded-full p-0.5 ring-2 ring-background group-hover:bg-primary/80 transition-colors duration-200" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56" align="end" forceMount>
-                                    <DropdownMenuLabel className="font-normal">
-                                        <div className="flex flex-col space-y-1">
-                                            <p className="text-sm font-medium leading-none">{profile?.full_name || 'User'}</p>
-                                            <p className="text-xs leading-none text-muted-foreground">
-                                                {user.email}
-                                            </p>
-                                            <p className="text-xs text-primary font-semibold mt-1 capitalize">
-                                                {profile?.role === 'user' ? 'Individual' : profile?.role || 'Individual'}
-                                            </p>
-                                        </div>
-                                    </DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem asChild>
-                                        <Link href={getDashboardLink()}>
-                                            <LayoutDashboard className="mr-2 h-4 w-4" />
-                                            {getDashboardLabel()}
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    {profile?.role === 'vendor' && (
+                    {/* Universal Right Side Container */}
+                    <div className="flex items-center gap-2 md:gap-3">
+
+                        {/* Custom Segmented Sell Button */}
+                        <div className="relative group mr-1 md:mr-0 mt-0.5 md:mt-0">
+                            <Link
+                                href="/post-ad"
+                                className="relative flex items-center justify-center p-[2.5px] rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95"
+                            >
+                                <div
+                                    className="absolute inset-0 rounded-full"
+                                    style={{ background: 'conic-gradient(from 290deg, #14E8D8 0deg 140deg, #3B82F6 140deg 250deg, #FACC15 250deg 360deg)' }}
+                                ></div>
+                                <div className="relative flex items-center justify-center gap-1.5 px-4 py-1.5 md:px-[22px] md:py-[7px] bg-white rounded-full h-full w-full transition-colors duration-300 group-hover:bg-slate-50/90">
+                                    <Plus className="h-4 w-4 md:h-[18px] md:w-[18px] text-[#033342] transition-transform duration-300 group-hover:rotate-90" strokeWidth={3.5} />
+                                    <span className="text-[12px] md:text-[15px] font-black tracking-widest text-[#033342] uppercase mt-px">SELL</span>
+                                </div>
+                            </Link>
+                        </div>
+
+                        {/* Desktop Only User Elements */}
+                        <div className="hidden items-center gap-3 md:flex">
+                            <NotificationBell />
+                            {user ? (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 hover:bg-transparent transition-all duration-200 group border-2 border-primary/30 hover:border-primary/60">
+                                            <div className="relative h-full w-full rounded-full overflow-hidden">
+                                                {profile?.avatar_url ? (
+                                                    <Avatar className="h-10 w-10">
+                                                        <AvatarImage src={profile.avatar_url} alt={profile?.full_name || ''} />
+                                                    </Avatar>
+                                                ) : (
+                                                    <Image
+                                                        src="/user-icon.svg"
+                                                        alt="User Profile"
+                                                        width={40}
+                                                        height={40}
+                                                        className="w-full h-full"
+                                                    />
+                                                )}
+                                            </div>
+                                            <ChevronDown className="absolute -bottom-1 -right-1 h-4 w-4 bg-primary text-white rounded-full p-0.5 ring-2 ring-background group-hover:bg-primary/80 transition-colors duration-200" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                                        <DropdownMenuLabel className="font-normal">
+                                            <div className="flex flex-col space-y-1">
+                                                <p className="text-sm font-medium leading-none">{profile?.full_name || 'User'}</p>
+                                                <p className="text-xs leading-none text-muted-foreground">
+                                                    {user.email}
+                                                </p>
+                                                <p className="text-xs text-primary font-semibold mt-1 capitalize">
+                                                    {profile?.role === 'user' ? 'Individual' : profile?.role || 'Individual'}
+                                                </p>
+                                            </div>
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/shop/${profile.vendors?.showroom_slug || profile.id}`}>
-                                                <Store className="mr-2 h-4 w-4" />
-                                                My Webstore
+                                            <Link href={getDashboardLink()}>
+                                                <LayoutDashboard className="mr-2 h-4 w-4" />
+                                                {getDashboardLabel()}
                                             </Link>
                                         </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/dashboard/settings">
-                                            <User className="mr-2 h-4 w-4" />
-                                            Profile Settings
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer" disabled={isLoggingOut}>
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        {isLoggingOut ? 'Logging out...' : 'Log out'}
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        ) : loading ? (
-                            <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
-                        ) : (
-                            <>
-                                <Button variant="ghost" className="rounded-full" asChild>
-                                    <Link href="/login">Sign In</Link>
-                                </Button>
-                                <Button variant="outline" className="rounded-full" asChild>
-                                    <Link href="/signup">Sign Up</Link>
-                                </Button>
-                            </>
-                        )}
-                    </div>
+                                        {profile?.role === 'vendor' && (
+                                            <DropdownMenuItem asChild>
+                                                <Link href={`/shop/${profile.vendors?.showroom_slug || profile.id}`}>
+                                                    <Store className="mr-2 h-4 w-4" />
+                                                    My Webstore
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        )}
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/dashboard/settings">
+                                                <User className="mr-2 h-4 w-4" />
+                                                Profile Settings
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer" disabled={isLoggingOut}>
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            {isLoggingOut ? 'Logging out...' : 'Log out'}
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            ) : loading ? (
+                                <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
+                            ) : (
+                                <>
+                                    <Button variant="ghost" className="rounded-full" asChild>
+                                        <Link href="/login">Sign In</Link>
+                                    </Button>
+                                    <Button variant="outline" className="rounded-full" asChild>
+                                        <Link href="/signup">Sign Up</Link>
+                                    </Button>
+                                </>
+                            )}
+                        </div>
 
-                    <button
-                        className="md:hidden p-2"
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    >
-                        {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                    </button>
+                        <button
+                            className="md:hidden p-1.5 text-foreground/80 hover:text-foreground transition-colors"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        >
+                            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                        </button>
+                    </div>
                 </div>
 
                 {mobileMenuOpen && (
@@ -330,12 +345,6 @@ export default function Navigation() {
                                         </Button>
                                     </div>
                                 )}
-                                <Button variant="cta" className="w-full gap-2 group hover:shadow-lg hover:shadow-amber-400/30 transition-all duration-300 hover:scale-105 rounded-full" asChild>
-                                    <Link href="/post-ad">
-                                        <PlusCircle className="h-4 w-4 transition-transform group-hover:rotate-90" />
-                                        SELL NOW
-                                    </Link>
-                                </Button>
                             </div>
                         </div>
                     </div>

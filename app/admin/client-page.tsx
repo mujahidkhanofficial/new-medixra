@@ -83,6 +83,7 @@ export default function AdminDashboardClient({
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [isPending, startTransition] = useTransition()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
     const [selectedUser, setSelectedUser] = useState<any>(null)
     const [isUserSheetOpen, setIsUserSheetOpen] = useState(false)
     const router = useRouter()
@@ -106,7 +107,11 @@ export default function AdminDashboardClient({
 
     // Data Fetching Effects
     useEffect(() => {
-        if (activeSection === 'approvals' && !isApprovalsLoaded) {
+        setIsMounted(true)
+    }, [])
+
+    useEffect(() => {
+        if (activeSection === 'approvals' && !isApprovalsLoaded && isMounted) {
             const loadApprovals = async () => {
                 setLoadingApprovals(true)
                 try {
@@ -131,12 +136,11 @@ export default function AdminDashboardClient({
                     console.error('Failed to load approvals:', error)
                     toast.error('Failed to load pending approvals')
                 } finally {
-                    setLoadingApprovals(false)
                 }
             }
             loadApprovals()
         }
-    }, [activeSection, isApprovalsLoaded])
+    }, [activeSection, isApprovalsLoaded, isMounted])
 
     useEffect(() => {
         if (activeSection === 'users' && !isUsersLoaded) {
@@ -367,6 +371,8 @@ export default function AdminDashboardClient({
             </div>
         </div>
     )
+
+    if (!isMounted) return null; // Hydration fix
 
     return (
         <div className="flex min-h-screen bg-gray-50/50">

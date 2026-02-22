@@ -15,7 +15,8 @@ import { useAuth } from '@/components/providers/auth-provider'
 import { getTechnicianProfile, updateTechnicianProfile } from '@/lib/actions/technician'
 import { getErrorMessage } from '@/lib/error-handler'
 import { toast } from 'sonner'
-import { CITIES } from '@/lib/constants'
+import { CITIES, SPECIALTIES } from '@/lib/constants'
+import { MultiSelectSpecialities } from '@/components/ui/multi-select-specialities'
 
 export default function TechnicianEditPage() {
     const router = useRouter()
@@ -217,13 +218,17 @@ export default function TechnicianEditPage() {
                         <div className="space-y-6 border-t border-border pt-6">
                             <h2 className="text-lg font-semibold text-foreground">Professional Information</h2>
 
-                            <FormField label="Speciality" error={errors.speciality} helpText="e.g., Imaging, Cardiology, Orthopedics">
-                                <Input
-                                    type="text"
-                                    name="speciality"
-                                    value={formData.speciality}
-                                    onChange={handleInputChange}
-                                    placeholder="Your area of expertise"
+                            <FormField label="Specialities" error={errors.speciality}>
+                                <MultiSelectSpecialities
+                                    specialities={SPECIALTIES as any}
+                                    selected={(() => {
+                                        try {
+                                            return formData.speciality ? JSON.parse(formData.speciality) : []
+                                        } catch {
+                                            return formData.speciality ? formData.speciality.split(',').map(s => s.trim()) : []
+                                        }
+                                    })()}
+                                    onChange={(selected) => handleInputChange({ target: { name: 'speciality', value: JSON.stringify(selected) } } as any)}
                                     disabled={isSubmitting}
                                 />
                             </FormField>

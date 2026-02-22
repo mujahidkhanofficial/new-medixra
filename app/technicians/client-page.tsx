@@ -1,8 +1,11 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Search, MapPin, Star, CheckCircle, Award, Zap } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Search, MapPin, CheckCircle, Award, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { incrementTechnicianViews, incrementTechnicianWhatsappClicks } from '@/lib/actions/technician'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export interface Technician {
     id: string
@@ -17,13 +20,15 @@ export interface Technician {
     reviews: number
     responseTime: string
     certifications: string[]
+    avatarUrl?: string
     image: string
     whatsapp: string
 }
 
-export default function TechniciansClientPage({ initialTechnicians }: { initialTechnicians: Technician[] }) {
+export default function TechniciansClientPage({ initialTechnicians }: { initialTechnicians: any[] }) {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedCity, setSelectedCity] = useState('all')
+    const [viewedTechs, setViewedTechs] = useState<Record<string, boolean>>({})
 
     // Extract unique cities from technicians + default 'all'
     const cities = useMemo(() => {
@@ -37,6 +42,26 @@ export default function TechniciansClientPage({ initialTechnicians }: { initialT
         const matchesCity = selectedCity === 'all' || tech.city === selectedCity
         return matchesSearch && matchesCity
     })
+
+    // Track views when technicians appear in the filtered list
+    useEffect(() => {
+        const sessionViewed = JSON.parse(sessionStorage.getItem('viewedTechs') || '{}')
+        let hasNewViews = false
+
+        filteredTechnicians.forEach(tech => {
+            if (!sessionViewed[tech.id]) {
+                sessionViewed[tech.id] = true
+                hasNewViews = true
+                // Fire and forget server action
+                incrementTechnicianViews(tech.id).catch(console.error)
+            }
+        })
+
+        if (hasNewViews) {
+            sessionStorage.setItem('viewedTechs', JSON.stringify(sessionViewed))
+            setViewedTechs(sessionViewed)
+        }
+    }, [filteredTechnicians])
 
     return (
         <div className="flex-1">
@@ -88,91 +113,75 @@ export default function TechniciansClientPage({ initialTechnicians }: { initialT
                 </div>
 
                 {/* Technicians Grid */}
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {filteredTechnicians.map((tech) => (
                         <div
                             key={tech.id}
-                            className="rounded-lg border border-border bg-card hover:border-primary transition-all hover:shadow-lg overflow-hidden"
+                            className="group flex flex-col rounded-xl border border-border bg-card hover:border-primary/50 transition-all hover:shadow-md overflow-hidden relative"
                         >
-                            <div className={`${tech.image} aspect-video`} />
-
-                            <div className="p-6">
-                                <div className="flex items-start justify-between mb-3">
+                            <div className="p-5 flex-1 flex flex-col">
+                                <div className="flex items-start gap-3 mb-4">
+                                    <Avatar className="h-12 w-12 border-2 border-primary/10">
+                                        <AvatarImage src={tech.avatarUrl} alt={tech.name} />
+                                        <AvatarFallback className="bg-primary/5 text-primary text-sm font-bold">
+                                            {tech.name.substring(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
                                     <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="font-semibold text-foreground text-lg">{tech.name}</h3>
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                            <h3 className="font-bold text-foreground line-clamp-1">{tech.name}</h3>
                                             {tech.verified && (
-                                                <CheckCircle className="h-5 w-5 text-primary" />
+                                                <CheckCircle className="h-4 w-4 text-primary shrink-0" />
                                             )}
                                         </div>
-                                        <p className="text-sm text-primary font-medium">{tech.speciality}</p>
+                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <MapPin className="h-3 w-3" />
+                                            {tech.city || 'Not specified'}
+                                        </p>
                                     </div>
                                 </div>
 
-                                {/* Rating */}
-                                <div className="flex items-center gap-2 mb-3">
-                                    <div className="flex gap-1">
-                                        {[...Array(5)].map((_, i) => (
-                                            <Star
-                                                key={i}
-                                                className={`h-4 w-4 ${i < Math.floor(tech.rating) ? 'fill-accent text-accent' : 'text-muted'
-                                                    }`}
-                                            />
+                                {/* Specialities Badges */}
+                                <div className="mb-4 flex-1">
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {tech.specialitiesList?.slice(0, 3).map((s: string, i: number) => (
+                                            <Badge key={i} variant="secondary" className="font-medium bg-primary/10 text-primary hover:bg-primary/20 text-[10px] px-2 py-0.5">
+                                                {s}
+                                            </Badge>
                                         ))}
+                                        {tech.specialitiesList?.length > 3 && (
+                                            <Badge variant="outline" className="font-medium text-[10px] px-2 py-0.5">
+                                                +{tech.specialitiesList.length - 3} more
+                                            </Badge>
+                                        )}
+                                        {(!tech.specialitiesList || tech.specialitiesList.length === 0) && (
+                                            <span className="text-xs text-muted-foreground italic">No specialties listed</span>
+                                        )}
                                     </div>
-                                    <span className="text-sm font-semibold text-foreground">{tech.rating}</span>
-                                    <span className="text-xs text-muted-foreground">({tech.reviews} reviews)</span>
                                 </div>
 
                                 {/* Info Grid */}
-                                <div className="grid grid-cols-2 gap-3 mb-4 pb-4 border-b border-border">
+                                <div className="grid grid-cols-2 gap-2 mb-5 p-3 rounded-lg bg-muted/40 border border-border/50">
                                     <div>
-                                        <p className="text-xs text-muted-foreground mb-1">Location</p>
-                                        <p className="flex items-center gap-1 text-sm text-foreground font-medium">
-                                            <MapPin className="h-3.5 w-3.5" />
-                                            {tech.city}
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Experience</p>
+                                        <p className="text-xs text-foreground font-semibold flex items-center gap-1">
+                                            <Award className="h-3 w-3 text-primary/70" />
+                                            {tech.experience}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-muted-foreground mb-1">Response Time</p>
-                                        <p className="text-sm text-foreground font-medium">{tech.responseTime}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground mb-1">Experience</p>
-                                        <p className="text-sm text-foreground font-medium">{tech.experience}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground mb-1">Status</p>
-                                        <span className="inline-flex items-center gap-1 text-sm text-emerald-700 font-medium">
-                                            <Zap className="h-3.5 w-3.5" />
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Status</p>
+                                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                                            <Zap className="h-3 w-3" />
                                             Available
                                         </span>
                                     </div>
                                 </div>
 
-                                {/* Certifications */}
-                                {tech.certifications.length > 0 && (
-                                    <div className="mb-4">
-                                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                                            <Award className="h-3.5 w-3.5" />
-                                            Certifications
-                                        </p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {tech.certifications.map((cert) => (
-                                                <span
-                                                    key={cert}
-                                                    className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
-                                                >
-                                                    {cert}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
 
-                                {/* Action Button */}
                                 <Button
                                     onClick={() => {
+                                        incrementTechnicianWhatsappClicks(tech.id).catch(console.error)
                                         const message = encodeURIComponent(`Hi! I need repair/maintenance service for my medical equipment. Found you on Medixra.`)
                                         if (tech.whatsapp) {
                                             window.open(`https://wa.me/${tech.whatsapp}?text=${message}`, '_blank')
