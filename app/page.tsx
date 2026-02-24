@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import {
   MessageCircle, Wrench, Building2, Star, MapPin, Filter, Package,
   Activity, Scissors, FlaskConical, Stethoscope, HeartPulse,
