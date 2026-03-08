@@ -34,7 +34,7 @@ export default async function DashboardPage() {
     // 3. Handle Missing Profile (Self-healing on server with UPSERT to prevent race conditions)
     if (profileError && !profile) {
         const requestedRole = user.user_metadata.role
-        const safeRole: 'user' | 'vendor' | 'technician' = requestedRole === 'vendor' || requestedRole === 'technician' ? requestedRole : 'user'
+        const safeRole: 'user' | 'vendor' | 'engineer' = requestedRole === 'vendor' || requestedRole === 'engineer' ? requestedRole : 'user'
 
         // Use UPSERT to handle race conditions where trigger might have created it
         const { data: newProfile, error: createError } = await supabase
@@ -45,7 +45,7 @@ export default async function DashboardPage() {
                 full_name: user.user_metadata.full_name || 'User',
                 role: safeRole,
                 avatar_url: user.user_metadata.avatar_url || null,
-                approval_status: (safeRole === 'vendor' || safeRole === 'technician') ? 'pending' : 'approved',
+                approval_status: (safeRole === 'vendor' || safeRole === 'engineer') ? 'pending' : 'approved',
                 updated_at: new Date().toISOString()
             } as any, { onConflict: 'id' })
             .select('role, approval_status')
@@ -53,7 +53,7 @@ export default async function DashboardPage() {
 
         if (!createError && newProfile) {
             // Check approval status first
-            if ((newProfile.role === 'vendor' || newProfile.role === 'technician') && newProfile.approval_status !== 'approved') {
+            if ((newProfile.role === 'vendor' || newProfile.role === 'engineer') && newProfile.approval_status !== 'approved') {
                 redirect('/pending-approval')
             }
 
@@ -73,17 +73,17 @@ export default async function DashboardPage() {
                 }
             }
 
-            if (newProfile.role === 'technician') {
+            if (newProfile.role === 'engineer') {
                 try {
-                    const techMeta = user.user_metadata?.technician || null
-                    await supabase.from('technicians').upsert({
+                    const engMeta = user.user_metadata?.engineer || null
+                    await supabase.from('engineers').upsert({
                         id: user.id,
-                        speciality: techMeta?.speciality || null,
-                        experience_years: techMeta?.experience_years || null,
-                        city: techMeta?.city || null,
+                        speciality: engMeta?.speciality || null,
+                        experience_years: engMeta?.experience_years || null,
+                        city: engMeta?.city || null,
                     } as any, { onConflict: 'id' })
                 } catch (err) {
-                    console.error('Error upserting technician row:', err)
+                    console.error('Error upserting engineer row:', err)
                 }
             }
 
@@ -98,7 +98,7 @@ export default async function DashboardPage() {
 
     // 4. Standard Redirect
     // Check approval status for restricted roles
-    if ((profile?.role === 'vendor' || profile?.role === 'technician') && profile?.approval_status !== 'approved') {
+    if ((profile?.role === 'vendor' || profile?.role === 'engineer') && profile?.approval_status !== 'approved') {
         redirect('/pending-approval')
     }
 
@@ -119,21 +119,21 @@ export default async function DashboardPage() {
         } catch (err) {
             console.error('Error ensuring vendor row exists:', err)
         }
-    } else if (profile?.role === 'technician') {
-        // Ensure technicians row exists
+    } else if (profile?.role === 'engineer') {
+        // Ensure engineers row exists
         try {
-            const { data: existingTech } = await supabase.from('technicians').select('id').eq('id', user.id).single()
-            if (!existingTech) {
-                const techMeta = user.user_metadata?.technician || null
-                await supabase.from('technicians').upsert({
+            const { data: existingEng } = await supabase.from('engineers').select('id').eq('id', user.id).single()
+            if (!existingEng) {
+                const engMeta = user.user_metadata?.engineer || null
+                await supabase.from('engineers').upsert({
                     id: user.id,
-                    speciality: techMeta?.speciality || null,
-                    experience_years: techMeta?.experience_years || null,
-                    city: techMeta?.city || null,
+                    speciality: engMeta?.speciality || null,
+                    experience_years: engMeta?.experience_years || null,
+                    city: engMeta?.city || null,
                 } as any, { onConflict: 'id' })
             }
         } catch (err) {
-            console.error('Error ensuring technician row exists:', err)
+            console.error('Error ensuring engineer row exists:', err)
         }
     }
 

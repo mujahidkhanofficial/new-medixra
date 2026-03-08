@@ -17,10 +17,12 @@ interface Step3Props {
 }
 
 export function Step3Industrial({ formData, updateFormData, onNext, onBack, formLoading, error }: Step3Props) {
-    // Derive dynamic specialities based on selected category
-    const dynamicSpecialties = EQUIPMENT_HIERARCHY.find(
-        c => c.name === formData.category
-    )?.subcategories || []
+    // Derive dynamic specialities based on selected categories
+    const dynamicSpecialties = Array.from(new Set(
+        EQUIPMENT_HIERARCHY
+            .filter(c => formData.category.includes(c.name))
+            .flatMap(c => c.subcategories)
+    ))
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">

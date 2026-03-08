@@ -15,7 +15,7 @@ import { profiles } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { logAuditEvent } from '../audit/audit-logger'
 
-export type UserRole = 'admin' | 'vendor' | 'technician' | 'user'
+export type UserRole = 'admin' | 'vendor' | 'engineer' | 'user'
 
 export interface AuthenticatedRequest extends NextRequest {
   user?: {
@@ -161,7 +161,7 @@ export async function verifyApiAuth(
     }
 
     // 5. Check approval status for vendors/technicians
-    if (requireApproval && (profileRow.role === 'vendor' || profileRow.role === 'technician')) {
+    if (requireApproval && (profileRow.role === 'vendor' || profileRow.role === 'engineer')) {
       if (profileRow.approvalStatus !== 'approved') {
         await logAuditEvent({
           action: auditAction || 'api.auth.failed',

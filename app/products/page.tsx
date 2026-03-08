@@ -31,7 +31,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
         descriptionText = `Find the best prices for ${query} from verified medical equipment vendors. Connect directly on WhatsApp with zero markup.`;
     } else if (category) {
         titleText = `${category} Equipment | Direct Medical Equipment Network`;
-        descriptionText = `Explore our comprehensive catalog of ${category} equipment. Connect with certified vendors and technicians instantly.`;
+        descriptionText = `Explore our comprehensive catalog of ${category} equipment. Connect with certified vendors and engineers instantly.`;
     }
 
     return {
@@ -65,7 +65,8 @@ export default async function ProductsPage({ searchParams }: Props) {
         city,
         minPrice,
         maxPrice,
-        condition
+        condition,
+        speciality: specialty
     })
 
     const supabase = await createClient()

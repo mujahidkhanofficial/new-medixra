@@ -113,7 +113,7 @@ export function AdForm({ initialData }: AdFormProps) {
                 router.replace('/account-suspended')
                 return
             }
-            if ((profile?.role === 'vendor' || profile?.role === 'technician') && profile?.approval_status !== 'approved') {
+            if ((profile?.role === 'vendor' || profile?.role === 'engineer') && profile?.approval_status !== 'approved') {
                 router.replace('/pending-approval')
                 return
             }
@@ -136,7 +136,7 @@ export function AdForm({ initialData }: AdFormProps) {
 
     // Form Data
     const [formData, setFormData] = useState<AdFormData>(initialData || {
-        category: '',
+        category: [],
         name: '',
         model: '',
         description: '',
@@ -148,14 +148,14 @@ export function AdForm({ initialData }: AdFormProps) {
         tags: [],
         brand: '',
         warranty: 'No Warranty',
-        
+
         // Regulatory
         ceCertified: false,
         fdaApproved: false,
         isoCertified: false,
         drapRegistered: false,
         otherCertifications: '',
-        
+
         // Origin & Service
         originCountry: '',
         refurbishmentCountry: '',
@@ -163,7 +163,7 @@ export function AdForm({ initialData }: AdFormProps) {
         amcAvailable: false,
         sparePartsAvailable: false,
         installationIncluded: false,
-        
+
         city: '',
         area: '',
     })
@@ -173,8 +173,8 @@ export function AdForm({ initialData }: AdFormProps) {
         if (initialData?.imageUrls) {
             return initialData.imageUrls.map(url => ({
                 id: Math.random().toString(36).substring(7),
-                file: new File([], "existing-image"), 
-                preview: url, 
+                file: new File([], "existing-image"),
+                preview: url,
                 status: 'complete',
                 url: url
             }))
@@ -205,16 +205,16 @@ export function AdForm({ initialData }: AdFormProps) {
             const stepErrors: Record<string, string> = {}
             if (!formData.name) stepErrors.name = 'Product name is required'
             else if (formData.name.length < 3) stepErrors.name = 'Product name must be at least 3 characters'
-            
+
             if (!formData.description || formData.description.length < 10) stepErrors.description = 'Description must be at least 10 characters'
-            
+
             if (formData.priceType !== 'quote' && !formData.price) stepErrors.price = 'Price is required'
-            
+
             if (Object.keys(stepErrors).length > 0) {
                 setErrors(stepErrors)
                 return
             }
-        } else if (step === 6) { 
+        } else if (step === 6) {
             if (!formData.city) {
                 setErrors({ city: 'City is required' })
                 return
@@ -222,12 +222,14 @@ export function AdForm({ initialData }: AdFormProps) {
         }
 
         setStep(prev => prev + 1)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     const handleBack = () => {
         setError(null)
         setErrors({})
         setStep(prev => prev - 1)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     // Queue Processor for Images
@@ -262,7 +264,7 @@ export function AdForm({ initialData }: AdFormProps) {
             // Use Server Action for Upload
             const formData = new FormData()
             formData.append('file', compressedFile)
-            formData.append('bucket', 'products') 
+            formData.append('bucket', 'products')
 
             console.log('☁️ Uploading via Server Action...')
             const result = await uploadImage(formData)
@@ -376,7 +378,7 @@ export function AdForm({ initialData }: AdFormProps) {
         }
 
         const validationErrors: Record<string, string> = {}
-        if (!formData.category) validationErrors.category = 'Category is required'
+        if (!formData.category || formData.category.length === 0) validationErrors.category = 'At least one category is required'
         if (!formData.name || formData.name.length < 3) validationErrors.name = 'Product name must be at least 3 characters'
         if (!formData.description || formData.description.length < 10) validationErrors.description = 'Description must be at least 10 characters'
         if (formData.priceType !== 'quote' && (!formData.price || Number(formData.price) <= 0)) validationErrors.price = 'Price is required'
@@ -399,7 +401,7 @@ export function AdForm({ initialData }: AdFormProps) {
             adFormData.append('name', formData.name)
             adFormData.append('description', formData.description)
             adFormData.append('price', formData.price)
-            adFormData.append('category', formData.category)
+            if (formData.category.length > 0) adFormData.append('category', JSON.stringify(formData.category))
             adFormData.append('condition', formData.condition)
             if (formData.specialities.length > 0) adFormData.append('specialities', JSON.stringify(formData.specialities))
             if (formData.tags.length > 0) adFormData.append('tags', JSON.stringify(formData.tags))
@@ -450,7 +452,7 @@ export function AdForm({ initialData }: AdFormProps) {
             }
 
             toast.success(isEditMode ? 'Ad updated successfully! 🎉' : 'Ad posted successfully! 🎉')
-            router.push('/dashboard/user') 
+            router.push('/dashboard/user')
         } catch (err: any) {
             const errorMessage = getErrorMessage(err)
             setError(errorMessage)
@@ -480,7 +482,7 @@ export function AdForm({ initialData }: AdFormProps) {
                         <div className="mb-6">
                             <h1 className="text-2xl font-bold">{isEditMode ? 'Edit Ad' : 'Post New Ad'}</h1>
                         </div>
-                    
+
                         {step === 1 && (
                             <Step1Category
                                 formData={formData}

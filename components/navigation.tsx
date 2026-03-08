@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Menu, X, User, LogOut, Plus, LayoutDashboard, Store, ChevronDown, PlusCircle } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -32,6 +32,33 @@ export default function Navigation() {
     const [isEquipmentOpen, setIsEquipmentOpen] = useState(false)
     const router = useRouter()
 
+    // buffered open/close timer makes hover feel smooth
+    const closeTimer = useRef<number | null>(null)
+
+    const openMenu = () => {
+        if (closeTimer.current) {
+            clearTimeout(closeTimer.current)
+            closeTimer.current = null
+        }
+        setIsEquipmentOpen(true)
+    }
+
+    const closeMenu = () => {
+        if (closeTimer.current) clearTimeout(closeTimer.current)
+        closeTimer.current = window.setTimeout(() => {
+            setIsEquipmentOpen(false)
+            closeTimer.current = null
+        }, 150)
+    }
+
+    // clear any pending timer when component unmounts
+    useEffect(() => {
+        return () => {
+            if (closeTimer.current) clearTimeout(closeTimer.current)
+        }
+    }, [])
+
+
     const handleLogout = async () => {
         setIsLoggingOut(true)
         try {
@@ -59,14 +86,14 @@ export default function Navigation() {
     const getDashboardLink = () => {
         if (profile?.role === 'vendor') return '/dashboard/vendor'
         if (profile?.role === 'admin') return '/admin'
-        if (profile?.role === 'technician') return '/dashboard/technician'
+        if (profile?.role === 'engineer') return '/dashboard/engineer'
         return '/dashboard/user'
     }
 
     const getDashboardLabel = () => {
         if (profile?.role === 'vendor') return 'Vendor Dashboard'
         if (profile?.role === 'admin') return 'Admin Dashboard'
-        if (profile?.role === 'technician') return 'Technician Dashboard'
+        if (profile?.role === 'engineer') return 'Engineer Dashboard'
         return 'My Dashboard'
     }
 
@@ -94,8 +121,8 @@ export default function Navigation() {
                         </Link>
 
                         <div
-                            onMouseEnter={() => setIsEquipmentOpen(true)}
-                            onMouseLeave={() => setIsEquipmentOpen(false)}
+                            onMouseEnter={openMenu}
+                            onMouseLeave={closeMenu}
                             className="relative"
                         >
                             <DropdownMenu open={isEquipmentOpen} onOpenChange={setIsEquipmentOpen}>
@@ -111,7 +138,9 @@ export default function Navigation() {
                                 <DropdownMenuContent
                                     className="w-64 max-h-[80vh] overflow-y-auto"
                                     align="start"
-                                    onMouseEnter={() => setIsEquipmentOpen(true)}
+                                    sideOffset={2}
+                                    onMouseEnter={openMenu}
+                                    onMouseLeave={closeMenu}
                                 >
                                     {EQUIPMENT_HIERARCHY.map((category) => (
                                         <DropdownMenuSub key={category.name}>
@@ -139,8 +168,14 @@ export default function Navigation() {
                             </DropdownMenu>
                         </div>
 
-                        <Link href="/technicians" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                            Technicians
+                        <Link href="/blogs" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                            Blogs
+                        </Link>
+                        <Link href="/community" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                            Community
+                        </Link>
+                        <Link href="/engineers" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                            Engineers
                         </Link>
                         <Link href="/how-it-works" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                             How it Works
@@ -225,6 +260,14 @@ export default function Navigation() {
                                                 </Link>
                                             </DropdownMenuItem>
                                         )}
+                                        {profile?.role === 'engineer' && (
+                                            <DropdownMenuItem asChild>
+                                                <Link href="/dashboard/engineer" className="flex items-center cursor-pointer w-full">
+                                                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                                                    <span>Dashboard</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        )}
                                         <DropdownMenuItem asChild>
                                             <Link href="/dashboard/settings">
                                                 <User className="mr-2 h-4 w-4" />
@@ -303,8 +346,14 @@ export default function Navigation() {
                             <Link href="/products" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
                                 Equipment
                             </Link>
-                            <Link href="/technicians" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
-                                Technicians
+                            <Link href="/blogs" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
+                                Blogs
+                            </Link>
+                            <Link href="/community" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
+                                Community
+                            </Link>
+                            <Link href="/engineers" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
+                                Engineers
                             </Link>
 
                             {profile?.role !== 'vendor' && (

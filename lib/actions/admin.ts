@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db/drizzle'
-import { profiles, vendors, products, technicians, productReports } from '@/lib/db/schema'
+import { profiles, vendors, products, engineers, productReports } from '@/lib/db/schema'
 import { eq, and, ne, sql, desc, inArray } from 'drizzle-orm'
 import { authenticatedAction, adminAction } from '@/lib/safe-action'
 import { z } from 'zod'
@@ -55,11 +55,11 @@ export const approveUser = adminAction(
                     target: vendors.id,
                     set: { isVerified: true }
                 })
-        } else if (user.role === 'technician') {
-            await db.insert(technicians)
+        } else if (user.role === 'engineer') {
+            await db.insert(engineers)
                 .values({ id: targetUserId, isVerified: true })
                 .onConflictDoUpdate({
-                    target: technicians.id,
+                    target: engineers.id,
                     set: { isVerified: true }
                 })
         }
@@ -129,7 +129,7 @@ export const banUser = adminAction(
 )
 
 export const activateUser = adminAction(
-    z.object({ userId: z.string().uuid(), role: z.enum(['user', 'vendor', 'technician']) }),
+    z.object({ userId: z.string().uuid(), role: z.enum(['user', 'vendor', 'engineer']) }),
     async ({ userId: targetUserId, role }, adminId) => {
         // CheckAdmin is handled by adminAction wrapper
 
@@ -214,13 +214,13 @@ export const getPendingApprovals = async () => {
                     where: eq(vendors.id, profile.id)
                 })
                 return { ...profile, vendorDetails: vendorData ?? null, technicianDetails: null }
-            } else if (profile.role === 'technician') {
-                const techData = await db.query.technicians.findFirst({
-                    where: eq(technicians.id, profile.id)
+            } else if (profile.role === 'engineer') {
+                const engData = await db.query.engineers.findFirst({
+                    where: eq(engineers.id, profile.id)
                 })
-                return { ...profile, vendorDetails: null, technicianDetails: techData ?? null }
+                return { ...profile, vendorDetails: null, engineerDetails: engData ?? null }
             }
-            return { ...profile, vendorDetails: null, technicianDetails: null }
+            return { ...profile, vendorDetails: null, engineerDetails: null }
         })
     )
 

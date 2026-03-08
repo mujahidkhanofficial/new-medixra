@@ -30,7 +30,8 @@ import {
     Wrench,
     MapPin,
     Calendar,
-    Star
+    Star,
+    Globe
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -51,6 +52,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import { AdminCharts } from './components/AdminCharts'
 import { ProductManager } from './components/ProductManager'
+import { BlogManager } from './components/BlogManager'
 
 import { UserDetailSheet } from './components/UserDetailSheet'
 import { ActivityFeed } from './components/ActivityFeed'
@@ -59,7 +61,7 @@ interface AdminDashboardClientProps {
     initialStats: {
         totalUsers: number
         activeVendors: number
-        activeTechnicians: number
+        activeEngineers: number
         listedProducts: number
         totalInquiries: number
     }
@@ -117,7 +119,7 @@ export default function AdminDashboardClient({
                 try {
                     const data = await getPendingApprovals()
                     // Transform
-                    const formatted = data.map(u => ({
+                    const formatted = data.map((u: any) => ({
                         id: u.id,
                         name: u.fullName || u.email,
                         email: u.email,
@@ -125,10 +127,10 @@ export default function AdminDashboardClient({
                         role: u.role,
                         location: u.city || 'Pakistan',
                         appliedDate: new Date(u.createdAt).toLocaleDateString(),
-                        equipment: u.role === 'vendor' ? 'Vendor Application' : 'Technician Application',
+                        equipment: u.role === 'vendor' ? 'Vendor Application' : 'Engineer Application',
                         status: 'pending',
                         vendorDetails: u.vendorDetails,
-                        technicianDetails: u.technicianDetails,
+                        engineerDetails: u.engineerDetails,
                     }))
                     setPendingApprovals(formatted)
                     setIsApprovalsLoaded(true)
@@ -310,10 +312,13 @@ export default function AdminDashboardClient({
     const navItems = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'inventory', label: 'All Inventory', icon: Package },
+        { id: 'blogs', label: 'Blogs & CMS', icon: Globe },
         { id: 'approvals', label: 'Pending Approvals', icon: UserCheck, count: pendingApprovals.length },
         { id: 'users', label: 'All Users', icon: Users },
         { id: 'reports', label: 'Reported Listings', icon: Flag, count: reportedListings.length },
     ]
+
+    const GlobeIcon = Globe;
 
     const SidebarContent = () => (
         <div className="flex flex-col h-full bg-white">
@@ -431,7 +436,7 @@ export default function AdminDashboardClient({
                                 {[
                                     { label: 'Total Users', value: initialStats.totalUsers, icon: Users, color: 'text-teal-600' },
                                     { label: 'Active Vendors', value: initialStats.activeVendors, icon: Package, color: 'text-blue-600' },
-                                    { label: 'Technicians', value: initialStats.activeTechnicians, icon: Shield, color: 'text-amber-600' },
+                                    { label: 'Engineers', value: initialStats.activeEngineers, icon: Shield, color: 'text-amber-600' },
                                     { label: 'Products', value: initialStats.listedProducts, icon: Eye, color: 'text-purple-600' },
                                     { label: 'Inquiries', value: initialStats.totalInquiries, icon: MessageSquare, color: 'text-emerald-600' },
                                 ].map((stat) => (
@@ -468,6 +473,12 @@ export default function AdminDashboardClient({
                                 <p className="text-sm text-gray-500">Manage all listed products and equipment on the platform</p>
                             </div>
                             <ProductManager />
+                        </div>
+                    )}
+
+                    {activeSection === 'blogs' && (
+                        <div className="space-y-6 animate-in slide-in-from-left-4 duration-500">
+                            <BlogManager />
                         </div>
                     )}
 
@@ -518,7 +529,7 @@ export default function AdminDashboardClient({
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <span className={`inline-flex px-2.5 py-1 text-[10px] font-bold uppercase rounded-md tracking-wider ${u.role === 'vendor' ? 'bg-teal-50 text-teal-700' :
-                                                        u.role === 'technician' ? 'bg-blue-50 text-blue-700' :
+                                                        u.role === 'engineer' ? 'bg-blue-50 text-blue-700' :
                                                             u.role === 'admin' ? 'bg-red-50 text-red-700' :
                                                                 'bg-gray-50 text-gray-600'
                                                         }`}>
@@ -778,24 +789,24 @@ export default function AdminDashboardClient({
                                                 </>
                                             )}
 
-                                            {/* Technician-specific fields */}
-                                            {selectedApplicant.role === 'technician' && selectedApplicant.technicianDetails && (
+                                            {/* Engineer-specific fields */}
+                                            {selectedApplicant.role === 'engineer' && selectedApplicant.engineerDetails && (
                                                 <>
-                                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-2">Technician Details</h3>
+                                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-2">Engineer Details</h3>
                                                     <div className="bg-blue-50 rounded-xl p-4 space-y-3">
-                                                        {selectedApplicant.technicianDetails.experienceYears && (
+                                                        {selectedApplicant.engineerDetails.experienceYears && (
                                                             <div className="flex items-start gap-3 text-sm">
                                                                 <Calendar className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
                                                                 <span className="text-gray-500 w-24 shrink-0">Experience</span>
-                                                                <span className="font-semibold text-gray-900">{selectedApplicant.technicianDetails.experienceYears} years</span>
+                                                                <span className="font-semibold text-gray-900">{selectedApplicant.engineerDetails.experienceYears} years</span>
                                                             </div>
                                                         )}
-                                                        {selectedApplicant.technicianDetails.speciality && (
+                                                        {selectedApplicant.engineerDetails.speciality && (
                                                             <div className="flex items-start gap-3 text-sm">
                                                                 <Wrench className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
                                                                 <span className="text-gray-500 w-24 shrink-0">Specialities</span>
                                                                 <div className="flex flex-wrap gap-1">
-                                                                    {(() => { try { const s = JSON.parse(selectedApplicant.technicianDetails.speciality); return Array.isArray(s) ? s.map((sp: string, i: number) => <span key={i} className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">{sp}</span>) : <span className="font-semibold text-gray-900">{selectedApplicant.technicianDetails.speciality}</span> } catch { return <span className="font-semibold text-gray-900">{selectedApplicant.technicianDetails.speciality}</span> } })()}
+                                                                    {(() => { try { const s = JSON.parse(selectedApplicant.engineerDetails.speciality); return Array.isArray(s) ? s.map((sp: string, i: number) => <span key={i} className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">{sp}</span>) : <span className="font-semibold text-gray-900">{selectedApplicant.engineerDetails.speciality}</span> } catch { return <span className="font-semibold text-gray-900">{selectedApplicant.engineerDetails.speciality}</span> } })()}
                                                                 </div>
                                                             </div>
                                                         )}

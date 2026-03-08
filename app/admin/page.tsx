@@ -1,5 +1,5 @@
 import { db } from '@/lib/db/drizzle'
-import { profiles, vendors, products, technicians, productReports } from '@/lib/db/schema'
+import { profiles, vendors, products, engineers, productReports } from '@/lib/db/schema'
 import { eq, desc, count, sql } from 'drizzle-orm'
 import AdminDashboardClient from './client-page'
 import { redirect } from 'next/navigation'
@@ -44,7 +44,7 @@ export default async function AdminDashboardPage() {
         const [
             totalUsersResult,
             activeVendorsResult,
-            activeTechniciansResult,
+            activeEngineersResult,
             listedProductsResult,
             totalInquiriesResult,
             analyticsData, // New analytics data
@@ -53,7 +53,7 @@ export default async function AdminDashboardPage() {
         ] = await Promise.all([
             db.select({ count: count() }).from(profiles),
             db.select({ count: count() }).from(vendors).where(eq(vendors.isVerified, true)),
-            db.select({ count: count() }).from(technicians).where(eq(technicians.isVerified, true)),
+            db.select({ count: count() }).from(engineers).where(eq(engineers.isVerified, true)),
             db.select({ count: count() }).from(products).where(eq(products.status, 'active')),
             db.select({ sum: sql<number>`sum(${products.whatsappClicks})` }).from(products),
             getAnalyticsData(),
@@ -66,6 +66,16 @@ export default async function AdminDashboardPage() {
                 vendorId: products.vendorId
             }).from(products).orderBy(desc(products.createdAt)).limit(5)
         ])
+
+        // Helper to cleanly format JSON array strings
+        const formatCategory = (catStr: string | null) => {
+            if (!catStr) return 'Uncategorized';
+            try {
+                const arr = JSON.parse(catStr);
+                if (Array.isArray(arr)) return arr.join(', ');
+            } catch (e) { }
+            return catStr.replace(/[\[\]"]/g, '').replace(/,/g, ', ');
+        };
 
         // Generate Activity Feed
         const activityFeed = [
@@ -81,7 +91,7 @@ export default async function AdminDashboardPage() {
                 id: `product-${p.id}`,
                 type: 'product_list',
                 title: 'New Product Listed',
-                description: `${p.name} added to ${p.category}`,
+                description: `${p.name} added to ${formatCategory(p.category)}`,
                 timestamp: new Date(p.createdAt),
                 // We could fetch vendor name here but for performance, skipping for now or can use "Vendor"
             }))
@@ -90,7 +100,7 @@ export default async function AdminDashboardPage() {
         const stats = {
             totalUsers: totalUsersResult[0].count,
             activeVendors: activeVendorsResult[0].count,
-            activeTechnicians: activeTechniciansResult[0].count,
+            activeEngineers: activeEngineersResult[0].count,
             listedProducts: listedProductsResult[0].count,
             totalInquiries: Number(totalInquiriesResult[0].sum || 0)
         }

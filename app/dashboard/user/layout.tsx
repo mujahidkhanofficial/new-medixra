@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 /**
  * Server-side layout guard for user dashboard
- * Ensures only users (and approved vendors/technicians) can access
+ * Ensures only users (and approved vendors/engineers) can access
  */
 export default async function UserDashboardLayout({
     children,
@@ -39,7 +39,7 @@ export default async function UserDashboardLayout({
     }
 
     // Users can view the user dashboard
-    // Vendors/technicians can also access (for cross-platform features)
+    // Vendors/engineers can also access (for cross-platform features)
     // Admins should not see this
     if (profile.role === 'admin') {
         redirect('/admin')

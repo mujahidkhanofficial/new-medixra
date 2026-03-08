@@ -30,7 +30,7 @@ export const productSchema = z.object({
   name: z.string().min(3, 'Product name must be at least 3 characters').max(100),
   description: z.string().min(10, 'Description must be at least 10 characters').max(2000),
   price: z.number().min(0, 'Price cannot be negative'),
-  category: z.string().min(1, 'Category is required'),
+  category: z.array(z.string()).min(1, 'At least one category is required'),
   condition: z.enum(['New', 'Used', 'Refurbished']),
   location: z.string().min(2, 'Location is required'),
   images: z.array(z.instanceof(File)).min(1, 'At least one image is required'),

@@ -17,12 +17,13 @@ import { getErrorMessage } from '@/lib/error-handler'
 import { CITIES, SPECIALTIES, BUSINESS_TYPES } from '@/lib/constants'
 import { MultiSelectSpecialities } from '@/components/ui/multi-select-specialities'
 import { toast } from 'sonner'
+import { User, Store, ArrowRight, ArrowLeft, Mail, Wrench, Eye, EyeOff } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 const signupWizardSchema = z.object({
-    role: z.enum(['user', 'vendor', 'technician']),
+    role: z.enum(['user', 'vendor', 'engineer']),
     email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -55,6 +56,7 @@ export default function SignupPage() {
     const { user, loading } = useAuth()
 
     const [step, setStep] = useState<number>(1)
+    const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [success, setSuccess] = useState(false)
@@ -159,7 +161,7 @@ export default function SignupPage() {
             // Trigger role specific fields
             let isValid = false
             if (role === 'vendor') isValid = await trigger(['companyName', 'businessType', 'customBusinessType', 'yearsExperience', 'description'])
-            if (role === 'technician') isValid = await trigger(['specialities', 'yearsExperience'])
+            if (role === 'engineer') isValid = await trigger(['specialities', 'yearsExperience'])
 
             if (!isValid) {
                 setError(`Please fix ${role} details highlighted below.`)
@@ -186,6 +188,7 @@ export default function SignupPage() {
                 email: data.email,
                 password: data.password,
                 options: {
+                    emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined,
                     data: {
                         full_name: data.fullName,
                         role: data.role,
@@ -200,7 +203,7 @@ export default function SignupPage() {
                             whatsapp_number: data.phoneNumber || null,
                             description: data.description || null,
                         } : undefined,
-                        technician: data.role === 'technician' ? {
+                        engineer: data.role === 'engineer' ? {
                             phone: data.phoneNumber || null,
                             city: data.city || null,
                             speciality: data.specialities && data.specialities.length > 0 ? JSON.stringify(data.specialities) : null,
@@ -340,9 +343,10 @@ export default function SignupPage() {
                                         <span className="text-xs text-muted-foreground">Buy & Sell</span>
                                     </button>
 
-                                    <button type="button" onClick={() => setValue('role', 'technician')} className={`p-4 rounded-lg border text-center transition-all ${role === 'technician' ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}>
-                                        <span className="font-medium block">Technician</span>
-                                        <span className="text-xs text-muted-foreground">Offer Services</span>
+                                    <button type="button" onClick={() => setValue('role', 'engineer')} className={`p-4 rounded-lg border text-center transition-all ${role === 'engineer' ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}>
+                                        <Wrench className="h-6 w-6 text-primary mb-2" />
+                                        <span className="font-semibold text-foreground">Engineer</span>
+                                        <span className="text-xs text-muted-foreground mt-1 text-center">Equipment Repair</span>
                                     </button>
 
                                     <button type="button" onClick={() => setValue('role', 'vendor')} className={`p-4 rounded-lg border text-center transition-all ${role === 'vendor' ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}>
@@ -388,7 +392,17 @@ export default function SignupPage() {
                                 </div>
 
                                 <FormField label="Password" required error={errors.password?.message} helpText="Minimum 8 characters with uppercase, lowercase, and number">
-                                    <Input type="password" {...register('password')} placeholder="••••••••" disabled={isLoading} />
+                                    <div className="relative">
+                                        <Input type={showPassword ? "text" : "password"} {...register('password')} placeholder="••••••••" disabled={isLoading} className="pr-10" />
+                                        <button
+                                            type="button"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            tabIndex={-1}
+                                        >
+                                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
                                 </FormField>
                             </>
                         )}
@@ -437,10 +451,10 @@ export default function SignupPage() {
                             </div>
                         )}
 
-                        {/* STEP 3 - TECHNICIAN DETAILS */}
-                        {step === 3 && role === 'technician' && (
+                        {/* STEP 3 - ENGINEER DETAILS */}
+                        {step === 3 && role === 'engineer' && (
                             <div className="space-y-4 pt-2">
-                                <h4 className="text-sm font-semibold text-foreground">Technician Details</h4>
+                                <h4 className="text-sm font-semibold text-foreground">Engineer Details</h4>
                                 <div className="grid grid-cols-1 gap-3">
                                     <FormField label="Years Experience" error={errors.yearsExperience?.message}>
                                         <Input type="text" {...register('yearsExperience')} placeholder="e.g. 5" disabled={isLoading} />
@@ -472,7 +486,7 @@ export default function SignupPage() {
                                             <div><strong>Experience:</strong> {currentData.yearsExperience} Years</div>
                                         </>
                                     )}
-                                    {role === 'technician' && (
+                                    {role === 'engineer' && (
                                         <>
                                             <div><strong>Experience:</strong> {currentData.yearsExperience} Years</div>
                                             <div><strong>Specialities:</strong> {currentData.specialities?.length ? currentData.specialities.join(', ') : 'Not specified'}</div>

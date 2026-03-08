@@ -2,13 +2,13 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { db } from '@/lib/db/drizzle'
-import { profiles, technicians } from '@/lib/db/schema'
+import { profiles, engineers } from '@/lib/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { authenticatedAction } from '@/lib/safe-action'
 import { z } from 'zod'
 
-export async function getTechnicianProfile(userId: string) {
+export async function getEngineerProfile(userId: string) {
     const supabase = await createClient()
     if (!supabase) return null
 
@@ -16,54 +16,54 @@ export async function getTechnicianProfile(userId: string) {
         .from('profiles')
         .select(`
       *,
-      technicians(*)
+      engineers(*)
     `)
         .eq('id', userId)
         .single()
 
     if (profileError) {
-        console.error('Error fetching technician profile:', profileError)
+        console.error('Error fetching engineer profile:', profileError)
         return null
     }
 
-    // Combine profile and technician data
-    const technicianData = profile.technicians ? (Array.isArray(profile.technicians) ? profile.technicians[0] : profile.technicians) : {}
+    // Combine profile and engineer data
+    const engineerData = profile.engineers ? (Array.isArray(profile.engineers) ? profile.engineers[0] : profile.engineers) : {}
 
     return {
         ...profile,
-        ...technicianData,
-        speciality: technicianData?.speciality || '',
-        experience_years: technicianData?.experience_years,
-        views: technicianData?.views || 0,
-        whatsapp_clicks: technicianData?.whatsapp_clicks || 0,
+        ...engineerData,
+        speciality: engineerData?.speciality || '',
+        experience_years: engineerData?.experience_years,
+        views: engineerData?.views || 0,
+        whatsapp_clicks: engineerData?.whatsapp_clicks || 0,
     }
 }
 
-export async function incrementTechnicianViews(technicianId: string) {
+export async function incrementEngineerViews(engineerId: string) {
     try {
-        await db.update(technicians)
-            .set({ views: sql`${technicians.views} + 1` })
-            .where(eq(technicians.id, technicianId))
+        await db.update(engineers)
+            .set({ views: sql`${engineers.views} + 1` })
+            .where(eq(engineers.id, engineerId))
         return { success: true }
     } catch (error) {
-        console.error('Failed to increment technician views:', error)
+        console.error('Failed to increment engineer views:', error)
         return { success: false }
     }
 }
 
-export async function incrementTechnicianWhatsappClicks(technicianId: string) {
+export async function incrementEngineerWhatsappClicks(engineerId: string) {
     try {
-        await db.update(technicians)
-            .set({ whatsappClicks: sql`${technicians.whatsappClicks} + 1` })
-            .where(eq(technicians.id, technicianId))
+        await db.update(engineers)
+            .set({ whatsappClicks: sql`${engineers.whatsappClicks} + 1` })
+            .where(eq(engineers.id, engineerId))
         return { success: true }
     } catch (error) {
-        console.error('Failed to increment technician whatsapp clicks:', error)
+        console.error('Failed to increment engineer whatsapp clicks:', error)
         return { success: false }
     }
 }
 
-export const updateTechnicianProfile = authenticatedAction(
+export const updateEngineerProfile = authenticatedAction(
     z.object({
         fullName: z.string().min(2, 'Name must be at least 2 characters').optional(),
         phone: z.string().optional(),
@@ -83,26 +83,26 @@ export const updateTechnicianProfile = authenticatedAction(
                 await db.update(profiles).set(profileUpdate).where(eq(profiles.id, userId))
             }
 
-            // Update technician details
+            // Update engineer details
             if (data.speciality || data.experienceYears) {
-                const techUpdate: any = {}
-                if (data.speciality) techUpdate.speciality = data.speciality
-                if (data.experienceYears) techUpdate.experience_years = data.experienceYears
-                techUpdate.updated_at = new Date().toISOString()
+                const engUpdate: any = {}
+                if (data.speciality) engUpdate.speciality = data.speciality
+                if (data.experienceYears) engUpdate.experience_years = data.experienceYears
+                engUpdate.updated_at = new Date().toISOString()
 
-                await db.update(technicians).set(techUpdate).where(eq(technicians.id, userId))
+                await db.update(engineers).set(engUpdate).where(eq(engineers.id, userId))
             }
 
-            revalidatePath('/dashboard/technician')
+            revalidatePath('/dashboard/engineer')
 
             return { success: true }
         } catch (error: any) {
-            throw new Error(error?.message || 'Failed to update technician profile')
+            throw new Error(error?.message || 'Failed to update engineer profile')
         }
     }
 )
 
-export async function getApprovedTechnicians() {
+export async function getApprovedEngineers() {
     const supabase = await createClient()
     if (!supabase) return []
 
@@ -115,49 +115,49 @@ export async function getApprovedTechnicians() {
             city,
             phone,
             created_at,
-            technicians(
+            engineers(
                 speciality,
                 experience_years,
                 is_verified
             )
         `)
-        .eq('role', 'technician')
+        .eq('role', 'engineer')
         .eq('approval_status', 'approved')
 
     if (error) {
-        console.error('Error fetching approved technicians:', error)
+        console.error('Error fetching approved engineers:', error)
         return []
     }
 
     return profiles.map(profile => {
-        const technicianData = profile.technicians ? (Array.isArray(profile.technicians) ? profile.technicians[0] : profile.technicians) : {}
+        const engineerData = profile.engineers ? (Array.isArray(profile.engineers) ? profile.engineers[0] : profile.engineers) : {}
 
         let parsedSpecialities: string[] = []
         try {
-            if (technicianData?.speciality) {
+            if (engineerData?.speciality) {
                 // Specialities might be saved as JSON array from the MultiSelect or comma-separated
-                if (technicianData.speciality.startsWith('[')) {
-                    parsedSpecialities = JSON.parse(technicianData.speciality)
+                if (engineerData.speciality.startsWith('[')) {
+                    parsedSpecialities = JSON.parse(engineerData.speciality)
                 } else {
-                    parsedSpecialities = technicianData.speciality.split(',').map((s: string) => s.trim())
+                    parsedSpecialities = engineerData.speciality.split(',').map((s: string) => s.trim())
                 }
             }
         } catch (e) { /* ignore parse error */ }
 
         return {
             id: profile.id,
-            name: profile.full_name || 'Technician',
-            city: profile.city || technicianData?.city || 'Not specified',
+            name: profile.full_name || 'Engineer',
+            city: profile.city || engineerData?.city || 'Not specified',
             phone: profile.phone || '',
-            speciality: technicianData?.speciality ? parsedSpecialities.join(', ') : 'General Maintenance',
+            speciality: engineerData?.speciality ? parsedSpecialities.join(', ') : 'General Maintenance',
             specialitiesList: parsedSpecialities,
-            experience: technicianData?.experience_years ? `${technicianData.experience_years} years` : 'Not specified',
-            verified: technicianData?.is_verified || false,
+            experience: engineerData?.experience_years ? `${engineerData.experience_years} years` : 'Not specified',
+            verified: engineerData?.is_verified || false,
             // Fallbacks for UI that were in mock data
             rating: 5.0,
             reviews: 0,
             responseTime: 'Will contact ASAP',
-            certifications: technicianData?.is_verified ? ['Platform Verified'] : [],
+            certifications: engineerData?.is_verified ? ['Platform Verified'] : [],
             image: `bg-gradient-to-br from-teal-100 to-teal-50`, // Randomize later if needed
             whatsapp: profile.phone ? profile.phone.replace(/\D/g, '') : '',
         }

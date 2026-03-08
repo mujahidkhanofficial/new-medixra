@@ -1,5 +1,5 @@
 export interface AdFormData {
-    category: string
+    category: string[]
     name: string
     model: string
     description: string

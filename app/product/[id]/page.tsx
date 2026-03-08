@@ -254,11 +254,29 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
                             {/* Primary Action Card */}
                             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-                                <div className="flex justify-between items-start mb-4">
-                                    <span className="text-xs font-semibold tracking-wide text-primary bg-primary/5 px-2.5 py-1 rounded-full uppercase">
-                                        {product.category}
-                                    </span>
-                                    <div className="flex gap-2">
+                                <div className="flex justify-between items-start gap-4 mb-4">
+                                    <div className="flex flex-wrap gap-2">
+                                        {(() => {
+                                            try {
+                                                const cats = JSON.parse(product.category);
+                                                if (Array.isArray(cats)) {
+                                                    return cats.map((cat: string) => (
+                                                        <span key={cat} className="text-xs font-semibold tracking-wide text-primary bg-primary/5 px-2.5 py-1 rounded-full uppercase">
+                                                            {cat}
+                                                        </span>
+                                                    ))
+                                                }
+                                            } catch {
+                                                // Fallback for single legacy strings
+                                            }
+                                            return (
+                                                <span className="text-xs font-semibold tracking-wide text-primary bg-primary/5 px-2.5 py-1 rounded-full uppercase">
+                                                    {product.category || 'Uncategorized'}
+                                                </span>
+                                            )
+                                        })()}
+                                    </div>
+                                    <div className="flex gap-2 shrink-0">
                                         <SaveButton productId={product.id} initialIsSaved={isSaved} />
                                         <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
                                             <Share2 className="h-4 w-4" />
@@ -314,9 +332,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
                         </div>
                     </div>
                 </div>
-            </main>
+            </main >
             <Footer />
-        </div>
+        </div >
     )
 }
 

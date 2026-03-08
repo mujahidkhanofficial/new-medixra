@@ -31,7 +31,7 @@ export const getAnalyticsData = async () => {
 
     // 1. Category Distribution
     // Group products by category and count them
-    const categoryStats = await db
+    const rawCategoryStats = await db
       .select({
         name: products.category,
         value: sql<number>`count(*)::int`
@@ -40,6 +40,20 @@ export const getAnalyticsData = async () => {
       .groupBy(products.category)
       .orderBy(desc(sql`count(*)`))
       .limit(5)
+
+    const categoryStats = rawCategoryStats.map(stat => {
+      let formattedName = stat.name;
+      try {
+        if (formattedName) {
+          const arr = JSON.parse(formattedName);
+          if (Array.isArray(arr)) formattedName = arr.join(', ');
+        }
+      } catch (e) {
+        // Fallback for non-JSON strings
+        formattedName = formattedName?.replace(/[\[\]"]/g, '').replace(/,/g, ', ') || 'Uncategorized';
+      }
+      return { ...stat, name: formattedName || 'Uncategorized' };
+    })
 
     // 2. Growth Trends (Last 6 Months)
     // This is a bit complex in SQL, usually easier to fetch raw dates and aggregate in JS 

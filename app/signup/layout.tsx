@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
     title: 'Create Account',
-    description: 'Join Medixra as a User, Vendor, or Technician to buy and sell medical equipment.',
+    description: 'Join Medixra as a User, Vendor, or Engineer to buy and sell medical equipment.',
 }
 
 export default function SignupLayout({

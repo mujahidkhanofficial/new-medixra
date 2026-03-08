@@ -1,89 +1,24 @@
 export const PRODUCT_CATEGORIES = [
-    'Anesthesia & Critical Care',
-    'Cardiology & Cath Lab',
-    'ENT (Otolaryngology)',
-    'Neurosurgery',
-    'Orthopedics',
-    'Urology',
-    'Gynecology & Obstetrics',
-    'General Surgery',
-    'Medical Imaging & Diagnostics',
-    'Laboratory & Research',
-    'Primary & Secondary Care',
-    'Hygiene & Sterilization',
-    'Furniture & Facility',
-    'Medical Infrastructure',
-    'Dental',
-    'Rehabilitation & Physiotherapy',
-    'Veterinary',
-    'Other'
+    'Diagnostic Imaging Equipment',
+    'Patient Monitoring & Life Support Equipment',
+    'Surgical & Operating Room Equipment',
+    'Endoscopy & Minimally Invasive Equipment',
+    'Laboratory & Diagnostic Equipment',
+    'Sterilization & Infection Control Equipment',
+    'Hospital Furniture & Patient Handling Equipment',
+    'Rehabilitation & Physiotherapy Equipment',
+    'Emergency & Pre-Hospital Equipment',
+    'Neonatal & Pediatric Equipment',
+    'Home Healthcare Equipment',
+    'Oncology & Radiotherapy Equipment',
+    'Dialysis & Renal Care Equipment',
+    'Medical Infrastructure & Hospital Systems',
+    'Medical Consumables, Implants & Disposables'
 ] as const
 
 export const EQUIPMENT_HIERARCHY = [
     {
-        name: 'Anesthesia & Critical Care',
-        icon: 'Activity',
-        subcategories: [
-            'Anesthesia Workstations', 'ICU Ventilators', 'Transport Ventilators', 'HFNC Systems',
-            'Patient Monitors', 'Central Monitoring Systems', 'Defibrillators', 'Infusion & Syringe Pumps',
-            'Capnography', 'Suction Units', 'Crash Carts'
-        ]
-    },
-    {
-        name: 'Cardiology & Cath Lab',
-        icon: 'HeartPulse',
-        subcategories: [
-            'ECG Machines', 'Holter & ABPM Systems', 'Stress Test Systems', 'Echocardiography',
-            'Cath Lab Systems', 'Hemodynamic Monitoring', 'Pacemakers', 'IABP Systems'
-        ]
-    },
-    {
-        name: 'ENT (Otolaryngology)',
-        icon: 'Ear',
-        subcategories: [
-            'ENT Treatment Units', 'Rigid & Flexible Endoscopes', 'Endoscopy Towers', 'ENT Microscopes',
-            'Mastoid Drill Systems', 'Skeeter Drills', 'Burr Systems', 'Microdebriders', 'Audiometers',
-            'Tympanometers', 'ASSR', 'ABR/BERA', 'OEA Systems', 'Ear Surgery sets', 'Nose Surgery Sets',
-            'FESS Sets', 'Laryngology Sets', 'Ear Microscopic surgery sets', 'Bronchoscopy sets', 'Oesophagscopy sets'
-        ]
-    },
-    {
-        name: 'Neurosurgery',
-        icon: 'Brain',
-        subcategories: [
-            'Craniotomy Sets', 'Neuro Drill Systems', 'Navigation Systems', 'Neuromonitoring Systems', 'Neuro Microscopes'
-        ]
-    },
-    {
-        name: 'Orthopedics',
-        icon: 'Bone',
-        subcategories: [
-            'Trauma Sets', 'Locking Plate Systems', 'Arthroscopy Towers', 'Power Tools', 'Spine Systems'
-        ]
-    },
-    {
-        name: 'Urology',
-        icon: 'Accessibility', // Placeholder for Kidney/Urology
-        subcategories: [
-            'Cystoscopy Systems', 'Ureteroscopy Systems', 'TURP Sets', 'Lithotripters', 'Holmium Lasers', 'Urodynamic Systems'
-        ]
-    },
-    {
-        name: 'Gynecology & Obstetrics',
-        icon: 'Baby',
-        subcategories: [
-            'Delivery Tables', 'Hysteroscopy Systems', 'Laparoscopic Gyne Sets', 'Cesarean Sets'
-        ]
-    },
-    {
-        name: 'General Surgery',
-        icon: 'Scalpel',
-        subcategories: [
-            'Open Surgery Sets', 'Laparoscopic Towers', 'Energy Devices', 'Smoke Evacuators'
-        ]
-    },
-    {
-        name: 'Medical Imaging & Diagnostics',
+        name: 'Diagnostic Imaging Equipment',
         icon: 'ScanEye',
         subcategories: [
             'Digital X-Ray (DR/CR)', 'CT Scanners', 'MRI Systems', 'C-Arm Systems', 'Angiography Suites',
@@ -91,38 +26,95 @@ export const EQUIPMENT_HIERARCHY = [
         ]
     },
     {
-        name: 'Laboratory & Research',
+        name: 'Patient Monitoring & Life Support Equipment',
+        icon: 'Activity',
+        subcategories: [
+            'Patient Monitors', 'Central Monitoring Systems', 'Defibrillators', 'Infusion & Syringe Pumps', 'Capnography',
+            'ICU Ventilators', 'Transport Ventilators', 'HFNC Systems', 'Anesthesia Workstations'
+        ]
+    },
+    {
+        name: 'Surgical & Operating Room Equipment',
+        icon: 'Scalpel',
+        subcategories: [
+            'Open Surgery Sets', 'Energy Devices', 'Smoke Evacuators', 'Trauma Sets', 'Craniotomy Sets',
+            'Navigation Systems', 'Neuromonitoring Systems', 'Surgical Lights', 'Operating Tables', 'Electrosurgical Units (ESU)'
+        ]
+    },
+    {
+        name: 'Endoscopy & Minimally Invasive Equipment',
+        icon: 'Search',
+        subcategories: [
+            'Rigid & Flexible Endoscopes', 'Endoscopy Towers', 'Surgical Microscopes', 'Laparoscopic Suites',
+            'Laparoscopic Gyne Sets', 'Arthroscopy Towers', 'Cystoscopy Systems', 'Ureteroscopy Systems', 'Bronchoscopes'
+        ]
+    },
+    {
+        name: 'Laboratory & Diagnostic Equipment',
         icon: 'FlaskConical',
         subcategories: [
             'Hematology Analyzers', 'Biochemistry Analyzers', 'Immunoassay Systems', 'PCR Systems',
-            'Coagulation Analyzers', 'Blood Gas Analyzers', 'Centrifuges', 'Biosafety Cabinets', 'Refrigerators & Freezers'
+            'Coagulation Analyzers', 'Blood Gas Analyzers', 'Centrifuges', 'Biosafety Cabinets', 'Refrigerators & Freezers', 'Microscopes'
         ]
     },
     {
-        name: 'Primary & Secondary Care',
-        icon: 'Stethoscope',
-        subcategories: [
-            'Examination Tables', 'Diagnostic Sets', 'Stethoscopes', 'BP Monitors', 'Pulse Oximeters',
-            'Glucometers', 'Nebulizers', 'Portable Ultrasound', 'Oxygen Concentrators', 'Ward Monitors',
-            'Non-Invasive Ventilators', 'Portable X-Ray', 'Bedside Ultrasound', 'Telemetry Systems'
-        ]
-    },
-    {
-        name: 'Hygiene & Sterilization',
+        name: 'Sterilization & Infection Control Equipment',
         icon: 'Sparkles',
         subcategories: [
-            'Autoclaves', 'ETO Sterilizers', 'Washer Disinfectors', 'UV Disinfection Systems', 'PPE', 'Waste Management Systems'
+            'Autoclaves', 'ETO Sterilizers', 'Washer Disinfectors', 'UV Disinfection Systems', 'Waste Management Systems', 'Plasma Sterilizers'
         ]
     },
     {
-        name: 'Furniture & Facility',
-        icon: 'Armchair',
+        name: 'Hospital Furniture & Patient Handling Equipment',
+        icon: 'BedDouble',
         subcategories: [
-            'Hospital Beds', 'ICU Beds', 'Stretchers', 'Trolleys', 'Cabinets', 'Pressure-Relief Mattresses'
+            'Hospital Beds', 'ICU Beds', 'Stretchers', 'Trolleys', 'Cabinets', 'Pressure-Relief Mattresses', 'Patient Hoists', 'Overbed Tables'
         ]
     },
     {
-        name: 'Medical Infrastructure',
+        name: 'Rehabilitation & Physiotherapy Equipment',
+        icon: 'Accessibility',
+        subcategories: [
+            'TENS Units', 'CPM Machines', 'Traction Tables', 'Rehab Cycles', 'Mobility Aids', 'Laser Therapy Units', 'Shockwave Therapy'
+        ]
+    },
+    {
+        name: 'Emergency & Pre-Hospital Equipment',
+        icon: 'Ambulance',
+        subcategories: [
+            'Crash Carts', 'Transport Incubators', 'Portable Defibrillators', 'Suction Units', 'Spine Boards', 'Emergency Resuscitation Kits'
+        ]
+    },
+    {
+        name: 'Neonatal & Pediatric Equipment',
+        icon: 'Baby',
+        subcategories: [
+            'Infant Incubators', 'Radiant Warmers', 'Phototherapy Units', 'Fetal Monitors', 'Neonatal Ventilators', 'Bassinets'
+        ]
+    },
+    {
+        name: 'Home Healthcare Equipment',
+        icon: 'HeartPulse',
+        subcategories: [
+            'CPAP/BiPAP', 'Oxygen Concentrators', 'Home Care Beds', 'Pulse Oximeters', 'Nebulizers', 'Glucometers', 'BP Monitors'
+        ]
+    },
+    {
+        name: 'Oncology & Radiotherapy Equipment',
+        icon: 'Zap',
+        subcategories: [
+            'Linear Accelerators (LINAC)', 'Brachytherapy Systems', 'Treatment Planning Systems', 'Dosimetry Equipment'
+        ]
+    },
+    {
+        name: 'Dialysis & Renal Care Equipment',
+        icon: 'Droplet',
+        subcategories: [
+            'Hemodialysis Machines', 'CRRT Machines', 'RO Water Plants', 'Peritoneal Dialysis Cyclers', 'Dialyzer Reprocessing Systems'
+        ]
+    },
+    {
+        name: 'Medical Infrastructure & Hospital Systems',
         icon: 'Building2',
         subcategories: [
             'Medical Gas Pipeline Systems', 'HVAC & Cleanroom Systems', 'Modular OT Systems', 'Nurse Call Systems',
@@ -130,24 +122,10 @@ export const EQUIPMENT_HIERARCHY = [
         ]
     },
     {
-        name: 'Dental',
-        icon: 'Smile',
+        name: 'Medical Consumables, Implants & Disposables',
+        icon: 'Syringe',
         subcategories: [
-            'Dental Chairs', 'Dental Imaging (CBCT / RVG)', 'Implant Systems', 'Endomotors', 'Dental Lasers'
-        ]
-    },
-    {
-        name: 'Rehabilitation & Physiotherapy',
-        icon: 'Accessibility',
-        subcategories: [
-            'TENS Units', 'CPM Machines', 'Traction Tables', 'Rehab Cycles', 'Mobility Aids'
-        ]
-    },
-    {
-        name: 'Veterinary',
-        icon: 'Cat',
-        subcategories: [
-            'Vet Imaging', 'Vet Surgery', 'Animal Monitoring', 'Vet Sterilization'
+            'Surgical Implants', 'Orthopedic Implants', 'Catheters', 'Syringes & Needles', 'PPE', 'Sutures', 'Wound Care Dressings'
         ]
     }
 ] as const
@@ -187,22 +165,9 @@ export const BUSINESS_TYPES = [
 
 export const CONDITIONS = ['New', 'Used', 'Refurbished'] as const
 
-export const SPECIALTIES = [
-    'Cardiology',
-    'Neurology',
-    'Orthopedics',
-    'Pediatrics',
-    'Radiology',
-    'Dermatology',
-    'ICU / Critical Care',
-    'General Surgery',
-    'Gynecology',
-    'Ent',
-    'Ophthalmology',
-    'Urology',
-    'Oncology',
-    'Interventional'
-] as const
+export const SPECIALTIES = Array.from(
+    new Set(EQUIPMENT_HIERARCHY.flatMap(c => c.subcategories))
+).sort()
 
 export const WARRANTIES = [
     'No Warranty',

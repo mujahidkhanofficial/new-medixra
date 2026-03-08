@@ -117,7 +117,9 @@ export async function logout() {
             return { success: false, error: 'Service Unavailable' }
         }
 
-        // Get current user session for fast audit logging without DB roundtrip
+        // Use getSession() instead of getUser() during logout. 
+        // If the user sat idle and their token expired, getUser() will attempt a refresh and potentially hang/fail.
+        // We only need the ID to log the audit event anyway.
         const { data: { session } } = await supabase.auth.getSession()
         const user = session?.user
 
@@ -131,7 +133,10 @@ export async function logout() {
                 status: 'error',
                 reason: error.message,
             })
-            return { success: false, error: error.message }
+            // Even if Supabase throws an error (e.g., token already dead), we still return success 
+            // to the client so they can clear their local state and return to the login screen.
+            revalidatePath('/', 'layout')
+            return { success: true }
         }
 
         // Log successful logout

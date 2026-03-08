@@ -40,7 +40,7 @@ export default function HowItWorksPage() {
                     <div className="mx-auto max-w-screen-2xl px-4 text-center">
                         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">How Medixra Works</h1>
                         <p className="text-xl text-muted-foreground">
-                            A direct bridge between medical equipment users, sellers, and specialized technicians in Pakistan.
+                            A direct bridge between medical equipment users, sellers, and specialized engineers in Pakistan.
                         </p>
                     </div>
                 </section>

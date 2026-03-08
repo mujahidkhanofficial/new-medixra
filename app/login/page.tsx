@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useState, useActionState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { FormError } from '@/components/ui/form-error'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
 import { useAuth } from '@/components/providers/auth-provider'
+import { Eye, EyeOff } from 'lucide-react'
 import { loginAction } from '@/lib/actions/auth'
 import { getRoleDashboard } from '@/lib/auth/role-redirect'
 
@@ -24,6 +25,7 @@ export default function LoginPage() {
     const [state, formAction, isPending] = useActionState(loginAction, initialState)
     const router = useRouter()
     const { user, profile, loading } = useAuth()
+    const [showPassword, setShowPassword] = useState(false)
     const formErrors = (state?.errors || {}) as Record<string, string[]>
 
     // Handle server action success
@@ -139,12 +141,23 @@ export default function LoginPage() {
                         </FormField>
 
                         <FormField label="Password" required error={formErrors.password?.[0]}>
-                            <Input
-                                name="password"
-                                type="password"
-                                placeholder="••••••••"
-                                disabled={isPending}
-                            />
+                            <div className="relative">
+                                <Input
+                                    name="password"
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="••••••••"
+                                    disabled={isPending}
+                                    className="pr-10"
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    tabIndex={-1}
+                                >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                            </div>
                         </FormField>
 
                         <Button type="submit" className="w-full" disabled={isPending}>

@@ -12,13 +12,13 @@ import { FormError } from '@/components/ui/form-error'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
 import { useAuth } from '@/components/providers/auth-provider'
-import { getTechnicianProfile, updateTechnicianProfile } from '@/lib/actions/technician'
+import { getEngineerProfile, updateEngineerProfile } from '@/lib/actions/engineer'
 import { getErrorMessage } from '@/lib/error-handler'
 import { toast } from 'sonner'
 import { CITIES, SPECIALTIES } from '@/lib/constants'
 import { MultiSelectSpecialities } from '@/components/ui/multi-select-specialities'
 
-export default function TechnicianEditPage() {
+export default function EngineerEditPage() {
     const router = useRouter()
     const { user, loading: authLoading } = useAuth()
 
@@ -42,7 +42,7 @@ export default function TechnicianEditPage() {
         async function loadProfile() {
             try {
                 setLoading(true)
-                const data = await getTechnicianProfile(user!.id)
+                const data = await getEngineerProfile(user!.id)
 
                 if (!data) {
                     setError('Profile not found')
@@ -90,7 +90,7 @@ export default function TechnicianEditPage() {
         setErrors({})
 
         try {
-            const result = await updateTechnicianProfile({
+            const result = await updateEngineerProfile({
                 fullName: formData.fullName,
                 phone: formData.phone,
                 city: formData.city,
@@ -100,7 +100,7 @@ export default function TechnicianEditPage() {
 
             if (result.success) {
                 toast.success('Profile updated successfully!')
-                router.push('/dashboard/technician')
+                router.push('/dashboard/engineer')
             } else if (result.error) {
                 setError(result.error)
             }
@@ -138,8 +138,8 @@ export default function TechnicianEditPage() {
                 <main className="flex-1 flex items-center justify-center px-4">
                     <div className="max-w-md text-center space-y-4">
                         <h1 className="text-2xl font-bold text-foreground">{error}</h1>
-                        <Button onClick={() => router.push('/dashboard/technician')} asChild>
-                            <Link href="/dashboard/technician">Back to Dashboard</Link>
+                        <Button onClick={() => router.push('/dashboard/engineer')} asChild>
+                            <Link href="/dashboard/engineer">Back to Dashboard</Link>
                         </Button>
                     </div>
                 </main>
@@ -155,13 +155,13 @@ export default function TechnicianEditPage() {
                 <div className="w-full max-w-2xl">
                     {/* Header */}
                     <div className="flex items-center gap-4 mb-8">
-                        <Link href="/dashboard/technician">
+                        <Link href="/dashboard/engineer">
                             <Button variant="outline" size="sm">
                                 <ArrowLeft className="h-4 w-4 mr-2" />
                                 Back
                             </Button>
                         </Link>
-                        <h1 className="text-3xl font-bold text-foreground">Edit Technician Profile</h1>
+                        <h1 className="text-3xl font-bold text-foreground">Edit Engineer Profile</h1>
                     </div>
 
                     {/* Form */}
@@ -257,7 +257,7 @@ export default function TechnicianEditPage() {
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => router.push('/dashboard/technician')}
+                                onClick={() => router.push('/dashboard/engineer')}
                                 disabled={isSubmitting}
                             >
                                 Cancel

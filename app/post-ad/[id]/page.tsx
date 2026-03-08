@@ -50,7 +50,8 @@ export default async function EditAdPage({ params }: { params: Promise<{ id: str
         name: typedProduct.name,
         description: typedProduct.description || '', // Ensure no nulls for controlled inputs
         price: typedProduct.price?.toString() || '',
-        category: typedProduct.category,
+        // JSON Arrays
+        category: safeJsonParse(typedProduct.category, []),
         condition: typedProduct.condition || 'Used',
         brand: typedProduct.brand || '',
         warranty: typedProduct.warranty || 'No Warranty',

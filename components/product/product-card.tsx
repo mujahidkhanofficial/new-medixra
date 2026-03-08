@@ -15,6 +15,7 @@ interface ProductCardProps {
         created_at?: string | Date
         condition?: string | null
         category?: string | null
+        speciality?: string | null
         vendor_name?: string | null
     }
     isSaved: boolean
@@ -28,6 +29,32 @@ export function ProductCard({ product, isSaved }: ProductCardProps) {
     const priceDisplay = typeof product.price === 'number'
         ? `${product.currency || 'Rs'} ${product.price.toLocaleString()}`
         : product.price
+
+    // Determine the primary label (Specialty > Category) for the card
+    let primaryLabel = 'Medical Equipment'
+    if (product.speciality) {
+        try {
+            const parsed = JSON.parse(product.speciality)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                primaryLabel = parsed[0]
+            } else if (typeof product.speciality === 'string') {
+                primaryLabel = product.speciality
+            }
+        } catch {
+            primaryLabel = product.speciality
+        }
+    } else if (product.category) {
+        try {
+            const parsed = JSON.parse(product.category)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                primaryLabel = parsed[0]
+            } else if (typeof product.category === 'string') {
+                primaryLabel = product.category
+            }
+        } catch {
+            primaryLabel = product.category
+        }
+    }
 
     return (
         <div className="group flex flex-col h-full bg-card rounded-lg overflow-hidden border border-border hover:shadow-md transition-shadow">
@@ -61,7 +88,7 @@ export function ProductCard({ product, isSaved }: ProductCardProps) {
             <div className="p-3 flex flex-col flex-1 gap-1">
                 {/* Price & Heart */}
                 <div className="flex justify-between items-start">
-                    <h3 className="text-lg font-bold text-primary truncate leading-tight">
+                    <h3 className="text-lg font-bold text-primary truncate leading-tight" suppressHydrationWarning>
                         {priceDisplay}
                     </h3>
                     <SaveButton
@@ -74,9 +101,14 @@ export function ProductCard({ product, isSaved }: ProductCardProps) {
                     />
                 </div>
 
+                {/* Subtitle (Specialty/Category) */}
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5 mt-1 line-clamp-1 font-medium">
+                    {primaryLabel}
+                </p>
+
                 {/* Title */}
                 <Link href={`/product/${product.id}`} className="block group-hover:text-primary transition-colors">
-                    <h4 className="text-sm font-medium text-foreground line-clamp-1" title={product.name}>
+                    <h4 className="text-sm font-medium text-foreground line-clamp-2" title={product.name}>
                         {product.name}
                     </h4>
                 </Link>
@@ -84,11 +116,11 @@ export function ProductCard({ product, isSaved }: ProductCardProps) {
                 {/* Location & Time */}
                 <div className="mt-auto pt-2 flex flex-col gap-0.5">
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <span className="truncate">{product.location || 'Pakistan'}</span>
+                        <span className="truncate" suppressHydrationWarning>{product.location || 'Pakistan'}</span>
                     </div>
                     {timeAgo && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <span className="truncate">{timeAgo}</span>
+                            <span className="truncate" suppressHydrationWarning>{timeAgo}</span>
                         </div>
                     )}
                 </div>

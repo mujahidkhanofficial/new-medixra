@@ -1,51 +1,22 @@
 import Link from 'next/link'
-import {
-  MessageCircle, Wrench, Building2, Star, MapPin, Filter, Package,
-  Activity, Scissors, FlaskConical, Stethoscope, HeartPulse,
-  Ear, Brain, Bone, Accessibility, Baby, ScanEye, Sparkles, Armchair, Smile, Cat, CheckCircle, ArrowRight, ShieldCheck, Zap
-} from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
+import { ArrowRight, ShieldCheck, MapPin, Zap, Filter, Package, Stethoscope, Building2, Wrench } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
-import { ProductCard } from '@/components/product/product-card'
 import { getProducts } from '@/lib/actions/products'
 import { createClient } from '@/lib/supabase/server'
 import { getSavedProductIds } from '@/lib/actions/saved-items'
-import { HomeSearchBar } from '@/components/home/search-bar'
 import { EQUIPMENT_HIERARCHY } from '@/lib/constants'
 import { VendorsMarquee } from '@/components/home/vendors-marquee'
-import { getApprovedTechnicians } from '@/lib/actions/technician'
+import { FeaturedSlider } from '@/components/home/featured-slider'
+import { getApprovedEngineers } from '@/lib/actions/engineer'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Metadata } from 'next'
-
-const iconMap = {
-  'Activity': Activity,
-  'HeartPulse': HeartPulse,
-  'Ear': Ear,
-  'Brain': Brain,
-  'Bone': Bone,
-  'Accessibility': Accessibility,
-  'Baby': Baby,
-  'Scalpel': Scissors,
-  'ScanEye': ScanEye,
-  'FlaskConical': FlaskConical,
-  'Stethoscope': Stethoscope,
-  'Sparkles': Sparkles,
-  'Armchair': Armchair,
-  'Building2': Building2,
-  'Smile': Smile,
-  'Cat': Cat
-}
-
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: 'Home',
-}
-
 export default async function Home() {
-  const products = await getProducts({ limit: 6 })
+  const products = await getProducts({ limit: 10 })
   const supabase = await createClient()
 
   let user = null
@@ -56,58 +27,87 @@ export default async function Home() {
 
   const savedIds = user ? await getSavedProductIds(user.id) : []
 
-  // Dynamically fetch actual approved technicians instead of using mock data
-  const allTechnicians = await getApprovedTechnicians()
-  const topTechnicians = allTechnicians.slice(0, 4)
+  // Dynamically fetch actual approved engineers instead of using mock data
+  const allEngineers = await getApprovedEngineers()
+  const topEngineers = allEngineers.slice(0, 4)
 
+  // Force Turbopack HMR cache clearing
   return (
-    <main className="min-h-screen flex flex-col bg-background selection:bg-primary/20">
+    <main className="min-h-screen flex flex-col bg-background selection:bg-primary/20" suppressHydrationWarning>
       <Navigation />
 
-      {/* High-Impact Hero Section */}
-      <section className="relative overflow-hidden pt-24 pb-32 md:pt-32 md:pb-40 tracking-tight">
-        {/* Subtle Background Glows */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
+      {/* High-Impact Hero Section (Teal Redesign) */}
+      <section className="relative w-full bg-[#1B7484] pt-24 pb-40 md:pt-32 md:pb-48">
+        <div className="mx-auto max-w-7xl px-4 md:px-8">
 
-        <div className="mx-auto max-w-7xl px-4 text-center">
+          <div className="max-w-2xl text-left">
+            <h1 className="mb-6 text-4xl font-black tracking-tight text-white sm:text-5xl md:text-6xl leading-[1.1]">
+              Medical Equipment Marketplace for Pakistan
+            </h1>
 
-          <h1 className="mb-6 mx-auto max-w-4xl text-5xl font-black tracking-tighter sm:text-6xl md:text-7xl">
-            The Direct Network for
-            <span className="block text-transparent bg-clip-text bg-linear-to-r from-primary to-primary/60 mt-1">
-              Medical Equipment
-            </span>
-          </h1>
+            <p className="mb-10 text-lg text-white/90 font-medium leading-relaxed max-w-xl">
+              The trusted platform for doctors, hospitals, and vendors to buy and sell quality medical equipment securely and efficiently.
+            </p>
 
-          <p className="mx-auto mb-12 max-w-2xl text-lg md:text-xl text-muted-foreground font-medium leading-relaxed">
-            Connect directly with verified vendors, buyers, and certified technicians across Pakistan. <strong className="text-foreground">Zero commissions. Complete transparency.</strong>
-          </p>
-
-          {/* Minimalist Search Bar */}
-          <div className="mx-auto max-w-2xl mb-14 relative z-10">
-            <HomeSearchBar />
-          </div>
-
-          {/* Inline Trust Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm font-semibold text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-emerald-500" />
-              Verified Vendors
-            </div>
-            <div className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-blue-500" />
-              Direct WhatsApp Chat
-            </div>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              Secure Ecosystem
-            </div>
-            <div className="flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-amber-500" />
-              Certified Technicians
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-4">
+              <Button asChild className="bg-white text-[#1B7484] hover:bg-gray-100 font-bold px-8 py-6 rounded-md shadow-lg text-base transition-colors">
+                <Link href="/products">Browse Equipment</Link>
+              </Button>
+              <Button asChild className="bg-emerald-500 text-white hover:bg-emerald-600 font-bold px-8 py-6 rounded-md shadow-lg text-base flex items-center gap-2 transition-colors">
+                <Link href="/post-ad">
+                  Post a Listing <ArrowRight className="h-5 w-5" />
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Overlapping Quick Access Cards */}
+      <div className="relative z-10 -mt-24 md:-mt-16 lg:-mt-28 px-4 md:px-8 mb-12 lg:mb-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4 lg:gap-6">
+
+            {/* Card 1 */}
+            <Link href="/products" className="group flex flex-col items-center justify-center bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 p-6 md:p-5 lg:p-8 text-center border border-gray-100 min-h-[160px] lg:min-h-[180px]">
+              <div className="h-12 w-12 rounded-full bg-[#1B7484]/10 flex items-center justify-center mb-4 text-[#1B7484] group-hover:scale-110 transition-transform">
+                <Stethoscope className="h-6 w-6" />
+              </div>
+              <h3 className="font-bold text-gray-900 text-lg md:text-base lg:text-lg mb-2">Browse by Specialty</h3>
+              <p className="text-gray-500 text-sm md:text-xs lg:text-sm leading-relaxed">Find equipment for specific medical fields</p>
+            </Link>
+
+            {/* Card 2 */}
+            <Link href="/products" className="group flex flex-col items-center justify-center bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 p-6 md:p-5 lg:p-8 text-center border border-gray-100 min-h-[160px] lg:min-h-[180px]">
+              <div className="h-12 w-12 rounded-full bg-[#1B7484]/10 flex items-center justify-center mb-4 text-[#1B7484] group-hover:scale-110 transition-transform">
+                <Package className="h-6 w-6" />
+              </div>
+              <h3 className="font-bold text-gray-900 text-lg md:text-base lg:text-lg mb-2">Browse by Category</h3>
+              <p className="text-gray-500 text-sm md:text-xs lg:text-sm leading-relaxed">Explore diagnostic, surgical & more</p>
+            </Link>
+
+            {/* Card 3 */}
+            <Link href="/signup?role=vendor" className="group flex flex-col items-center justify-center bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 p-6 md:p-5 lg:p-8 text-center border border-gray-100 min-h-[160px] lg:min-h-[180px]">
+              <div className="h-12 w-12 rounded-full bg-[#1B7484]/10 flex items-center justify-center mb-4 text-[#1B7484] group-hover:scale-110 transition-transform">
+                <Building2 className="h-6 w-6" />
+              </div>
+              <h3 className="font-bold text-gray-900 text-lg md:text-base lg:text-lg mb-2">Register as Vendor</h3>
+              <p className="text-gray-500 text-sm md:text-xs lg:text-sm leading-relaxed">Create your professional store profile</p>
+            </Link>
+
+            {/* Card 4 */}
+            <Link href="/engineers" className="group flex flex-col items-center justify-center bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 p-6 md:p-5 lg:p-8 text-center border border-gray-100 min-h-[160px] lg:min-h-[180px]">
+              <div className="h-12 w-12 rounded-full bg-[#1B7484]/10 flex items-center justify-center mb-4 text-[#1B7484] group-hover:scale-110 transition-transform">
+                <Wrench className="h-6 w-6" />
+              </div>
+              <h3 className="font-bold text-gray-900 text-lg md:text-base lg:text-lg mb-2">Find Engineers</h3>
+              <p className="text-gray-500 text-sm md:text-xs lg:text-sm leading-relaxed">Certified equipment maintenance</p>
+            </Link>
+
+          </div>
+        </div>
+      </div>
 
       {/* Marquee Section */}
       <VendorsMarquee />
@@ -127,36 +127,44 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 relative">
             {EQUIPMENT_HIERARCHY.map((category) => {
-              const Icon = iconMap[category.icon as keyof typeof iconMap] || Package
+              const Icon = (LucideIcons as any)[category.icon] || Package
               return (
-                <Link
-                  href={`/products?category=${encodeURIComponent(category.name)}`}
+                <div
                   key={category.name}
-                  className="group flex flex-col bg-card/50 backdrop-blur-sm border border-border/60 hover:border-primary/40 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
+                  className="group relative flex flex-col bg-card/50 backdrop-blur-sm border border-border/60 hover:border-primary/40 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
                 >
-                  <div className="flex items-center gap-4 mb-6">
+                  <Link
+                    href={`/products?category=${encodeURIComponent(category.name)}`}
+                    className="absolute inset-0 z-0 rounded-2xl"
+                    aria-label={`View all ${category.name}`}
+                  />
+
+                  <div className="flex items-center gap-4 mb-6 relative z-10 pointer-events-none">
                     <div className="h-12 w-12 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 shadow-inner">
                       <Icon className="h-6 w-6" />
                     </div>
                     <h3 className="font-bold text-lg text-foreground tracking-tight line-clamp-2">{category.name}</h3>
                   </div>
 
-                  <ul className="space-y-3 mb-6 grow">
-                    {category.subcategories.slice(0, 4).map((sub) => (
-                      <li key={sub}>
-                        <div className="text-sm text-muted-foreground group-hover/item:text-foreground transition-colors flex items-center gap-2.5">
-                          <span className="h-1.5 w-1.5 rounded-full bg-border group-hover:bg-primary/50 transition-colors shrink-0" />
-                          <span className="line-clamp-1 group-hover:translate-x-1 transition-transform duration-300">{sub}</span>
-                        </div>
+                  <ul className="space-y-1.5 mb-6 grow relative z-10 pointer-events-none">
+                    {category.subcategories.map((sub) => (
+                      <li key={sub} className="pointer-events-auto">
+                        <Link
+                          href={`/products?category=${encodeURIComponent(category.name)}&speciality=${encodeURIComponent(sub)}`}
+                          className="group/item flex items-center gap-2.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-300 px-2 -mx-2 py-1.5 rounded-md"
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-border group-hover/item:bg-primary group-hover:bg-primary/50 transition-colors shrink-0" />
+                          <span className="line-clamp-1 group-hover/item:translate-x-1 transition-transform duration-300">{sub}</span>
+                        </Link>
                       </li>
                     ))}
                   </ul>
 
-                  <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between text-sm font-semibold text-primary/80 group-hover:text-primary transition-colors">
+                  <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between text-sm font-semibold text-primary/80 group-hover:text-primary transition-colors relative z-10 pointer-events-none">
                     <span>View Collection</span>
                     <ArrowRight className="h-4 w-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                   </div>
-                </Link>
+                </div>
               )
             })}
           </div>
@@ -178,14 +186,8 @@ export default async function Home() {
           </div>
 
           {products.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  isSaved={savedIds.includes(product.id)}
-                />
-              ))}
+            <div className="-mx-4 md:mx-0">
+              <FeaturedSlider products={products} savedIds={savedIds} />
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 bg-muted/10 rounded-3xl border border-dashed border-border/60">
@@ -202,7 +204,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Premium Technicians Network */}
+      {/* Premium Engineers Network */}
       <section className="py-24 bg-card border-y border-border/40 relative overflow-hidden">
         {/* Decorative Background Element */}
         <div className="absolute right-0 bottom-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[100px] -z-10 translate-x-1/3 translate-y-1/3 pointer-events-none" />
@@ -213,18 +215,18 @@ export default async function Home() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary font-semibold text-xs tracking-wider uppercase mb-4">
                 <Zap className="h-3.5 w-3.5" /> Service Network
               </div>
-              <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">Certified Technical Support</h2>
+              <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">Certified Engineering Support</h2>
               <p className="text-muted-foreground mt-3 text-lg leading-relaxed">
-                Connect instantly with top-rated medical technicians for emergency repairs, preventative maintenance, and calibration.
+                Connect instantly with top-rated medical engineers for emergency repairs, preventative maintenance, and calibration.
               </p>
             </div>
             <Button variant="outline" className="rounded-full shadow-sm shrink-0" asChild>
-              <Link href="/technicians">View All Technicians <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              <Link href="/engineers">View All Engineers <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {topTechnicians.length > 0 ? topTechnicians.map((tech) => (
+            {topEngineers.length > 0 ? topEngineers.map((tech) => (
               <div key={tech.id} className="group flex flex-col rounded-2xl border border-border/50 bg-background/60 backdrop-blur-md p-6 hover:border-primary/30 transition-all hover:shadow-xl hover:shadow-primary/5">
                 <div className="flex items-start gap-4 mb-5">
                   <Avatar className="h-14 w-14 border border-border bg-card shadow-sm group-hover:border-primary/20 transition-colors">
@@ -271,13 +273,13 @@ export default async function Home() {
                   </div>
                 </div>
 
-                <Link href={`/technicians`} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary transition-colors font-bold text-sm">
+                <Link href={`/engineers`} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary transition-colors font-bold text-sm">
                   View Profile
                 </Link>
               </div>
             )) : (
               <div className="col-span-full py-12 text-center text-muted-foreground border border-dashed border-border rounded-2xl bg-muted/10">
-                No technicians have joined the network yet.
+                No engineers have joined the network yet.
               </div>
             )}
           </div>

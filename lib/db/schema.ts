@@ -54,7 +54,7 @@ export const vendors = pgTable("vendors", {
     pgPolicy("Vendors can update own business", { as: "permissive", for: "update", to: ["public"], using: sql`auth.uid() = id`, withCheck: sql`auth.uid() = id` }),
 ]);
 
-export const technicians = pgTable("technicians", {
+export const engineers = pgTable("engineers", {
     id: uuid().primaryKey().notNull(),
     speciality: text(),
     experienceYears: text("experience_years"),
@@ -68,11 +68,11 @@ export const technicians = pgTable("technicians", {
     foreignKey({
         columns: [table.id],
         foreignColumns: [profiles.id],
-        name: "technicians_id_profiles_id_fk"
+        name: "engineers_id_profiles_id_fk"
     }).onDelete("cascade"),
-    pgPolicy("Public Technicians", { as: "permissive", for: "select", to: ["public"], using: sql`true` }),
-    pgPolicy("Technicians can insert own profile", { as: "permissive", for: "insert", to: ["public"], withCheck: sql`auth.uid() = id` }),
-    pgPolicy("Technicians can update own profile", { as: "permissive", for: "update", to: ["public"], using: sql`auth.uid() = id`, withCheck: sql`auth.uid() = id` }),
+    pgPolicy("Public Engineers", { as: "permissive", for: "select", to: ["public"], using: sql`true` }),
+    pgPolicy("Engineers can insert own profile", { as: "permissive", for: "insert", to: ["public"], withCheck: sql`auth.uid() = id` }),
+    pgPolicy("Engineers can update own profile", { as: "permissive", for: "update", to: ["public"], using: sql`auth.uid() = id`, withCheck: sql`auth.uid() = id` }),
 ]);
 
 export const products = pgTable("products", {
@@ -269,6 +269,56 @@ export const productAnalytics = pgTable("product_analytics", {
     pgPolicy("Public can update analytics", { as: "permissive", for: "update", to: ["public"], using: sql`true`, withCheck: sql`true` }),
 ]);
 
+export const blogs = pgTable("blogs", {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    title: text().notNull(),
+    slug: text().unique().notNull(),
+    content: text().notNull(),
+    excerpt: text(),
+    coverImageUrl: text("cover_image_url"),
+    metaTitle: text("meta_title"),
+    metaDescription: text("meta_description"),
+    status: text().default('draft').notNull(), // 'draft', 'published'
+    authorId: uuid("author_id").notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true, mode: 'string' }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+    index("blogs_slug_idx").on(table.slug),
+    index("blogs_status_idx").on(table.status),
+    index("blogs_author_idx").on(table.authorId),
+    foreignKey({
+        columns: [table.authorId],
+        foreignColumns: [profiles.id],
+        name: "blogs_author_id_fkey"
+    }).onDelete("cascade"),
+    pgPolicy("Public published blogs", { as: "permissive", for: "select", to: ["public"], using: sql`status = 'published'` }),
+    pgPolicy("Admins full access blogs", { as: "permissive", for: "all", to: ["public"], using: sql`auth.jwt()->>'role' = 'admin'` }),
+]);
+
+export const communityMessages = pgTable("community_messages", {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    userId: uuid("user_id").notNull(),
+    replyToId: uuid("reply_to_id"),
+    content: text().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+    index("community_messages_created_idx").on(table.createdAt),
+    foreignKey({
+        columns: [table.userId],
+        foreignColumns: [profiles.id],
+        name: "community_messages_user_id_fkey"
+    }).onDelete("cascade"),
+    foreignKey({
+        columns: [table.replyToId],
+        foreignColumns: [table.id],
+        name: "community_messages_reply_to_id_fkey"
+    }).onDelete("set null"),
+    pgPolicy("Public read community messages", { as: "permissive", for: "select", to: ["public"], using: sql`true` }),
+    pgPolicy("Authenticated users can post", { as: "permissive", for: "insert", to: ["public"], withCheck: sql`auth.role() = 'authenticated' AND auth.uid() = user_id` }),
+    pgPolicy("Users can delete own messages", { as: "permissive", for: "delete", to: ["public"], using: sql`auth.uid() = user_id` }),
+]);
+
 // --- Relations ---
 
 export const vendorsRelations = relations(vendors, ({ one }) => ({
@@ -280,17 +330,19 @@ export const vendorsRelations = relations(vendors, ({ one }) => ({
 
 export const profilesRelations = relations(profiles, ({ many }) => ({
     vendors: many(vendors),
-    technicians: many(technicians),
+    engineers: many(engineers),
     savedItems: many(savedItems),
     products: many(products),
     productAnalytics: many(productAnalytics, { relationName: "vendorProfile" }),
     reportsCreated: many(productReports, { relationName: "reportedBy" }),
     reportsResolved: many(productReports, { relationName: "resolvedBy" }),
+    blogs: many(blogs),
+    communityMessages: many(communityMessages),
 }));
 
-export const techniciansRelations = relations(technicians, ({ one }) => ({
+export const engineersRelations = relations(engineers, ({ one }) => ({
     profile: one(profiles, {
-        fields: [technicians.id],
+        fields: [engineers.id],
         references: [profiles.id]
     }),
 }));
@@ -350,5 +402,24 @@ export const productAnalyticsRelations = relations(productAnalytics, ({ one }) =
         fields: [productAnalytics.vendorId],
         references: [profiles.id],
         relationName: "vendorProfile"
+    })
+}));
+
+export const blogsRelations = relations(blogs, ({ one }) => ({
+    author: one(profiles, {
+        fields: [blogs.authorId],
+        references: [profiles.id]
+    }),
+}));
+
+export const communityMessagesRelations = relations(communityMessages, ({ one }) => ({
+    user: one(profiles, {
+        fields: [communityMessages.userId],
+        references: [profiles.id]
+    }),
+    repliedTo: one(communityMessages, {
+        fields: [communityMessages.replyToId],
+        references: [communityMessages.id],
+        relationName: "threadReplies"
     })
 }));

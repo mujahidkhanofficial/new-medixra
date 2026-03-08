@@ -56,6 +56,7 @@ export type ProductFilterOptions = {
     minPrice?: number
     maxPrice?: number
     condition?: string
+    speciality?: string
     limit?: number
 }
 
@@ -66,7 +67,13 @@ export async function getProducts(options: ProductFilterOptions = {}) {
                 const conditions = [eq(products.status, 'active')];
 
                 if (options.category && options.category !== 'All Categories') {
-                    conditions.push(eq(products.category, options.category));
+                    // Category is stored as a stringified JSON array like '["Category A", "Category B"]'
+                    conditions.push(ilike(products.category, `%${options.category}%`));
+                }
+
+                if (options.speciality && options.speciality !== 'All Specialties') {
+                    // Speciality is also stored as a stringified JSON array
+                    conditions.push(ilike(products.speciality, `%${options.speciality}%`));
                 }
 
                 if (options.condition && options.condition !== 'All') {

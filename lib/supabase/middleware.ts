@@ -41,7 +41,7 @@ export async function updateSession(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     // Public routes that should be accessible to unauthenticated users
-    const publicPaths = ['/', '/login', '/signup', '/about-us', '/how-it-works', '/products', '/technicians', '/shop', '/privacy', '/terms', '/safety-compliance']
+    const publicPaths = ['/', '/login', '/signup', '/about-us', '/how-it-works', '/products', '/engineers', '/shop', '/privacy', '/terms', '/safety-compliance']
     const isPublicPath = publicPaths.some(path =>
         path === '/' ?
             request.nextUrl.pathname === '/' :
@@ -112,10 +112,10 @@ export async function updateSession(request: NextRequest) {
         }
 
         // CRITICAL: For vendor/technician restricted routes, also check approval status
-        const vendorTechRoutes = ['/dashboard/vendor', '/dashboard/technician']
+        const vendorTechRoutes = ['/dashboard/vendor', '/dashboard/engineer']
         const isVendorTechRoute = vendorTechRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
-        if (isVendorTechRoute && (userRole === 'vendor' || userRole === 'technician')) {
+        if (isVendorTechRoute && (userRole === 'vendor' || userRole === 'engineer')) {
             if (approvalStatus !== 'approved') {
                 // Redirect to pending approval page, not unauthorized
                 return NextResponse.redirect(new URL('/pending-approval', request.url))

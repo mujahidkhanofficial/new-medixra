@@ -49,24 +49,93 @@ async function main() {
         ALTER TABLE public.vendors ADD COLUMN IF NOT EXISTS business_type text DEFAULT 'Retailer';
         ALTER TABLE public.vendors ADD COLUMN IF NOT EXISTS years_in_business text DEFAULT '1';
         
-        -- Add missing analytics metrics to technicians 
-        ALTER TABLE public.technicians ADD COLUMN IF NOT EXISTS views integer DEFAULT 0;
-        ALTER TABLE public.technicians ADD COLUMN IF NOT EXISTS whatsapp_clicks integer DEFAULT 0;
+        -- Add missing analytics metrics to engineers 
+        ALTER TABLE public.engineers ADD COLUMN IF NOT EXISTS views integer DEFAULT 0;
+        ALTER TABLE public.engineers ADD COLUMN IF NOT EXISTS whatsapp_clicks integer DEFAULT 0;
     `);
     console.log('   ✅ product_analytics and vendor table columns active.\n');
 
+
+    // ─── 1.5 Create blogs table manually ─────────────────────────
+    console.log('📝 Step 1.5/5: Creating blogs table...');
+    await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS public.blogs (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+            title text NOT NULL,
+            slug text UNIQUE NOT NULL,
+            content text NOT NULL,
+            excerpt text,
+            cover_image_url text,
+            meta_title text,
+            meta_description text,
+            status text NOT NULL DEFAULT 'draft',
+            author_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+            published_at timestamp with time zone,
+            created_at timestamp with time zone NOT NULL DEFAULT now(),
+            updated_at timestamp with time zone NOT NULL DEFAULT now()
+        );
+
+        CREATE INDEX IF NOT EXISTS blogs_slug_idx ON public.blogs (slug);
+        CREATE INDEX IF NOT EXISTS blogs_status_idx ON public.blogs (status);
+        CREATE INDEX IF NOT EXISTS blogs_author_idx ON public.blogs (author_id);
+    `);
+    console.log('   ✅ blogs table active.\n');
+
+    // ─── 1.6 Create community_messages table manually ─────────────
+    console.log('💬 Step 1.6/5: Creating community_messages table...');
+    await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS public.community_messages (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+            user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+            reply_to_id uuid REFERENCES public.community_messages(id) ON DELETE SET NULL,
+            content text NOT NULL,
+            created_at timestamp with time zone NOT NULL DEFAULT now()
+        );
+
+        CREATE INDEX IF NOT EXISTS community_messages_created_idx ON public.community_messages (created_at);
+
+        -- CRITICAL: Configure Postgres for WebSockets / Supabase Realtime
+        -- Requires Replica Identity Full to capture row state changes
+        ALTER TABLE public.community_messages REPLICA IDENTITY FULL;
+        
+        -- Add to the active Supabase realtime publication if it exists
+        DO $$
+        BEGIN
+            IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+                ALTER PUBLICATION supabase_realtime ADD TABLE public.community_messages;
+            END IF;
+        EXCEPTION
+            WHEN undefined_object THEN
+                -- Publication doesn't exist yet, ignore
+            WHEN duplicate_object THEN
+                -- Table already in publication, ignore
+        END
+        $$;
+    `);
+    console.log('   ✅ community_messages table configured for Realtime.\n');
 
     // ─── 2. Enable RLS on all tables ─────────────────────────────
     console.log('🔒 Step 2/5: Enabling RLS on all tables...');
     await db.execute(sql`
         ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
         ALTER TABLE public.vendors ENABLE ROW LEVEL SECURITY;
-        ALTER TABLE public.technicians ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE public.engineers ENABLE ROW LEVEL SECURITY;
         ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
         ALTER TABLE public.product_images ENABLE ROW LEVEL SECURITY;
         ALTER TABLE public.saved_items ENABLE ROW LEVEL SECURITY;
         ALTER TABLE public.product_reports ENABLE ROW LEVEL SECURITY;
         ALTER TABLE public.product_analytics ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE public.blogs ENABLE ROW LEVEL SECURITY;
+
+        -- RLS Policies for blogs
+        DROP POLICY IF EXISTS "Public published blogs" ON public.blogs;
+        CREATE POLICY "Public published blogs" ON public.blogs
+            FOR SELECT USING (status = 'published');
+
+        DROP POLICY IF EXISTS "Admins full access blogs" ON public.blogs;
+        CREATE POLICY "Admins full access blogs" ON public.blogs
+            FOR ALL USING (auth.jwt()->>'role' = 'admin');
+
 
         -- RLS Policies for product_analytics
         DROP POLICY IF EXISTS "Vendors can view own analytics" ON public.product_analytics;
@@ -80,6 +149,21 @@ async function main() {
         DROP POLICY IF EXISTS "Public can update analytics" ON public.product_analytics;
         CREATE POLICY "Public can update analytics" ON public.product_analytics
             FOR UPDATE USING (true);
+            
+        -- RLS Policies for community_messages
+        ALTER TABLE public.community_messages ENABLE ROW LEVEL SECURITY;
+        
+        DROP POLICY IF EXISTS "Public read community messages" ON public.community_messages;
+        CREATE POLICY "Public read community messages" ON public.community_messages
+            FOR SELECT USING (true);
+
+        DROP POLICY IF EXISTS "Authenticated users can post" ON public.community_messages;
+        CREATE POLICY "Authenticated users can post" ON public.community_messages
+            FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND auth.uid() = user_id);
+
+        DROP POLICY IF EXISTS "Users can delete own messages" ON public.community_messages;
+        CREATE POLICY "Users can delete own messages" ON public.community_messages
+            FOR DELETE USING (auth.uid() = user_id);
     `);
     console.log('   ✅ RLS enabled on all tables.\n');
 
@@ -106,9 +190,9 @@ async function main() {
             BEFORE UPDATE ON public.vendors
             FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
 
-        DROP TRIGGER IF EXISTS set_technicians_updated_at ON public.technicians;
-        CREATE TRIGGER set_technicians_updated_at
-            BEFORE UPDATE ON public.technicians
+        DROP TRIGGER IF EXISTS set_engineers_updated_at ON public.engineers;
+        CREATE TRIGGER set_engineers_updated_at
+            BEFORE UPDATE ON public.engineers
             FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
 
         DROP TRIGGER IF EXISTS set_products_updated_at ON public.products;
@@ -119,6 +203,11 @@ async function main() {
         DROP TRIGGER IF EXISTS set_product_analytics_updated_at ON public.product_analytics;
         CREATE TRIGGER set_product_analytics_updated_at
             BEFORE UPDATE ON public.product_analytics
+            FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
+
+        DROP TRIGGER IF EXISTS set_blogs_updated_at ON public.blogs;
+        CREATE TRIGGER set_blogs_updated_at
+            BEFORE UPDATE ON public.blogs
             FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
     `);
     console.log('   ✅ updated_at triggers created.\n');
@@ -136,14 +225,14 @@ async function main() {
                 new.raw_user_meta_data->>'full_name',
                 new.raw_user_meta_data->>'avatar_url',
                 CASE
-                    WHEN (new.raw_user_meta_data->>'role') IN ('vendor', 'technician')
+                    WHEN (new.raw_user_meta_data->>'role') IN ('vendor', 'engineer')
                     THEN (new.raw_user_meta_data->>'role')
                     ELSE 'user'
                 END,
                 new.raw_user_meta_data->>'phone',
                 new.raw_user_meta_data->>'city',
                 CASE
-                    WHEN (new.raw_user_meta_data->>'role') IN ('vendor', 'technician')
+                    WHEN (new.raw_user_meta_data->>'role') IN ('vendor', 'engineer')
                     THEN 'pending'
                     ELSE 'approved'
                 END
@@ -159,13 +248,13 @@ async function main() {
                     new.raw_user_meta_data->'vendor'->>'years_in_business',
                     new.raw_user_meta_data->'vendor'->>'city'
                 );
-            ELSIF (new.raw_user_meta_data->>'role') = 'technician' THEN
-                INSERT INTO public.technicians (id, speciality, experience_years, city)
+            ELSIF (new.raw_user_meta_data->>'role') = 'engineer' THEN
+                INSERT INTO public.engineers (id, speciality, experience_years, city)
                 VALUES (
                     new.id,
-                    new.raw_user_meta_data->'technician'->>'speciality',
-                    new.raw_user_meta_data->'technician'->>'experience_years',
-                    new.raw_user_meta_data->'technician'->>'city'
+                    new.raw_user_meta_data->'engineer'->>'speciality',
+                    new.raw_user_meta_data->'engineer'->>'experience_years',
+                    new.raw_user_meta_data->'engineer'->>'city'
                 );
             END IF;
 

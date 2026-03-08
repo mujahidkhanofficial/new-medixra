@@ -70,7 +70,7 @@ export function UserDetailSheet({ user, isOpen, onClose }: UserDetailSheetProps)
                             <SheetTitle className="text-2xl font-bold">{user.name || user.fullName}</SheetTitle>
                             <SheetDescription className="flex items-center gap-2 mt-1">
                                 <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${user.role === 'vendor' ? 'bg-teal-50 text-teal-700 ring-teal-600/20' :
-                                    user.role === 'technician' ? 'bg-blue-50 text-blue-700 ring-blue-600/20' :
+                                    user.role === 'engineer' ? 'bg-blue-50 text-blue-700 ring-blue-600/20' :
                                         'bg-gray-50 text-gray-600 ring-gray-500/10'
                                     }`}>
                                     {user.role.toUpperCase()}

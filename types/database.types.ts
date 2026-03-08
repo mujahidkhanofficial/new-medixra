@@ -14,7 +14,7 @@ export interface Database {
                     id: string
                     email: string
                     full_name: string | null
-                    role: 'user' | 'vendor' | 'technician' | 'admin'
+                    role: 'user' | 'vendor' | 'engineer' | 'admin'
                     approval_status: 'approved' | 'pending' | 'rejected'
                     status: 'active' | 'suspended'
                     avatar_url: string | null
@@ -27,7 +27,7 @@ export interface Database {
                     id: string
                     email: string
                     full_name?: string | null
-                    role?: 'user' | 'vendor' | 'technician' | 'admin'
+                    role?: 'user' | 'vendor' | 'engineer' | 'admin'
                     approval_status?: 'approved' | 'pending' | 'rejected'
                     status?: 'active' | 'suspended'
                     avatar_url?: string | null
@@ -40,7 +40,7 @@ export interface Database {
                     id?: string
                     email?: string
                     full_name?: string | null
-                    role?: 'user' | 'vendor' | 'technician' | 'admin'
+                    role?: 'user' | 'vendor' | 'engineer' | 'admin'
                     approval_status?: 'approved' | 'pending' | 'rejected'
                     status?: 'active' | 'suspended'
                     avatar_url?: string | null
@@ -101,7 +101,7 @@ export interface Database {
                     }
                 ]
             }
-            technicians: {
+            engineers: {
                 Row: {
                     id: string
                     speciality: string | null
@@ -131,7 +131,7 @@ export interface Database {
                 }
                 Relationships: [
                     {
-                        foreignKeyName: "technicians_id_fkey"
+                        foreignKeyName: "engineers_id_fkey"
                         columns: ["id"]
                         isOneToOne: true
                         referencedRelation: "profiles"

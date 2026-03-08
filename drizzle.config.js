@@ -2,7 +2,7 @@
 const dotenv = require('dotenv');
 const { defineConfig } = require('drizzle-kit');
 
-dotenv.config({ path: '.env' });
+dotenv.config({ path: '.env.local' });
 
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not defined');
 

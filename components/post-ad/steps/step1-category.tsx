@@ -1,29 +1,8 @@
-import Image from 'next/image'
-import { PRODUCT_CATEGORIES } from '@/lib/constants'
+import { EQUIPMENT_HIERARCHY } from '@/lib/constants'
 import { AdFormData } from '../types'
-import { CheckCircle2 } from 'lucide-react'
-
-// Map product category to PNG in public/assets/categories
-const CATEGORY_ICON: Record<string, string> = {
-    'Anesthesia & Critical Care': '/assets/categories/Anesthesia.png',
-    'Cardiology & Cath Lab': '/assets/categories/Cardiology .png',
-    'ENT (Otolaryngology)': '/assets/categories/ent.png',
-    'Neurosurgery': '/assets/categories/neurosurgeon.png',
-    'Orthopedics': '/assets/categories/orthopedics.png',
-    'Urology': '/assets/categories/Urology.png',
-    'Gynecology & Obstetrics': '/assets/categories/gynecologist.png',
-    'General Surgery': '/assets/categories/surgeon.png',
-    'Medical Imaging & Diagnostics': '/assets/categories/ImagingDiagnostics.png',
-    'Laboratory & Research': '/assets/categories/Laboratory.png',
-    'Primary & Secondary Care': '/assets/categories/primaryandsecondarycare.png',
-    'Hygiene & Sterilization': '/assets/categories/Hygiene.png',
-    'Furniture & Facility': '/assets/categories/furniture.png',
-    'Medical Infrastructure': '/assets/categories/Infrastructure.png',
-    'Dental': '/assets/categories/dental.png',
-    'Rehabilitation & Physiotherapy': '/assets/categories/Physiotherapy.png',
-    'Veterinary': '/assets/categories/veterinary.png',
-    'Other': '/assets/categories/other.png',
-}
+import { CheckCircle2, ChevronRight } from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface Step1Props {
     formData: AdFormData
@@ -32,31 +11,60 @@ interface Step1Props {
 }
 
 export function Step1Category({ formData, updateFormData, onNext }: Step1Props) {
+    const toggleCategory = (catName: string) => {
+        const currentCats = formData.category || []
+        if (currentCats.includes(catName)) {
+            updateFormData({ category: currentCats.filter(c => c !== catName) })
+        } else {
+            updateFormData({ category: [...currentCats, catName] })
+        }
+    }
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-xl font-semibold mb-4">Core Identity: Choose Category</h2>
+            <h2 className="text-xl font-semibold mb-2">Core Identity: Choose Category</h2>
+            <p className="text-sm text-muted-foreground mb-4">Select one or more categories that apply to your equipment.</p>
+
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {PRODUCT_CATEGORIES.map((catName) => {
-                    const src = CATEGORY_ICON[catName] ?? '/assets/categories/other.png'
+                {EQUIPMENT_HIERARCHY.map((def) => {
+                    const catName = def.name
+                    const IconComponent = (LucideIcons as any)[def.icon] || LucideIcons.Layers
+                    const isSelected = formData.category?.includes(catName)
+
                     return (
                         <button
                             key={catName}
-                            onClick={() => {
-                                updateFormData({ category: catName })
-                                onNext()
-                            }}
-                            className={`p-4 flex flex-col items-center justify-center gap-3 rounded-xl border transition-all hover:border-primary hover:bg-primary/5 min-h-[100px]
-                                ${formData.category === catName ? 'border-primary bg-primary/10 ring-1 ring-primary' : 'border-border bg-card'}
+                            type="button"
+                            onClick={() => toggleCategory(catName)}
+                            className={`relative p-4 flex flex-col items-center justify-center gap-3 rounded-xl border transition-all hover:border-primary hover:bg-primary/5 min-h-[120px]
+                                ${isSelected ? 'border-primary bg-primary/10 ring-1 ring-primary' : 'border-border bg-card'}
                             `}
                         >
-                            <div className="h-12 w-12 relative">
-                                <Image src={encodeURI(src)} alt={`${catName} icon`} fill className="object-contain" />
+                            {isSelected && (
+                                <div className="absolute top-2 right-2 text-primary">
+                                    <CheckCircle2 className="w-5 h-5 fill-primary text-primary-foreground" />
+                                </div>
+                            )}
+                            <div className={`h-10 w-10 flex items-center justify-center rounded-full ${isSelected ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                                <IconComponent className="w-6 h-6" strokeWidth={1.5} />
                             </div>
-                            <span className="font-medium text-sm text-center">{catName}</span>
+                            <span className="font-medium text-xs text-center leading-tight">{catName}</span>
                         </button>
                     )
                 })}
             </div>
+
+            <div className="flex justify-end pt-6 border-t mt-6">
+                <Button
+                    onClick={onNext}
+                    disabled={!formData.category || formData.category.length === 0}
+                    size="lg"
+                    className="w-full sm:w-auto"
+                >
+                    Next Step <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+            </div>
         </div>
     )
 }
+

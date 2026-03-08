@@ -3,7 +3,7 @@
  * Defines where each role should be routed after login or unauthorized access
  */
 
-export type UserRole = 'admin' | 'vendor' | 'technician' | 'user'
+export type UserRole = 'admin' | 'vendor' | 'engineer' | 'user'
 
 export interface RoleDashboard {
     path: string
@@ -16,7 +16,7 @@ export interface RoleDashboard {
 export const ROLE_DASHBOARDS: Record<UserRole, RoleDashboard> = {
     admin: { path: '/admin', label: 'Admin Dashboard' },
     vendor: { path: '/dashboard/vendor', label: 'Vendor Dashboard' },
-    technician: { path: '/dashboard/technician', label: 'Technician Dashboard' },
+    engineer: { path: '/dashboard/engineer', label: 'Engineer Dashboard' },
     user: { path: '/dashboard/user', label: 'User Dashboard' },
 }
 
@@ -28,8 +28,8 @@ export const ROLE_PROTECTED_ROUTES: Record<string, UserRole[]> = {
     '/admin': ['admin'],
     '/post-ad': ['vendor', 'user'],
     '/dashboard/vendor': ['vendor'],
-    '/dashboard/technician': ['technician'],
-    '/dashboard/user': ['user', 'vendor', 'technician'], // Users can access other user dashboards
+    '/dashboard/engineer': ['engineer'],
+    '/dashboard/user': ['user', 'vendor', 'engineer'], // Users can access other user dashboards
 }
 
 /**

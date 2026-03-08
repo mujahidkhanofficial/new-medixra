@@ -33,7 +33,7 @@ export function Step8Review({ formData, images, onSubmit, onBack, formLoading }:
                     <div>
                         <h3 className="font-bold text-lg">{formData.name || <span className="text-destructive italic">Missing</span>}</h3>
                         <p className="text-muted-foreground">
-                            {formData.category || 'No category'} • {formData.condition}
+                            {(formData.category || []).join(', ') || 'No category'} • {formData.condition}
                         </p>
                     </div>
                     <div className="text-right">

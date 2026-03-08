@@ -3,11 +3,11 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Search, MapPin, CheckCircle, Award, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { incrementTechnicianViews, incrementTechnicianWhatsappClicks } from '@/lib/actions/technician'
+import { incrementEngineerViews, incrementEngineerWhatsappClicks } from '@/lib/actions/engineer'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
-export interface Technician {
+export interface Engineer {
     id: string
     name: string
     city: string
@@ -25,43 +25,43 @@ export interface Technician {
     whatsapp: string
 }
 
-export default function TechniciansClientPage({ initialTechnicians }: { initialTechnicians: any[] }) {
+export default function EngineersClientPage({ initialEngineers }: { initialEngineers: any[] }) {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedCity, setSelectedCity] = useState('all')
-    const [viewedTechs, setViewedTechs] = useState<Record<string, boolean>>({})
+    const [viewedEngs, setViewedEngs] = useState<Record<string, boolean>>({})
 
-    // Extract unique cities from technicians + default 'all'
+    // Extract unique cities from engineers + default 'all'
     const cities = useMemo(() => {
-        const uniqueCities = new Set(initialTechnicians.map(t => t.city).filter(Boolean))
+        const uniqueCities = new Set(initialEngineers.map(t => t.city).filter(Boolean))
         return ['all', ...Array.from(uniqueCities).sort()]
-    }, [initialTechnicians])
+    }, [initialEngineers])
 
-    const filteredTechnicians = initialTechnicians.filter((tech) => {
-        const matchesSearch = tech.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            tech.speciality.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesCity = selectedCity === 'all' || tech.city === selectedCity
+    const filteredEngineers = initialEngineers.filter((eng) => {
+        const matchesSearch = eng.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            eng.speciality.toLowerCase().includes(searchQuery.toLowerCase())
+        const matchesCity = selectedCity === 'all' || eng.city === selectedCity
         return matchesSearch && matchesCity
     })
 
-    // Track views when technicians appear in the filtered list
+    // Track views when engineers appear in the filtered list
     useEffect(() => {
-        const sessionViewed = JSON.parse(sessionStorage.getItem('viewedTechs') || '{}')
+        const sessionViewed = JSON.parse(sessionStorage.getItem('viewedEngs') || '{}')
         let hasNewViews = false
 
-        filteredTechnicians.forEach(tech => {
-            if (!sessionViewed[tech.id]) {
-                sessionViewed[tech.id] = true
+        filteredEngineers.forEach(eng => {
+            if (!sessionViewed[eng.id]) {
+                sessionViewed[eng.id] = true
                 hasNewViews = true
                 // Fire and forget server action
-                incrementTechnicianViews(tech.id).catch(console.error)
+                incrementEngineerViews(eng.id).catch(console.error)
             }
         })
 
         if (hasNewViews) {
-            sessionStorage.setItem('viewedTechs', JSON.stringify(sessionViewed))
-            setViewedTechs(sessionViewed)
+            sessionStorage.setItem('viewedEngs', JSON.stringify(sessionViewed))
+            setViewedEngs(sessionViewed)
         }
-    }, [filteredTechnicians])
+    }, [filteredEngineers])
 
     return (
         <div className="flex-1">
@@ -71,7 +71,7 @@ export default function TechniciansClientPage({ initialTechnicians }: { initialT
                     <div className="text-center mb-8">
                         <h1 className="text-3xl font-bold text-foreground md:text-4xl mb-2">Equipment Repair & Maintenance</h1>
                         <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Connect with certified technicians for professional equipment repair, maintenance, and calibration services
+                            Connect with certified engineers for professional equipment repair, maintenance, and calibration services
                         </p>
                     </div>
 
@@ -81,7 +81,7 @@ export default function TechniciansClientPage({ initialTechnicians }: { initialT
                             <Search className="ml-3 h-5 w-5 text-muted-foreground" />
                             <input
                                 type="text"
-                                placeholder="Search by technician name or specialty..."
+                                placeholder="Search by engineer name or specialty..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="flex-1 bg-transparent outline-none text-foreground placeholder-muted-foreground"
@@ -112,31 +112,31 @@ export default function TechniciansClientPage({ initialTechnicians }: { initialT
                     </div>
                 </div>
 
-                {/* Technicians Grid */}
+                {/* Engineers Grid */}
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {filteredTechnicians.map((tech) => (
+                    {filteredEngineers.map((eng) => (
                         <div
-                            key={tech.id}
+                            key={eng.id}
                             className="group flex flex-col rounded-xl border border-border bg-card hover:border-primary/50 transition-all hover:shadow-md overflow-hidden relative"
                         >
                             <div className="p-5 flex-1 flex flex-col">
                                 <div className="flex items-start gap-3 mb-4">
                                     <Avatar className="h-12 w-12 border-2 border-primary/10">
-                                        <AvatarImage src={tech.avatarUrl} alt={tech.name} />
+                                        <AvatarImage src={eng.avatarUrl} alt={eng.name} />
                                         <AvatarFallback className="bg-primary/5 text-primary text-sm font-bold">
-                                            {tech.name.substring(0, 2).toUpperCase()}
+                                            {eng.name.substring(0, 2).toUpperCase()}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div>
                                         <div className="flex items-center gap-1.5 mb-1">
-                                            <h3 className="font-bold text-foreground line-clamp-1">{tech.name}</h3>
-                                            {tech.verified && (
+                                            <h3 className="font-bold text-foreground line-clamp-1">{eng.name}</h3>
+                                            {eng.verified && (
                                                 <CheckCircle className="h-4 w-4 text-primary shrink-0" />
                                             )}
                                         </div>
                                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                                             <MapPin className="h-3 w-3" />
-                                            {tech.city || 'Not specified'}
+                                            {eng.city || 'Not specified'}
                                         </p>
                                     </div>
                                 </div>
@@ -144,17 +144,17 @@ export default function TechniciansClientPage({ initialTechnicians }: { initialT
                                 {/* Specialities Badges */}
                                 <div className="mb-4 flex-1">
                                     <div className="flex flex-wrap gap-1.5">
-                                        {tech.specialitiesList?.slice(0, 3).map((s: string, i: number) => (
+                                        {eng.specialitiesList?.slice(0, 3).map((s: string, i: number) => (
                                             <Badge key={i} variant="secondary" className="font-medium bg-primary/10 text-primary hover:bg-primary/20 text-[10px] px-2 py-0.5">
                                                 {s}
                                             </Badge>
                                         ))}
-                                        {tech.specialitiesList?.length > 3 && (
+                                        {eng.specialitiesList?.length > 3 && (
                                             <Badge variant="outline" className="font-medium text-[10px] px-2 py-0.5">
-                                                +{tech.specialitiesList.length - 3} more
+                                                +{eng.specialitiesList.length - 3} more
                                             </Badge>
                                         )}
-                                        {(!tech.specialitiesList || tech.specialitiesList.length === 0) && (
+                                        {(!eng.specialitiesList || eng.specialitiesList.length === 0) && (
                                             <span className="text-xs text-muted-foreground italic">No specialties listed</span>
                                         )}
                                     </div>
@@ -166,7 +166,7 @@ export default function TechniciansClientPage({ initialTechnicians }: { initialT
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Experience</p>
                                         <p className="text-xs text-foreground font-semibold flex items-center gap-1">
                                             <Award className="h-3 w-3 text-primary/70" />
-                                            {tech.experience}
+                                            {eng.experience}
                                         </p>
                                     </div>
                                     <div>
@@ -181,12 +181,12 @@ export default function TechniciansClientPage({ initialTechnicians }: { initialT
 
                                 <Button
                                     onClick={() => {
-                                        incrementTechnicianWhatsappClicks(tech.id).catch(console.error)
+                                        incrementEngineerWhatsappClicks(eng.id).catch(console.error)
                                         const message = encodeURIComponent(`Hi! I need repair/maintenance service for my medical equipment. Found you on Medixra.`)
-                                        if (tech.whatsapp) {
-                                            window.open(`https://wa.me/${tech.whatsapp}?text=${message}`, '_blank')
+                                        if (eng.whatsapp) {
+                                            window.open(`https://wa.me/${eng.whatsapp}?text=${message}`, '_blank')
                                         } else {
-                                            alert('This technician has not provided a contact number.')
+                                            alert('This engineer has not provided a contact number.')
                                         }
                                     }}
                                     className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white gap-2"
@@ -202,10 +202,10 @@ export default function TechniciansClientPage({ initialTechnicians }: { initialT
                 </div>
 
                 {/* No Results */}
-                {filteredTechnicians.length === 0 && (
+                {filteredEngineers.length === 0 && (
                     <div className="text-center py-16">
                         <Search className="h-12 w-12 text-muted mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-foreground mb-2">No technicians found</h3>
+                        <h3 className="text-lg font-semibold text-foreground mb-2">No engineers found</h3>
                         <p className="text-muted-foreground">Try adjusting your search criteria</p>
                     </div>
                 )}

@@ -9,12 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
 import { useAuth } from '@/components/providers/auth-provider'
-import { getTechnicianProfile } from '@/lib/actions/technician'
+import { getEngineerProfile } from '@/lib/actions/engineer'
 import { getErrorMessage } from '@/lib/error-handler'
 import WhatsAppContact from '@/components/whatsapp-contact'
 import { DashboardLoader } from '@/components/ui/dashboard-loader'
 
-export default function TechnicianDashboard() {
+export default function EngineerDashboard() {
     const { user } = useAuth()
     const [profile, setProfile] = useState<any>(null)
     const [loading, setLoading] = useState(true)
@@ -25,7 +25,7 @@ export default function TechnicianDashboard() {
             if (!user?.id) return
             setLoading(true)
             try {
-                const data = await getTechnicianProfile(user.id)
+                const data = await getEngineerProfile(user.id)
                 if (!data) {
                     setError('Profile not found')
                     return
@@ -83,7 +83,7 @@ export default function TechnicianDashboard() {
                         </Avatar>
                         <div>
                             <h1 className="text-3xl font-bold tracking-tight text-foreground mb-1">
-                                {profile.full_name || 'Technician'}
+                                {profile.full_name || 'Engineer'}
                             </h1>
                             <p className="text-muted-foreground flex items-center gap-2">
                                 <MapPin className="h-4 w-4" />
@@ -96,13 +96,13 @@ export default function TechnicianDashboard() {
 
                     <div className="flex items-center gap-3">
                         <Button variant="outline" className="gap-2" asChild>
-                            <Link href="/dashboard/technician/edit">
+                            <Link href="/dashboard/engineer/edit">
                                 <Edit2 className="h-4 w-4" />
                                 Edit Profile
                             </Link>
                         </Button>
                         <Button className="gap-2" asChild>
-                            <Link href="/technicians">View Directory</Link>
+                            <Link href="/engineers">View Directory</Link>
                         </Button>
                     </div>
                 </div>

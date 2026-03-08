@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   try {
     // 1. Verify authentication and authorization
     const authResult = await verifyApiAuth(req, {
-      requiredRoles: ['user', 'vendor', 'technician'],
+      requiredRoles: ['user', 'vendor', 'engineer'],
       auditAction: 'vendor.apply',
       logSuccess: false,
     })
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     // 2. Parse request body
     const body = await req.json()
     const parsed = applyVendorSchema.safeParse(body)
-    
+
     if (!parsed.success) {
       await logAuditEvent({
         action: 'vendor.apply',

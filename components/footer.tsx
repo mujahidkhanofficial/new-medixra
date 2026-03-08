@@ -27,7 +27,7 @@ export default function Footer() {
                         <h4 className="font-semibold text-foreground mb-4">Marketplace</h4>
                         <ul className="space-y-2 text-sm">
                             <li><Link href="/products" className="text-muted-foreground hover:text-primary transition-colors">All Medical Equipment</Link></li>
-                            <li><Link href="/technicians" className="text-muted-foreground hover:text-primary transition-colors">Find Certified Technicians</Link></li>
+                            <li><Link href="/engineers" className="text-muted-foreground hover:text-primary transition-colors">Find Certified Engineers</Link></li>
                             <li><Link href="/vendors" className="text-muted-foreground hover:text-primary transition-colors">Verified Vendors Directory</Link></li>
                             <li><Link href="/buyer-protection" className="text-muted-foreground hover:text-primary transition-colors">Buyer Protection & Safety</Link></li>
                         </ul>
@@ -38,7 +38,7 @@ export default function Footer() {
                         <ul className="space-y-2 text-sm">
                             <li><Link href="/post-ad" className="text-muted-foreground hover:text-primary transition-colors">Post an Ad</Link></li>
                             <li><Link href="/signup?role=vendor" className="text-muted-foreground hover:text-primary transition-colors">Vendor Registration</Link></li>
-                            <li><Link href="/signup?role=technician" className="text-muted-foreground hover:text-primary transition-colors">Technician Registration</Link></li>
+                            <li><Link href="/signup?role=engineer" className="text-muted-foreground hover:text-primary transition-colors">Engineer Registration</Link></li>
                             <li><Link href="/drap-guidelines" className="text-muted-foreground hover:text-primary transition-colors">DRAP Compliance Guidelines</Link></li>
                         </ul>
                     </div>
