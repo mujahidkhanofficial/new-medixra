@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Menu, X, User, LogOut, Plus, LayoutDashboard, Store, ChevronDown } from 'lucide-react'
+import { Menu, X, User, LogOut, Plus, LayoutDashboard, Store, ChevronDown, Activity } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
@@ -70,9 +70,12 @@ export default function Navigation() {
             <div className="mx-auto max-w-screen-2xl px-4 w-full">
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Link href="/" className="flex items-center gap-2">
-                            <span className="text-2xl font-black tracking-tight text-[#1B7484]">
-                                Pakmedinex
+                        <Link href="/" className="group flex items-center gap-2.5">
+                            <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-[#1B7484] to-[#14E8D8] shadow-md shadow-[#14E8D8]/25 group-hover:shadow-[#14E8D8]/50 group-hover:-translate-y-0.5 transition-all duration-300">
+                                <Activity className="w-5 h-5 text-white" strokeWidth={2.5} />
+                            </div>
+                            <span className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-[#033342] via-[#1B7484] to-[#14E8D8] relative overflow-hidden group-hover:opacity-90 transition-opacity duration-300">
+                                PakMedinex
                             </span>
                         </Link>
                     </div>

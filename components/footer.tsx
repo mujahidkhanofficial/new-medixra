@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Linkedin, Twitter, MessageCircle } from 'lucide-react'
+import { Linkedin, Twitter, MessageCircle, Activity } from 'lucide-react'
 
 export default function Footer() {
     return (
@@ -8,11 +8,14 @@ export default function Footer() {
             <div className="mx-auto max-w-screen-2xl px-4 py-12 w-full">
                 <div className="grid gap-8 md:grid-cols-4">
                     <div className="md:col-span-1">
-                        <div className="flex items-center gap-2 mb-4">
-                            <span className="text-2xl font-black tracking-tight text-[#1B7484]">
-                                Pakmedinex
+                        <Link href="/" className="group flex items-center gap-2.5 mb-4 inline-flex">
+                            <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-[#1B7484] to-[#14E8D8] shadow-md shadow-[#14E8D8]/20 group-hover:shadow-[#14E8D8]/40 transition-shadow duration-300">
+                                <Activity className="w-4 h-4 text-white" strokeWidth={2.5} />
+                            </div>
+                            <span className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-[#033342] via-[#1B7484] to-[#14E8D8] relative overflow-hidden group-hover:opacity-90 transition-opacity duration-300">
+                                PakMedinex
                             </span>
-                        </div>
+                        </Link>
                         <p className="text-sm text-muted-foreground">
                             Connecting users with medical equipment vendors directly across Pakistan.
                         </p>
