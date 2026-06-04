@@ -124,7 +124,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                                         <Shield className="h-4 w-4 text-teal-500 mt-0.5" />
                                         <div>
                                             <p className="font-semibold text-gray-900">Platform Management</p>
-                                            <p className="text-gray-600">Official Medixra Administrator</p>
+                                            <p className="text-gray-600">Official Pakmedinex Administrator</p>
                                         </div>
                                     </div>
                                 )}
@@ -154,7 +154,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
                             <WhatsappUnmask
                                 phoneNumber={whatsapp}
-                                defaultText={`Hi ${profile.fullName || 'there'}, I found your profile on the Medixra Community.`}
+                                defaultText={`Hi ${profile.fullName || 'there'}, I found your profile on the Pakmedinex Community.`}
                             />
                         </div>
                     </div>

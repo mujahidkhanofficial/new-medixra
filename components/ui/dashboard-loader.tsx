@@ -56,7 +56,7 @@ export function DashboardLoader({ className }: DashboardLoaderProps) {
                     <div className="relative">
                         <Image
                             src="/logo.svg"
-                            alt="Medixra"
+                            alt="Pakmedinex"
                             width={150}
                             height={80}
                             className="object-contain drop-shadow-sm"

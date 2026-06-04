@@ -120,7 +120,7 @@ export default function LoginPage() {
                 <div className="w-full max-w-md space-y-8">
                     <div className="text-center">
                         <h1 className="text-3xl font-bold text-foreground">Welcome Back</h1>
-                        <p className="mt-2 text-muted-foreground">Sign in to your Medixra account</p>
+                        <p className="mt-2 text-muted-foreground">Sign in to your Pakmedinex account</p>
                     </div>
 
                     <form action={formAction} className="space-y-6 bg-card p-8 rounded-xl border border-border shadow-sm">

@@ -3,8 +3,8 @@ import Footer from '@/components/footer'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-    title: 'Trust & Safety Hub | Medixra',
-    description: 'Learn how Medixra maintains a secure and verified medical marketplace.',
+    title: 'Trust & Safety Hub | Pakmedinex',
+    description: 'Learn how Pakmedinex maintains a secure and verified medical marketplace.',
 }
 
 export default function TrustAndSafetyPage() {
@@ -15,7 +15,7 @@ export default function TrustAndSafetyPage() {
                 <div className="mx-auto max-w-4xl prose prose-slate dark:prose-invert">
                     <h1 className="text-4xl font-bold mb-8">Trust & Safety Hub</h1>
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                        Medixra is committed to providing a secure B2B platform. Our dedicated Trust & Safety Hub is currently being updated.
+                        Pakmedinex is committed to providing a secure B2B platform. Our dedicated Trust & Safety Hub is currently being updated.
                     </p>
                 </div>
             </main>

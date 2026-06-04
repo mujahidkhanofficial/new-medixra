@@ -182,7 +182,7 @@ export default function EngineersClientPage({ initialEngineers }: { initialEngin
                                 <Button
                                     onClick={() => {
                                         incrementEngineerWhatsappClicks(eng.id).catch(console.error)
-                                        const message = encodeURIComponent(`Hi! I need repair/maintenance service for my medical equipment. Found you on Medixra.`)
+                                        const message = encodeURIComponent(`Hi! I need repair/maintenance service for my medical equipment. Found you on Pakmedinex.`)
                                         if (eng.whatsapp) {
                                             window.open(`https://wa.me/${eng.whatsapp}?text=${message}`, '_blank')
                                         } else {

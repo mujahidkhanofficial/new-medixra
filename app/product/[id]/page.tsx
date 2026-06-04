@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     return {
         title: product.name,
-        description: rawDescription || `Buy ${product.name} from Medixra.`,
+        description: rawDescription || `Buy ${product.name} from Pakmedinex.`,
         openGraph: {
             images: product.image_url ? [{ url: product.image_url }] : [],
         },
@@ -119,7 +119,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
         },
         offers: {
             '@type': 'Offer',
-            url: `https://medixra.com/product/${product.id}`,
+            url: `https://pakmedinex.com/product/${product.id}`,
             priceCurrency: 'PKR',
             price: product.price || 0,
             itemCondition: product.condition === 'New'
@@ -257,23 +257,42 @@ export default async function ProductDetailPage({ params }: PageProps) {
                                 <div className="flex justify-between items-start gap-4 mb-4">
                                     <div className="flex flex-wrap gap-2">
                                         {(() => {
-                                            try {
-                                                const cats = JSON.parse(product.category);
-                                                if (Array.isArray(cats)) {
-                                                    return cats.map((cat: string) => (
-                                                        <span key={cat} className="text-xs font-semibold tracking-wide text-primary bg-primary/5 px-2.5 py-1 rounded-full uppercase">
-                                                            {cat}
-                                                        </span>
-                                                    ))
+                                            const displayTags: string[] = []
+                                            const addTags = (raw: string | string[] | null | undefined) => {
+                                                if (!raw) return
+                                                if (Array.isArray(raw)) {
+                                                    raw.forEach(t => { if (t && !displayTags.includes(t)) displayTags.push(t) })
+                                                    return
                                                 }
-                                            } catch {
-                                                // Fallback for single legacy strings
+                                                try {
+                                                    const parsed = JSON.parse(raw)
+                                                    if (Array.isArray(parsed)) {
+                                                        parsed.forEach(t => { if (t && !displayTags.includes(t)) displayTags.push(t) })
+                                                    } else if (typeof parsed === 'string' && !displayTags.includes(parsed)) {
+                                                        displayTags.push(parsed)
+                                                    }
+                                                } catch {
+                                                    if (!displayTags.includes(raw)) displayTags.push(raw)
+                                                }
                                             }
-                                            return (
-                                                <span className="text-xs font-semibold tracking-wide text-primary bg-primary/5 px-2.5 py-1 rounded-full uppercase">
-                                                    {product.category || 'Uncategorized'}
+
+                                            addTags(product.category)
+                                            addTags(product.speciality)
+                                            addTags(product.tags)
+
+                                            if (displayTags.length === 0) {
+                                                return (
+                                                    <span className="text-xs font-semibold tracking-wide text-primary bg-primary/5 px-2.5 py-1 rounded-full uppercase">
+                                                        Uncategorized
+                                                    </span>
+                                                )
+                                            }
+
+                                            return displayTags.map(tag => (
+                                                <span key={tag} className="text-xs font-semibold tracking-wide text-primary bg-primary/5 px-2.5 py-1 rounded-full uppercase">
+                                                    {tag}
                                                 </span>
-                                            )
+                                            ))
                                         })()}
                                     </div>
                                     <div className="flex gap-2 shrink-0">

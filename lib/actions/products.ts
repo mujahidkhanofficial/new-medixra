@@ -216,7 +216,7 @@ export async function getProductById(id: string) {
                     created_at: product.createdAt,
                     updated_at: product.updatedAt,
 
-                    vendor_name: vendorProfile?.fullName || 'Medixra Member',
+                    vendor_name: vendorProfile?.fullName || 'Pakmedinex Member',
                     vendor_avatar: vendorProfile?.avatarUrl,
                     vendor_phone: vendorProfile?.phone,
                     vendor_city: vendorProfile?.city,

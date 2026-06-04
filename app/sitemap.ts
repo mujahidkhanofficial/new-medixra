@@ -6,7 +6,7 @@ import { EQUIPMENT_HIERARCHY } from '@/lib/constants'
 import { getApprovedEngineers } from '@/lib/actions/engineer'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://medixra.com'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://pakmedinex.com'
 
     // Get all active products with error handling for connection issues during build
     let allProducts: { id: string; updatedAt: string }[] = []

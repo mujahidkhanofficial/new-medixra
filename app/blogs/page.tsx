@@ -8,10 +8,10 @@ import { Metadata } from 'next'
 import Navigation from '@/components/navigation'
 
 export const metadata: Metadata = {
-    title: 'Medical Business & Technology Blog | Medixra',
+    title: 'Medical Business & Technology Blog | Pakmedinex',
     description: 'Read the latest insights on medical equipment procurement, biomedical engineering updates, and DRAP compliance in Pakistan.',
     openGraph: {
-        title: 'Medical Business & Technology Blog | Medixra',
+        title: 'Medical Business & Technology Blog | Pakmedinex',
         description: 'Read the latest insights on medical equipment procurement, biomedical engineering updates, and DRAP compliance.',
     }
 }
@@ -33,7 +33,7 @@ export default async function BlogsIndexPage() {
                         Official Updates & Insights
                     </Badge>
                     <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6">
-                        Medixra Business Blog
+                        Pakmedinex Business Blog
                     </h1>
                     <p className="text-lg md:text-xl text-teal-100/90 max-w-2xl mx-auto font-medium">
                         Expert analyses on medical equipment trends, engineering standards, and healthcare modernization in Pakistan.
@@ -47,7 +47,7 @@ export default async function BlogsIndexPage() {
                     {blogs.length === 0 ? (
                         <div className="col-span-full py-24 text-center">
                             <h3 className="text-2xl font-bold text-gray-900 mb-2">No articles published yet</h3>
-                            <p className="text-gray-500">Check back soon for insights and updates from the Medixra team.</p>
+                            <p className="text-gray-500">Check back soon for insights and updates from the Pakmedinex team.</p>
                         </div>
                     ) : (
                         blogs.map((blog) => (
@@ -63,7 +63,7 @@ export default async function BlogsIndexPage() {
                                             />
                                         ) : (
                                             <div className="absolute inset-0 bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center">
-                                                <span className="text-teal-900/10 font-bold text-4xl transform -rotate-12">Medixra</span>
+                                                <span className="text-teal-900/10 font-bold text-4xl transform -rotate-12">Pakmedinex</span>
                                             </div>
                                         )}
                                     </div>
@@ -90,7 +90,7 @@ export default async function BlogsIndexPage() {
                                                     {(blog.author?.fullName || blog.author?.email || 'M')[0].toUpperCase()}
                                                 </div>
                                                 <span className="text-sm font-semibold text-gray-700 truncate max-w-[120px]">
-                                                    {blog.author?.fullName || 'Medixra Admin'}
+                                                    {blog.author?.fullName || 'Pakmedinex Admin'}
                                                 </span>
                                             </div>
                                             <span className="flex items-center text-sm font-bold text-teal-600 group-hover:translate-x-1 transition-transform">

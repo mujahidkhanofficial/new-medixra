@@ -17,6 +17,7 @@ interface ProductCardProps {
         category?: string | null
         speciality?: string | null
         vendor_name?: string | null
+        tags?: string[] | null
     }
     isSaved: boolean
 }
@@ -30,31 +31,33 @@ export function ProductCard({ product, isSaved }: ProductCardProps) {
         ? `${product.currency || 'Rs'} ${product.price.toLocaleString()}`
         : product.price
 
-    // Determine the primary label (Specialty > Category) for the card
-    let primaryLabel = 'Medical Equipment'
-    if (product.speciality) {
-        try {
-            const parsed = JSON.parse(product.speciality)
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                primaryLabel = parsed[0]
-            } else if (typeof product.speciality === 'string') {
-                primaryLabel = product.speciality
-            }
-        } catch {
-            primaryLabel = product.speciality
+    // Extract all tags (categories, specialities, tags)
+    const displayTags: string[] = []
+    const addTags = (raw: string | string[] | null | undefined) => {
+        if (!raw) return
+        if (Array.isArray(raw)) {
+            raw.forEach(t => { if (t && !displayTags.includes(t)) displayTags.push(t) })
+            return
         }
-    } else if (product.category) {
         try {
-            const parsed = JSON.parse(product.category)
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                primaryLabel = parsed[0]
-            } else if (typeof product.category === 'string') {
-                primaryLabel = product.category
+            const parsed = JSON.parse(raw)
+            if (Array.isArray(parsed)) {
+                parsed.forEach(t => { if (t && !displayTags.includes(t)) displayTags.push(t) })
+            } else if (typeof parsed === 'string' && !displayTags.includes(parsed)) {
+                displayTags.push(parsed)
             }
         } catch {
-            primaryLabel = product.category
+            if (!displayTags.includes(raw)) displayTags.push(raw)
         }
     }
+
+    addTags(product.category)
+    addTags(product.speciality)
+    addTags(product.tags)
+
+    // Show up to 3 tags on the card to avoid layout break
+    const visibleTags = displayTags.slice(0, 3)
+    const extraTagsCount = displayTags.length - visibleTags.length
 
     return (
         <div className="group flex flex-col h-full bg-card rounded-lg overflow-hidden border border-border hover:shadow-md transition-shadow">
@@ -101,10 +104,25 @@ export function ProductCard({ product, isSaved }: ProductCardProps) {
                     />
                 </div>
 
-                {/* Subtitle (Specialty/Category) */}
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5 mt-1 line-clamp-1 font-medium">
-                    {primaryLabel}
-                </p>
+                {/* Visual Tags */}
+                <div className="flex flex-wrap gap-1.5 mt-1 mb-0.5">
+                    {visibleTags.length > 0 ? (
+                        visibleTags.map(tag => (
+                            <span key={tag} className="text-[10px] font-semibold tracking-wide text-primary bg-primary/10 px-1.5 py-0.5 rounded truncate max-w-[120px]">
+                                {tag}
+                            </span>
+                        ))
+                    ) : (
+                        <span className="text-[10px] font-semibold tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            Medical Equipment
+                        </span>
+                    )}
+                    {extraTagsCount > 0 && (
+                        <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            +{extraTagsCount}
+                        </span>
+                    )}
+                </div>
 
                 {/* Title */}
                 <Link href={`/product/${product.id}`} className="block group-hover:text-primary transition-colors">

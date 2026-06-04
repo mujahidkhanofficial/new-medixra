@@ -25,14 +25,14 @@ export async function generateMetadata(
     const previousImages = (await parent).openGraph?.images || []
 
     return {
-        title: blog.metaTitle || `${blog.title} | Medixra Blog`,
+        title: blog.metaTitle || `${blog.title} | Pakmedinex Blog`,
         description: blog.metaDescription || blog.excerpt || blog.title,
         openGraph: {
             title: blog.metaTitle || blog.title,
             description: blog.metaDescription || blog.excerpt || blog.title,
             type: 'article',
             publishedTime: blog.publishedAt!,
-            authors: [blog.author?.fullName || 'Medixra Admin'],
+            authors: [blog.author?.fullName || 'Pakmedinex Admin'],
             images: blog.coverImageUrl ? [blog.coverImageUrl, ...previousImages] : previousImages,
         },
         twitter: {
@@ -77,7 +77,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                                 <div className="h-8 w-8 rounded-full bg-white text-teal-800 flex items-center justify-center text-xs font-bold ring-2 ring-teal-500/30">
                                     {(blog.author?.fullName || blog.author?.email || 'M')[0].toUpperCase()}
                                 </div>
-                                <span className="font-semibold text-white">{blog.author?.fullName || 'Medixra Admin'}</span>
+                                <span className="font-semibold text-white">{blog.author?.fullName || 'Pakmedinex Admin'}</span>
                             </div>
                             <span className="opacity-30 hidden sm:inline">•</span>
                             <div className="flex items-center gap-2">

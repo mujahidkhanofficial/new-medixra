@@ -31,11 +31,11 @@ export const useAuth = () => {
     return useContext(AuthContext)
 }
 
-export function AuthProvider({ children, initialSession = null }: { children: React.ReactNode, initialSession?: Session | null }) {
-    const [session, setSession] = useState<Session | null>(initialSession)
-    const [user, setUser] = useState<User | null>(initialSession?.user ?? null)
+export function AuthProvider({ children, initialUser = null }: { children: React.ReactNode, initialUser?: User | null }) {
+    const [session, setSession] = useState<Session | null>(null)
+    const [user, setUser] = useState<User | null>(initialUser)
     const [profile, setProfile] = useState<Profile | null>(null)
-    const [loading, setLoading] = useState(!initialSession)
+    const [loading, setLoading] = useState(!initialUser)
     const supabase = createClient()
 
     const fetchProfile = async (userId: string) => {
@@ -98,45 +98,48 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
         if (data) setProfile(data)
     }
 
-    // Handle props change (server-side update of session)
+    // Handle props change (server-side update of user)
     useEffect(() => {
-        if (initialSession?.user?.id !== user?.id) {
-            setSession(initialSession)
-            setUser(initialSession?.user ?? null)
-            if (initialSession?.user) {
-                fetchProfile(initialSession.user.id).then(data => setProfile(data))
+        if (initialUser?.id !== user?.id) {
+            setUser(initialUser)
+            if (initialUser) {
+                fetchProfile(initialUser.id).then(data => setProfile(data))
             } else {
                 setProfile(null)
             }
         }
-    }, [initialSession])
+    }, [initialUser])
 
     useEffect(() => {
         let mounted = true
 
         const initializeAuth = async () => {
             try {
-                // If we already have a session from props, we might just want to fetch the profile if missing
-                if (initialSession?.user && !profile) {
-                    const profileData = await fetchProfile(initialSession.user.id)
+                // If we already have a user from props, fetch the profile if missing
+                if (initialUser && !profile) {
+                    const profileData = await fetchProfile(initialUser.id)
                     if (mounted) {
                         setProfile(profileData)
                         setLoading(false)
                     }
+                    // Fetch session silently in background to keep tokens fresh
+                    supabase.auth.getSession().then(({ data: { session: fetchedSession } }) => {
+                        if (mounted) setSession(fetchedSession)
+                    })
                     return
                 }
 
-                // Fallback to client-side session fetch if no prop provided or strict check needed
-                const { data: { session }, error } = await supabase.auth.getSession()
+                // Fallback to client-side session fetch if no prop provided
+                const { data: { session: currentSession }, error } = await supabase.auth.getSession()
 
                 if (error) throw error
 
                 if (mounted) {
-                    setSession(session)
-                    setUser(session?.user ?? null)
+                    setSession(currentSession)
+                    setUser(currentSession?.user ?? null)
 
-                    if (session?.user) {
-                        const profileData = await fetchProfile(session.user.id)
+                    if (currentSession?.user) {
+                        const profileData = await fetchProfile(currentSession.user.id)
                         if (mounted) setProfile(profileData)
                     } else {
                         if (mounted) setProfile(null)
@@ -154,17 +157,17 @@ export function AuthProvider({ children, initialSession = null }: { children: Re
         initializeAuth()
 
         // 2. Listen for changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
             if (!mounted) return
 
             // If we get an explicit event, we can trust it
-            setSession(session)
-            setUser(session?.user ?? null)
+            setSession(currentSession)
+            setUser(currentSession?.user ?? null)
 
-            if (session?.user) {
+            if (currentSession?.user) {
                 // ALWAYS refetch profile on state change to prevent new-tab race conditions
                 // where the initial Session is valid but the profile object is null
-                const profileData = await fetchProfile(session.user.id)
+                const profileData = await fetchProfile(currentSession.user.id)
                 if (mounted) setProfile(profileData)
             } else {
                 if (mounted) setProfile(null)

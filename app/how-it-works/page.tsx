@@ -24,7 +24,7 @@ export default function HowItWorksPage() {
         },
         {
             title: 'Close the Deal',
-            description: 'Finalize your agreement privately. Medixra helps you find the right partner.',
+            description: 'Finalize your agreement privately. Pakmedinex helps you find the right partner.',
             icon: CheckCircle2,
             color: 'text-primary'
         }
@@ -38,7 +38,7 @@ export default function HowItWorksPage() {
                 {/* Hero Section */}
                 <section className="py-20 bg-card border-b border-border">
                     <div className="mx-auto max-w-screen-2xl px-4 text-center">
-                        <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">How Medixra Works</h1>
+                        <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">How Pakmedinex Works</h1>
                         <p className="text-xl text-muted-foreground">
                             A direct bridge between medical equipment users, sellers, and specialized engineers in Pakistan.
                         </p>
@@ -74,7 +74,7 @@ export default function HowItWorksPage() {
                             <div className="p-8 bg-card rounded-3xl border border-border">
                                 <h3 className="text-xl font-bold text-foreground mb-4">Direct Communication</h3>
                                 <p className="text-muted-foreground leading-relaxed">
-                                    Medixra is a listing marketplace. We do not handle payments, logistics, or deliveries. All discussions regarding price, warranty, and shipping happen directly between the user and the seller.
+                                    Pakmedinex is a listing marketplace. We do not handle payments, logistics, or deliveries. All discussions regarding price, warranty, and shipping happen directly between the user and the seller.
                                 </p>
                             </div>
                             <div className="p-8 bg-card rounded-3xl border border-border">
@@ -93,7 +93,7 @@ export default function HowItWorksPage() {
                         <div className="p-10 rounded-[32px] border-2 border-dashed border-border">
                             <h2 className="text-2xl font-bold text-foreground mb-4">Important Notice</h2>
                             <p className="text-muted-foreground leading-relaxed italic">
-                                "Medixra serves as a facilitator to help you discover equipment and service providers. The final transaction, product verification, and delivery are the sole responsibility of the parties involved. We recommend verifying equipment in person before completing high-value payments."
+                                "Pakmedinex serves as a facilitator to help you discover equipment and service providers. The final transaction, product verification, and delivery are the sole responsibility of the parties involved. We recommend verifying equipment in person before completing high-value payments."
                             </p>
                         </div>
                     </div>

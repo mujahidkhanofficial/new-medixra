@@ -12,26 +12,26 @@ const _geistMono = Geist_Mono({ subsets: ["latin"], variable: '--font-geist-mono
 
 export const metadata: Metadata = {
   title: {
-    default: 'Medixra - Direct Medical Equipment Marketplace Pakistan',
-    template: '%s | Medixra',
+    default: 'Pakmedinex - Direct Medical Equipment Marketplace Pakistan',
+    template: '%s | Pakmedinex',
   },
   description: 'Pakistan\'s leading Direct Medical Equipment Marketplace. Connect directly with verified vendors, buyers, and certified engineers for zero-commission transactions.',
   keywords: ['medical equipment', 'Pakistan', 'direct medical marketplace', 'healthcare', 'hospital equipment', 'diagnostic equipment', 'medical devices', 'certified engineers', 'DRAP'],
-  authors: [{ name: 'Medixra' }],
-  creator: 'Medixra',
-  metadataBase: new URL('https://medixra.com'),
+  authors: [{ name: 'Pakmedinex' }],
+  creator: 'Pakmedinex',
+  metadataBase: new URL('https://pakmedinex.com'),
   openGraph: {
     type: 'website',
     locale: 'en_PK',
-    url: 'https://medixra.com',
-    siteName: 'Medixra',
-    title: 'Medixra - Direct Medical Equipment Marketplace Pakistan',
+    url: 'https://pakmedinex.com',
+    siteName: 'Pakmedinex',
+    title: 'Pakmedinex - Direct Medical Equipment Marketplace Pakistan',
     description: 'Pakistan\'s leading Direct Medical Equipment Marketplace. Connect directly with verified vendors and engineers.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Medixra' }],
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Pakmedinex' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Medixra - Direct Medical Equipment Marketplace',
+    title: 'Pakmedinex - Direct Medical Equipment Marketplace',
     description: 'Pakistan\'s leading Direct Medical Equipment Marketplace.',
     images: ['/og-image.png'],
   },
@@ -50,29 +50,29 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   const supabase = await createClient()
-  const { data: { session } } = supabase ? await supabase.auth.getSession() : { data: { session: null } }
+  const { data: { user } } = supabase ? await supabase.auth.getUser() : { data: { user: null } }
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "WebSite",
-        "@id": "https://medixra.com/#website",
-        "url": "https://medixra.com/",
-        "name": "Medixra",
+        "@id": "https://pakmedinex.com/#website",
+        "url": "https://pakmedinex.com/",
+        "name": "Pakmedinex",
         "description": "Direct Medical Equipment Marketplace Pakistan",
         "potentialAction": [{
           "@type": "SearchAction",
-          "target": "https://medixra.com/products?q={search_term_string}",
+          "target": "https://pakmedinex.com/products?q={search_term_string}",
           "query-input": "required name=search_term_string"
         }]
       },
       {
         "@type": "Organization",
-        "@id": "https://medixra.com/#organization",
-        "name": "Medixra",
-        "url": "https://medixra.com/",
-        "logo": "https://medixra.com/icon.svg",
+        "@id": "https://pakmedinex.com/#organization",
+        "name": "Pakmedinex",
+        "url": "https://pakmedinex.com/",
+        "logo": "https://pakmedinex.com/icon.svg",
         "sameAs": []
       }
     ]
@@ -87,7 +87,7 @@ export default async function RootLayout({
         />
       </head>
       <body className={`${_geist.className} font-sans antialiased`} suppressHydrationWarning>
-        <AuthProvider initialSession={session}>
+        <AuthProvider initialUser={user}>
           {children}
           <Analytics />
           <Toaster position="bottom-right" richColors />

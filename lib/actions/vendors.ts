@@ -61,7 +61,7 @@ export async function getVendorBySlug(slug: string) {
         ...profile,
         ...vendorDetails,
         // Prefer business name if set, else full name
-        business_name: vendorDetails?.business_name || profile.full_name || 'Medixra Member'
+        business_name: vendorDetails?.business_name || profile.full_name || 'Pakmedinex Member'
     } as VendorProfile
 }
 
@@ -91,7 +91,7 @@ export async function getApprovedVendors(): Promise<VendorProfile[]> {
         return {
             ...profile,
             ...vendorDetails,
-            business_name: vendorDetails?.business_name || profile.full_name || 'Medixra Vendor',
+            business_name: vendorDetails?.business_name || profile.full_name || 'Pakmedinex Vendor',
             city: vendorDetails?.city || profile.city
         } as VendorProfile
     })

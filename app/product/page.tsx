@@ -246,7 +246,7 @@ export default function ProductDetailPage() {
         <div className="rounded-lg bg-muted/50 border border-border p-6 mb-8">
           <h3 className="font-semibold text-foreground mb-3">Safety & Compliance</h3>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            <strong>Important:</strong> Medixra is a listing platform only. Responsibility for regulatory compliance with Pakistani laws (including DRAP) lies with the vendor and user, not Medixra. Users must verify that the equipment, seller, and use are compliant with applicable Pakistani laws and medical regulations before purchase. For more information, see our Safety & Compliance guidelines.
+            <strong>Important:</strong> Pakmedinex is a listing platform only. Responsibility for regulatory compliance with Pakistani laws (including DRAP) lies with the vendor and user, not Pakmedinex. Users must verify that the equipment, seller, and use are compliant with applicable Pakistani laws and medical regulations before purchase. For more information, see our Safety & Compliance guidelines.
           </p>
         </div>
       </div>

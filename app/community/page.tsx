@@ -5,7 +5,7 @@ import CommunityFeed from './CommunityFeed'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-    title: 'Community Board | Medixra',
+    title: 'Community Board | Pakmedinex',
     description: 'Join the real-time global discussion. Connect with vendors, biomeds, and buyers instantly.',
 }
 

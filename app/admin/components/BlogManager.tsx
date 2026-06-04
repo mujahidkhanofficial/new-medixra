@@ -302,7 +302,7 @@ export function BlogManager() {
                             <div>
                                 <label className="text-sm font-bold text-gray-700">URL Slug *</label>
                                 <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-gray-400 text-sm bg-gray-50 px-3 py-2 rounded-md border">medixra.com/blogs/</span>
+                                    <span className="text-gray-400 text-sm bg-gray-50 px-3 py-2 rounded-md border">pakmedinex.com/blogs/</span>
                                     <Input
                                         placeholder="url-friendly-slug"
                                         value={slug}

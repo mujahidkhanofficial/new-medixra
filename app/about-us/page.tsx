@@ -14,7 +14,7 @@ export default function AboutUsPage() {
                         <Globe className="absolute -right-24 -top-24 h-[600px] w-[600px] text-primary" />
                     </div>
                     <div className="mx-auto max-w-screen-2xl px-4 text-center relative z-10">
-                        <h1 className="text-4xl md:text-6xl font-extrabold text-foreground mb-6">About Medixra</h1>
+                        <h1 className="text-4xl md:text-6xl font-extrabold text-foreground mb-6">About Pakmedinex</h1>
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                             Revolutionizing the medical equipment ecosystem in Pakistan through transparency, technology, and trust.
                         </p>
@@ -28,7 +28,7 @@ export default function AboutUsPage() {
                             <div>
                                 <h2 className="text-3xl font-bold text-foreground mb-6">Our Mission</h2>
                                 <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                                    Medixra was founded with a single goal: to make healthcare technology accessible to every corner of Pakistan. We believe that modern medical equipment shouldn't be limited to major cities.
+                                    Pakmedinex was founded with a single goal: to make healthcare technology accessible to every corner of Pakistan. We believe that modern medical equipment shouldn't be limited to major cities.
                                 </p>
                                 <p className="text-lg text-muted-foreground leading-relaxed">
                                     By building a digital bridge between manufacturers, vendors, and healthcare providers, we are creating a more efficient, reliable, and affordable healthcare infrastructure.
@@ -94,7 +94,7 @@ export default function AboutUsPage() {
                         <div className="bg-primary/5 rounded-[40px] p-12 md:p-20 border border-primary/20">
                             <h2 className="text-4xl font-extrabold text-foreground mb-6">Join Our Growing Network</h2>
                             <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-                                Whether you're a healthcare provider or a medical equipment vendor, there's a place for you at Medixra.
+                                Whether you're a healthcare provider or a medical equipment vendor, there's a place for you at Pakmedinex.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <button className="px-8 py-4 bg-primary text-white rounded-full font-bold hover:bg-primary/90 transition-all">

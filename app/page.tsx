@@ -294,9 +294,9 @@ export default async function Home() {
             Platform Disclaimer & Compliance
           </h3>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Medixra operates strictly as a listing directory and facilitator. We are not the manufacturer, distributor, or direct seller of any medical inventory listed on this domain. The regulatory compliance burden pertaining to the Drug Regulatory Authority of Pakistan (DRAP) or local health authorities falls entirely upon the transacting vendors and end-users. Certain specialized clinical hardware may require distinct governmental licenses to procure or operate.
+            Pakmedinex operates strictly as a listing directory and facilitator. We are not the manufacturer, distributor, or direct seller of any medical inventory listed on this domain. The regulatory compliance burden pertaining to the Drug Regulatory Authority of Pakistan (DRAP) or local health authorities falls entirely upon the transacting vendors and end-users. Certain specialized clinical hardware may require distinct governmental licenses to procure or operate.
             <br /><br />
-            By utilizing Medixra, all parties acknowledge responsibility for verifying equipment legitimacy and regulatory alignment prior to purchase.
+            By utilizing Pakmedinex, all parties acknowledge responsibility for verifying equipment legitimacy and regulatory alignment prior to purchase.
           </p>
         </div>
       </section>

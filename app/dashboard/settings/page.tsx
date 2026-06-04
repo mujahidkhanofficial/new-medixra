@@ -8,7 +8,7 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
     title: 'Account Settings',
-    description: 'Manage your Medixra profile settings',
+    description: 'Manage your Pakmedinex profile settings',
 }
 
 export default async function SettingsPage() {

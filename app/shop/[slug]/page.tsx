@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const businessName = vendor.business_name || vendor.full_name
     return {
         title: `${businessName} Webstore`,
-        description: vendor.description || `Browse medical equipment from ${businessName} on Medixra.`,
+        description: vendor.description || `Browse medical equipment from ${businessName} on Pakmedinex.`,
     }
 }
 

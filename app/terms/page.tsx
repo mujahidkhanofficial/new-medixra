@@ -24,7 +24,7 @@ export default function TermsOfServicePage() {
                             1. Acceptance of Terms
                         </h2>
                         <p className="text-muted-foreground leading-relaxed">
-                            By accessing or using Medixra ("the Platform"), you agree to be bound by these Terms of Service.
+                            By accessing or using Pakmedinex ("the Platform"), you agree to be bound by these Terms of Service.
                             If you do not agree to these terms, please do not use our services.
                         </p>
                     </section>
@@ -35,7 +35,7 @@ export default function TermsOfServicePage() {
                             2. Platform Description
                         </h2>
                         <p className="text-muted-foreground leading-relaxed mb-4">
-                            Medixra is a B2B marketplace connecting medical equipment vendors with users in Pakistan.
+                            Pakmedinex is a B2B marketplace connecting medical equipment vendors with users in Pakistan.
                             We provide a listing platform only and do not:
                         </p>
                         <ul className="list-disc pl-6 text-muted-foreground space-y-2">
@@ -76,7 +76,7 @@ export default function TermsOfServicePage() {
                             4. Disclaimer of Liability
                         </h2>
                         <p className="text-muted-foreground leading-relaxed">
-                            Medixra is not responsible for any transactions, disputes, or damages arising from
+                            Pakmedinex is not responsible for any transactions, disputes, or damages arising from
                             the use of our platform. All transactions are conducted directly between users and vendors.
                             Users assume full responsibility for verifying regulatory compliance.
                         </p>
@@ -88,7 +88,7 @@ export default function TermsOfServicePage() {
                             5. Free Platform
                         </h2>
                         <p className="text-muted-foreground leading-relaxed">
-                            Medixra is currently free to use. We do not charge vendors for listings
+                            Pakmedinex is currently free to use. We do not charge vendors for listings
                             or users for accessing the platform. This may change in the future with prior notice.
                         </p>
                     </section>

@@ -9,14 +9,9 @@ export default function Footer() {
                 <div className="grid gap-8 md:grid-cols-4">
                     <div className="md:col-span-1">
                         <div className="flex items-center gap-2 mb-4">
-                            <div className="relative h-12 w-[150px]">
-                                <Image
-                                    src="/logo.svg"
-                                    alt="Medixra Logo"
-                                    fill
-                                    className="object-contain"
-                                />
-                            </div>
+                            <span className="text-2xl font-black tracking-tight text-[#1B7484]">
+                                Pakmedinex
+                            </span>
                         </div>
                         <p className="text-sm text-muted-foreground">
                             Connecting users with medical equipment vendors directly across Pakistan.
@@ -46,7 +41,7 @@ export default function Footer() {
                     <div>
                         <h4 className="font-semibold text-foreground mb-4">Support & Legal</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><Link href="/about-us" className="text-muted-foreground hover:text-primary transition-colors">About Medixra</Link></li>
+                            <li><Link href="/about-us" className="text-muted-foreground hover:text-primary transition-colors">About Pakmedinex</Link></li>
                             <li><Link href="/trust-and-safety" className="text-muted-foreground hover:text-primary transition-colors">Trust & Safety Hub</Link></li>
                             <li><Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">General Terms of Service</Link></li>
                             <li><Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link></li>
@@ -59,7 +54,7 @@ export default function Footer() {
 
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <p className="text-sm text-muted-foreground">
-                        © 2026 Medixra. All rights reserved. Pakistan&apos;s trusted medical equipment marketplace.
+                        © 2026 Pakmedinex. All rights reserved. Pakistan&apos;s trusted medical equipment marketplace.
                     </p>
 
                     <div className="flex gap-4">

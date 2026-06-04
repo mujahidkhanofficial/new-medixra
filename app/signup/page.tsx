@@ -287,7 +287,7 @@ export default function SignupPage() {
                             {role === 'user' ? (
                                 <>We've sent a confirmation link to <strong>{currentData.email}</strong>. Please verify your email to continue.</>
                             ) : (
-                                <>Welcome to Medixra! Since you signed up as a <strong>{role}</strong>, our admin team will review your application. Please check your email <strong>{currentData.email}</strong> to verify your account first.</>
+                                <>Welcome to Pakmedinex! Since you signed up as a <strong>{role}</strong>, our admin team will review your application. Please check your email <strong>{currentData.email}</strong> to verify your account first.</>
                             )}
                         </p>
 

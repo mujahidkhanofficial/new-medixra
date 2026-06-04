@@ -27,7 +27,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     let descriptionText = 'Browse verified new, refurbished, and pre-owned medical equipment directly from trusted vendors across Pakistan. Zero commissions.';
 
     if (query) {
-        titleText = `Buy ${query} in Pakistan | Medixra Marketplace`;
+        titleText = `Buy ${query} in Pakistan | Pakmedinex Marketplace`;
         descriptionText = `Find the best prices for ${query} from verified medical equipment vendors. Connect directly on WhatsApp with zero markup.`;
     } else if (category) {
         titleText = `${category} Equipment | Direct Medical Equipment Network`;
@@ -41,7 +41,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
             title: titleText,
             description: descriptionText,
             type: 'website',
-            siteName: 'Medixra',
+            siteName: 'Pakmedinex',
             locale: 'en_PK'
         }
     }

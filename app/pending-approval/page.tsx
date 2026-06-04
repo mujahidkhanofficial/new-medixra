@@ -63,7 +63,7 @@ export default async function PendingApprovalPage() {
                                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Need help?</p>
                                     <div className="flex items-center gap-3 text-sm text-foreground">
                                         <Mail className="h-4 w-4 text-primary" />
-                                        <span>medixra@gmail.com</span>
+                                        <span>pakmedinex@gmail.com</span>
                                     </div>
                                     <div className="flex items-center gap-3 text-sm text-foreground">
                                         <Phone className="h-4 w-4 text-primary" />

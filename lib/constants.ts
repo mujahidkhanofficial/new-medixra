@@ -1,131 +1,95 @@
 export const PRODUCT_CATEGORIES = [
-    'Diagnostic Imaging Equipment',
-    'Patient Monitoring & Life Support Equipment',
-    'Surgical & Operating Room Equipment',
-    'Endoscopy & Minimally Invasive Equipment',
-    'Laboratory & Diagnostic Equipment',
-    'Sterilization & Infection Control Equipment',
-    'Hospital Furniture & Patient Handling Equipment',
-    'Rehabilitation & Physiotherapy Equipment',
-    'Emergency & Pre-Hospital Equipment',
-    'Neonatal & Pediatric Equipment',
-    'Home Healthcare Equipment',
-    'Oncology & Radiotherapy Equipment',
-    'Dialysis & Renal Care Equipment',
-    'Medical Infrastructure & Hospital Systems',
-    'Medical Consumables, Implants & Disposables'
+    'Clinical Medicine',
+    "Surgery & Women's Health",
+    'Diagnostics & Laboratory',
+    'Critical Care & Hospital Departments',
+    'Specialized Care & Rehabilitation',
+    'Dentistry'
 ] as const
 
 export const EQUIPMENT_HIERARCHY = [
     {
-        name: 'Diagnostic Imaging Equipment',
-        icon: 'ScanEye',
+        name: 'Clinical Medicine',
+        icon: 'Stethoscope',
         subcategories: [
-            'Digital X-Ray (DR/CR)', 'CT Scanners', 'MRI Systems', 'C-Arm Systems', 'Angiography Suites',
-            'PET-CT', 'Mammography', 'Ultrasound Systems', 'PACS / RIS', 'Contrast Injectors', 'Radiation Protection'
+            'General & Family Medicine',
+            'Internal Medicine',
+            'Pediatrics',
+            'Emergency Medicine',
+            'Psychiatry',
+            'Infectious Diseases',
+            'Cardiology',
+            'Neurology',
+            'Pulmonology',
+            'Gastroenterology',
+            'Nephrology & Dialysis',
+            'Endocrinology',
+            'Hematology & Oncology',
+            'Rheumatology',
+            'Geriatrics',
+            'Reproductive Medicine & IVF',
+            'Palliative & Addiction Medicine'
         ]
     },
     {
-        name: 'Patient Monitoring & Life Support Equipment',
-        icon: 'Activity',
-        subcategories: [
-            'Patient Monitors', 'Central Monitoring Systems', 'Defibrillators', 'Infusion & Syringe Pumps', 'Capnography',
-            'ICU Ventilators', 'Transport Ventilators', 'HFNC Systems', 'Anesthesia Workstations'
-        ]
-    },
-    {
-        name: 'Surgical & Operating Room Equipment',
+        name: "Surgery & Women's Health",
         icon: 'Scalpel',
         subcategories: [
-            'Open Surgery Sets', 'Energy Devices', 'Smoke Evacuators', 'Trauma Sets', 'Craniotomy Sets',
-            'Navigation Systems', 'Neuromonitoring Systems', 'Surgical Lights', 'Operating Tables', 'Electrosurgical Units (ESU)'
+            'General Surgery',
+            'Obstetrics & Gynecology',
+            'Orthopedic Surgery',
+            'Neurosurgery',
+            'Cardiothoracic & Vascular Surgery',
+            'Urology',
+            'Plastic & Reconstructive Surgery',
+            'Trauma & Sports Medicine',
+            'Transplant Surgery',
+            'Bariatric Surgery'
         ]
     },
     {
-        name: 'Endoscopy & Minimally Invasive Equipment',
-        icon: 'Search',
-        subcategories: [
-            'Rigid & Flexible Endoscopes', 'Endoscopy Towers', 'Surgical Microscopes', 'Laparoscopic Suites',
-            'Laparoscopic Gyne Sets', 'Arthroscopy Towers', 'Cystoscopy Systems', 'Ureteroscopy Systems', 'Bronchoscopes'
-        ]
-    },
-    {
-        name: 'Laboratory & Diagnostic Equipment',
+        name: 'Diagnostics & Laboratory',
         icon: 'FlaskConical',
         subcategories: [
-            'Hematology Analyzers', 'Biochemistry Analyzers', 'Immunoassay Systems', 'PCR Systems',
-            'Coagulation Analyzers', 'Blood Gas Analyzers', 'Centrifuges', 'Biosafety Cabinets', 'Refrigerators & Freezers', 'Microscopes'
+            'Radiology & Imaging',
+            'Pathology',
+            'Medical Laboratory',
+            'Nuclear Medicine',
+            'Audiology'
         ]
     },
     {
-        name: 'Sterilization & Infection Control Equipment',
-        icon: 'Sparkles',
+        name: 'Critical Care & Hospital Departments',
+        icon: 'Activity',
         subcategories: [
-            'Autoclaves', 'ETO Sterilizers', 'Washer Disinfectors', 'UV Disinfection Systems', 'Waste Management Systems', 'Plasma Sterilizers'
+            'Anesthesiology',
+            'Intensive & Critical Care (ICU/NICU/CCU)',
+            'Operating Room & Surgical Services'
         ]
     },
     {
-        name: 'Hospital Furniture & Patient Handling Equipment',
-        icon: 'BedDouble',
-        subcategories: [
-            'Hospital Beds', 'ICU Beds', 'Stretchers', 'Trolleys', 'Cabinets', 'Pressure-Relief Mattresses', 'Patient Hoists', 'Overbed Tables'
-        ]
-    },
-    {
-        name: 'Rehabilitation & Physiotherapy Equipment',
+        name: 'Specialized Care & Rehabilitation',
         icon: 'Accessibility',
         subcategories: [
-            'TENS Units', 'CPM Machines', 'Traction Tables', 'Rehab Cycles', 'Mobility Aids', 'Laser Therapy Units', 'Shockwave Therapy'
+            'Dermatology',
+            'Ophthalmology',
+            'ENT (Ear, Nose & Throat)',
+            'Physical Therapy & Rehabilitation',
+            'Respiratory, Occupational & Speech Therapy',
+            'Pain Medicine'
         ]
     },
     {
-        name: 'Emergency & Pre-Hospital Equipment',
-        icon: 'Ambulance',
+        name: 'Dentistry',
+        icon: 'Smile',
         subcategories: [
-            'Crash Carts', 'Transport Incubators', 'Portable Defibrillators', 'Suction Units', 'Spine Boards', 'Emergency Resuscitation Kits'
-        ]
-    },
-    {
-        name: 'Neonatal & Pediatric Equipment',
-        icon: 'Baby',
-        subcategories: [
-            'Infant Incubators', 'Radiant Warmers', 'Phototherapy Units', 'Fetal Monitors', 'Neonatal Ventilators', 'Bassinets'
-        ]
-    },
-    {
-        name: 'Home Healthcare Equipment',
-        icon: 'HeartPulse',
-        subcategories: [
-            'CPAP/BiPAP', 'Oxygen Concentrators', 'Home Care Beds', 'Pulse Oximeters', 'Nebulizers', 'Glucometers', 'BP Monitors'
-        ]
-    },
-    {
-        name: 'Oncology & Radiotherapy Equipment',
-        icon: 'Zap',
-        subcategories: [
-            'Linear Accelerators (LINAC)', 'Brachytherapy Systems', 'Treatment Planning Systems', 'Dosimetry Equipment'
-        ]
-    },
-    {
-        name: 'Dialysis & Renal Care Equipment',
-        icon: 'Droplet',
-        subcategories: [
-            'Hemodialysis Machines', 'CRRT Machines', 'RO Water Plants', 'Peritoneal Dialysis Cyclers', 'Dialyzer Reprocessing Systems'
-        ]
-    },
-    {
-        name: 'Medical Infrastructure & Hospital Systems',
-        icon: 'Building2',
-        subcategories: [
-            'Medical Gas Pipeline Systems', 'HVAC & Cleanroom Systems', 'Modular OT Systems', 'Nurse Call Systems',
-            'Backup Power Systems', 'Radiation Shielding'
-        ]
-    },
-    {
-        name: 'Medical Consumables, Implants & Disposables',
-        icon: 'Syringe',
-        subcategories: [
-            'Surgical Implants', 'Orthopedic Implants', 'Catheters', 'Syringes & Needles', 'PPE', 'Sutures', 'Wound Care Dressings'
+            'General Dentistry',
+            'Orthodontics',
+            'Oral Surgery',
+            'Prosthodontics',
+            'Periodontics',
+            'Endodontics',
+            'Pediatric Dentistry'
         ]
     }
 ] as const

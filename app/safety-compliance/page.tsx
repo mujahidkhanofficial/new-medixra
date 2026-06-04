@@ -13,7 +13,7 @@ export default function SafetyCompliancePage() {
 
       <div className="mx-auto max-w-screen-2xl px-4 py-12">
         <div className="mb-8">          <h1 className="text-3xl font-bold text-foreground mb-2">Safety & Compliance</h1>
-          <p className="text-muted-foreground">Guidelines for buying and selling medical equipment safely on Medixra</p>
+          <p className="text-muted-foreground">Guidelines for buying and selling medical equipment safely on Pakmedinex</p>
         </div>
 
         <div className="prose prose-neutral dark:prose-invert max-w-none">
@@ -26,7 +26,7 @@ export default function SafetyCompliancePage() {
               All medical equipment bought and sold in Pakistan must comply with the Drug Regulatory Authority of Pakistan (DRAP) Medical Devices Rules involving registration, import, and sale.
             </p>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Medixra strictly facilitates connections between users and vendors. We do not verify the physical condition or legal compliance of every item listed. <strong>It is the user's responsibility to verify DRAP registration certificates before purchase.</strong>
+              Pakmedinex strictly facilitates connections between users and vendors. We do not verify the physical condition or legal compliance of every item listed. <strong>It is the user's responsibility to verify DRAP registration certificates before purchase.</strong>
             </p>
           </section>
 
@@ -65,7 +65,7 @@ export default function SafetyCompliancePage() {
               <Shield className="h-5 w-5 text-primary" />
               Prohibited Items
             </h2>
-            <p className="text-muted-foreground mb-4">The following items are strictly prohibited on Medixra:</p>
+            <p className="text-muted-foreground mb-4">The following items are strictly prohibited on Pakmedinex:</p>
             <div className="grid md:grid-cols-2 gap-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-2 p-2 rounded bg-muted/30">
                 <div className="h-1.5 w-1.5 rounded-full bg-red-500" />

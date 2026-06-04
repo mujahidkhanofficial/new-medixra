@@ -327,7 +327,7 @@ export default function AdminDashboardClient({
                     <div className="h-8 w-8 bg-teal-600 rounded-lg flex items-center justify-center text-white shadow-sm">
                         <Shield className="h-5 w-5" />
                     </div>
-                    <span className="tracking-tight">Medixra</span>
+                    <span className="tracking-tight">Pakmedinex</span>
                 </h2>
             </div>
 

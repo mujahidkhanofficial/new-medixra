@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { Menu, X, User, LogOut, Plus, LayoutDashboard, Store, ChevronDown, PlusCircle } from 'lucide-react'
+import { useState } from 'react'
+import { Menu, X, User, LogOut, Plus, LayoutDashboard, Store, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/providers/auth-provider'
-import { EQUIPMENT_HIERARCHY } from '@/lib/constants'
 
 import {
     DropdownMenu,
@@ -16,10 +15,6 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-    DropdownMenuSub,
-    DropdownMenuSubTrigger,
-    DropdownMenuSubContent,
-    DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { logout } from '@/lib/actions/auth'
@@ -29,34 +24,7 @@ export default function Navigation() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const { user, profile, loading } = useAuth()
-    const [isEquipmentOpen, setIsEquipmentOpen] = useState(false)
     const router = useRouter()
-
-    // buffered open/close timer makes hover feel smooth
-    const closeTimer = useRef<number | null>(null)
-
-    const openMenu = () => {
-        if (closeTimer.current) {
-            clearTimeout(closeTimer.current)
-            closeTimer.current = null
-        }
-        setIsEquipmentOpen(true)
-    }
-
-    const closeMenu = () => {
-        if (closeTimer.current) clearTimeout(closeTimer.current)
-        closeTimer.current = window.setTimeout(() => {
-            setIsEquipmentOpen(false)
-            closeTimer.current = null
-        }, 150)
-    }
-
-    // clear any pending timer when component unmounts
-    useEffect(() => {
-        return () => {
-            if (closeTimer.current) clearTimeout(closeTimer.current)
-        }
-    }, [])
 
 
     const handleLogout = async () => {
@@ -103,15 +71,9 @@ export default function Navigation() {
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Link href="/" className="flex items-center gap-2">
-                            <div className="relative h-12 w-[150px]">
-                                <Image
-                                    src="/logo.svg"
-                                    alt="Medixra Logo"
-                                    fill
-                                    className="object-contain"
-                                    priority
-                                />
-                            </div>
+                            <span className="text-2xl font-black tracking-tight text-[#1B7484]">
+                                Pakmedinex
+                            </span>
                         </Link>
                     </div>
 
@@ -120,53 +82,9 @@ export default function Navigation() {
                             Home
                         </Link>
 
-                        <div
-                            onMouseEnter={openMenu}
-                            onMouseLeave={closeMenu}
-                            className="relative"
-                        >
-                            <DropdownMenu open={isEquipmentOpen} onOpenChange={setIsEquipmentOpen}>
-                                <DropdownMenuTrigger asChild>
-                                    <Link
-                                        href="/products"
-                                        className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors outline-none cursor-pointer"
-                                        onClick={() => setIsEquipmentOpen(false)}
-                                    >
-                                        Equipment <ChevronDown className="h-4 w-4" />
-                                    </Link>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                    className="w-64 max-h-[80vh] overflow-y-auto"
-                                    align="start"
-                                    sideOffset={2}
-                                    onMouseEnter={openMenu}
-                                    onMouseLeave={closeMenu}
-                                >
-                                    {EQUIPMENT_HIERARCHY.map((category) => (
-                                        <DropdownMenuSub key={category.name}>
-                                            <DropdownMenuSubTrigger className="cursor-pointer">
-                                                {category.name}
-                                            </DropdownMenuSubTrigger>
-                                            <DropdownMenuPortal>
-                                                <DropdownMenuSubContent className="max-h-[80vh] overflow-y-auto">
-                                                    {category.subcategories.map((sub) => (
-                                                        <DropdownMenuItem key={sub} asChild>
-                                                            <Link
-                                                                href={`/products?category=${encodeURIComponent(category.name)}&query=${encodeURIComponent(sub)}`}
-                                                                className="cursor-pointer w-full"
-                                                                onClick={() => setIsEquipmentOpen(false)}
-                                                            >
-                                                                {sub}
-                                                            </Link>
-                                                        </DropdownMenuItem>
-                                                    ))}
-                                                </DropdownMenuSubContent>
-                                            </DropdownMenuPortal>
-                                        </DropdownMenuSub>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
+                        <Link href="/products" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                            Specialities
+                        </Link>
 
                         <Link href="/blogs" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                             Blogs
@@ -336,7 +254,7 @@ export default function Navigation() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-muted-foreground text-sm">Welcome to Medixra</p>
+                                    <p className="text-muted-foreground text-sm">Welcome to Pakmedinex</p>
                                 )}
                             </div>
 
@@ -344,7 +262,7 @@ export default function Navigation() {
                                 Home
                             </Link>
                             <Link href="/products" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
-                                Equipment
+                                Specialities
                             </Link>
                             <Link href="/blogs" className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded">
                                 Blogs
