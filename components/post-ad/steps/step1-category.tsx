@@ -22,8 +22,8 @@ export function Step1Category({ formData, updateFormData, onNext }: Step1Props) 
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-xl font-semibold mb-2">Core Identity: Choose Category</h2>
-            <p className="text-sm text-muted-foreground mb-4">Select one or more categories that apply to your equipment.</p>
+            <h2 className="text-xl font-semibold mb-2">Core Identity: Choose Speciality</h2>
+            <p className="text-sm text-muted-foreground mb-4">Select one or more specialities that apply to your equipment.</p>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {EQUIPMENT_HIERARCHY.map((def) => {

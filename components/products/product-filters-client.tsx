@@ -13,10 +13,10 @@ import {
     SPECIALTIES
 } from '@/lib/constants'
 
-const categories = ['All Categories', ...PRODUCT_CATEGORIES]
+const categories = ['All Primary Specialities', ...PRODUCT_CATEGORIES]
 const conditions = ['All', ...CONDITIONS]
 const locations = ['All Pakistan', ...CITIES]
-const specialties = ['All Specialties', ...SPECIALTIES]
+const specialties = ['All Sub-Specialities', ...SPECIALTIES]
 
 export function ProductFiltersClient() {
     const router = useRouter()
@@ -26,7 +26,15 @@ export function ProductFiltersClient() {
     const createQueryString = useCallback(
         (name: string, value: string) => {
             const params = new URLSearchParams(searchParams.toString())
-            if (value && value !== 'All' && value !== 'All Categories' && value !== 'All Pakistan' && value !== 'All Specialties') {
+            if (
+                value &&
+                value !== 'All' &&
+                value !== 'All Categories' &&
+                value !== 'All Primary Specialities' &&
+                value !== 'All Pakistan' &&
+                value !== 'All Specialties' &&
+                value !== 'All Sub-Specialities'
+            ) {
                 params.set(name, value)
             } else {
                 params.delete(name)
@@ -37,10 +45,10 @@ export function ProductFiltersClient() {
     )
 
     // State derived from URL
-    const selectedCategory = searchParams.get('category') || 'All Categories'
+    const selectedCategory = searchParams.get('category') || 'All Primary Specialities'
     const selectedCondition = searchParams.get('condition') || 'All'
     const selectedLocation = searchParams.get('city') || 'All Pakistan'
-    const selectedSpeciality = searchParams.get('speciality') || 'All Specialties'
+    const selectedSpeciality = searchParams.get('speciality') || 'All Sub-Specialities'
 
     // Price is a bit trickier as it's a range
     const minPrice = searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : 0

@@ -67,7 +67,7 @@ export default async function Home() {
       {/* Overlapping Quick Access Cards */}
       <div className="relative z-10 -mt-24 md:-mt-16 lg:-mt-28 px-4 md:px-8 mb-12 lg:mb-24">
         <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-4 lg:gap-6">
 
             {/* Card 1 */}
             <Link href="/products" className="group flex flex-col items-center justify-center bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 p-6 md:p-5 lg:p-8 text-center border border-gray-100 min-h-[160px] lg:min-h-[180px]">
@@ -78,25 +78,16 @@ export default async function Home() {
               <p className="text-gray-500 text-sm md:text-xs lg:text-sm leading-relaxed">Find equipment for specific medical fields</p>
             </Link>
 
-            {/* Card 2 */}
-            <Link href="/products" className="group flex flex-col items-center justify-center bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 p-6 md:p-5 lg:p-8 text-center border border-gray-100 min-h-[160px] lg:min-h-[180px]">
-              <div className="h-12 w-12 rounded-full bg-[#1B7484]/10 flex items-center justify-center mb-4 text-[#1B7484] group-hover:scale-110 transition-transform">
-                <Package className="h-6 w-6" />
-              </div>
-              <h3 className="font-bold text-gray-900 text-lg md:text-base lg:text-lg mb-2">Browse by Category</h3>
-              <p className="text-gray-500 text-sm md:text-xs lg:text-sm leading-relaxed">Explore diagnostic, surgical & more</p>
-            </Link>
-
-            {/* Card 3 */}
-            <Link href="/signup?role=vendor" className="group flex flex-col items-center justify-center bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 p-6 md:p-5 lg:p-8 text-center border border-gray-100 min-h-[160px] lg:min-h-[180px]">
+            {/* Card 2 (formerly Register as Vendor) */}
+            <Link href="/vendors" className="group flex flex-col items-center justify-center bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 p-6 md:p-5 lg:p-8 text-center border border-gray-100 min-h-[160px] lg:min-h-[180px]">
               <div className="h-12 w-12 rounded-full bg-[#1B7484]/10 flex items-center justify-center mb-4 text-[#1B7484] group-hover:scale-110 transition-transform">
                 <Building2 className="h-6 w-6" />
               </div>
-              <h3 className="font-bold text-gray-900 text-lg md:text-base lg:text-lg mb-2">Register as Vendor</h3>
-              <p className="text-gray-500 text-sm md:text-xs lg:text-sm leading-relaxed">Create your professional store profile</p>
+              <h3 className="font-bold text-gray-900 text-lg md:text-base lg:text-lg mb-2">Search Vendors</h3>
+              <p className="text-gray-500 text-sm md:text-xs lg:text-sm leading-relaxed">Find verified sellers on the platform</p>
             </Link>
 
-            {/* Card 4 */}
+            {/* Card 3 (formerly Find Engineers) */}
             <Link href="/engineers" className="group flex flex-col items-center justify-center bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 p-6 md:p-5 lg:p-8 text-center border border-gray-100 min-h-[160px] lg:min-h-[180px]">
               <div className="h-12 w-12 rounded-full bg-[#1B7484]/10 flex items-center justify-center mb-4 text-[#1B7484] group-hover:scale-110 transition-transform">
                 <Wrench className="h-6 w-6" />
@@ -117,7 +108,7 @@ export default async function Home() {
         <div className="mx-auto max-w-screen-2xl px-4">
           <div className="mb-14 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-foreground">Explore Categories</h2>
+              <h2 className="text-3xl font-bold tracking-tight text-foreground">Explore Specialities</h2>
               <p className="text-muted-foreground mt-2 text-lg">Comprehensive taxonomy of professional medical grade assets.</p>
             </div>
             <Button variant="outline" size="lg" className="rounded-full shadow-sm" asChild>

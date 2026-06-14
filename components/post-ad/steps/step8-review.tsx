@@ -28,12 +28,12 @@ export function Step8Review({ formData, images, onSubmit, onBack, formLoading }:
 
             <div className="bg-card border border-border rounded-xl p-6 text-sm space-y-5">
 
-                {/* Header: Name, Category, Condition, Price */}
+                {/* Header: Name, Speciality, Condition, Price */}
                 <div className="flex justify-between items-start border-b pb-4">
                     <div>
                         <h3 className="font-bold text-lg">{formData.name || <span className="text-destructive italic">Missing</span>}</h3>
                         <p className="text-muted-foreground">
-                            {(formData.category || []).join(', ') || 'No category'} • {formData.condition}
+                            {(formData.category || []).join(', ') || 'No speciality'} • {formData.condition}
                         </p>
                     </div>
                     <div className="text-right">
