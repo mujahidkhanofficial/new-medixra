@@ -66,31 +66,11 @@ export function ProductFilters({
 
             <Separator />
 
-            <Accordion type="multiple" defaultValue={['category', 'price', 'condition', 'location', 'speciality']} className="w-full">
+            <Accordion type="multiple" defaultValue={['price', 'condition', 'location', 'speciality']} className="w-full">
 
-                {/* Primary Speciality */}
-                <AccordionItem value="category">
-                    <AccordionTrigger>Primary Speciality</AccordionTrigger>
-                    <AccordionContent>
-                        <div className="space-y-2 pt-2">
-                            <select
-                                value={selectedCategory}
-                                onChange={(e) => onCategoryChange(e.target.value)}
-                                className="w-full h-10 px-4 rounded-full bg-secondary/50 text-sm focus:outline-none focus:ring-0"
-                            >
-                                {categories.map((category) => (
-                                    <option key={category} value={category}>
-                                        {category}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </AccordionContent>
-                </AccordionItem>
-
-                {/* Sub-Speciality */}
+                {/* Speciality */}
                 <AccordionItem value="speciality">
-                    <AccordionTrigger>Sub-Speciality</AccordionTrigger>
+                    <AccordionTrigger>Speciality</AccordionTrigger>
                     <AccordionContent>
                         <div className="space-y-2 pt-2">
                             <select
